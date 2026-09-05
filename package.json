@@ -13,7 +13,7 @@
     "lint:fix": "oxlint --fix",
     "run:migrate": "cd backend && pnpm run migrate",
     "run:bot": "cd backend && pnpm run start-bot-prod",
-    "run:api": "cd backend && pnpm run start-api-prod",
+    "run:api": "cd backend && pnpm run migrate && pnpm run start-api-prod",
     "run:dashboard": "cd dashboard && node serve.js"
   },
   "devDependencies": {
