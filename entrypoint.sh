@@ -1,45 +1,69 @@
-#!/bin/sh
+l#!/bin/sh
 
 export NODE_ENV=production
 
 case "$1" in
-    migrate) exec pnpm run --silent run:migrate;;
+    migrate)
+        exec pnpm run --silent run:migrate
+        ;;
+
     bot)
-    exec node -e '
-      const http = require("http");
-      const { spawn } = require("child_process");
-      const port = Number(process.env.PORT) || 10000;
+        exec node -e '
+            const http = require("http");
+            const { spawn } = require("child_process");
 
-      const server = http.createServer((req, res) => {
-        res.writeHead(200, {"Content-Type":"text/plain"});
-        res.end("OK");
-      });
+            const port = Number(process.env.PORT) || 10000;
 
-      server.listen(port, "0.0.0.0", () =>
-        console.log(`Health server listening on port ${port}`)
-      );
+            const server = http.createServer((req, res) => {
+                res.writeHead(200, {
+                    "Content-Type": "text/plain"
+                });
+                res.end("OK");
+            });
 
-      const bot = spawn("pnpm", ["run", "--silent", "run:bot"], {
-        stdio: "inherit",
-        env: process.env
-      });
+            server.listen(port, "0.0.0.0", () => {
+                console.log(`Health server listening on 0.0.0.0:${port}`);
+            });
 
-      const shutdown = (signal) => {
-        bot.kill(signal);
-        server.close();
-      };
+            const bot = spawn(
+                "pnpm",
+                ["run", "--silent", "run:bot"],
+                {
+                    stdio: "inherit",
+                    env: process.env
+                }
+            );
 
-      process.on("SIGTERM", () => shutdown("SIGTERM"));
-      process.on("SIGINT", () => shutdown("SIGINT"));
+            const shutdown = (signal) => {
+                console.log(`Received ${signal}, shutting down...`);
+                bot.kill(signal);
+                server.close();
+            };
 
-      bot.on("exit", (code, signal) => {
-        server.close();
-        process.exit(code ?? (signal ? 1 : 0));
-      });
-    '
-    ;;
-    api) exec pnpm run --silent run:api;;
-    dashboard) exec pnpm run --silent run:dashboard;;
+            process.on("SIGTERM", () => shutdown("SIGTERM"));
+            process.on("SIGINT", () => shutdown("SIGINT"));
+
+            bot.on("exit", (code, signal) => {
+                server.close();
+                process.exit(code ?? (signal ? 1 : 0));
+            });
+
+            bot.on("error", (error) => {
+                console.error("Failed to start bot:", error);
+                server.close();
+                process.exit(1);
+            });
+        '
+        ;;
+
+    api)
+        exec pnpm run --silent run:api
+        ;;
+
+    dashboard)
+        exec pnpm run --silent run:dashboard
+        ;;
+
     *)
         echo "Unknown command: $1"
         exit 1
