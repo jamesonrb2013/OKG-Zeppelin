@@ -175,11 +175,12 @@ await member.disableCommunicationUntil(timeoutUntil).catch(noop);
       expiresAt: muteExpiresAt,
       rolesToRestore,
     };
-    if (muteType === MuteTypes.Role) {
-      muteParams.muteRole = muteRole;
-    } else {
-      muteParams.timeoutExpiresAt = timeoutUntil;
-    }
+    if (muteRole) {
+  muteParams.muteRole = muteRole;
+}
+
+muteParams.timeoutExpiresAt = timeoutUntil;
+  
     finalMute = await pluginData.state.mutes.addMute(muteParams);
   }
 
