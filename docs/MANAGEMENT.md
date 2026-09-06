@@ -1,6 +1,6 @@
 # Management
 
-After starting Zeppelin -- either in the [development](./DEVELOPMENT.md) or [production](./PRODUCTION.md) environment -- you have several tools available to manage it.
+After starting Zeppelin -- either in the [development](./DEVELOPMENT.md) or [production](./PRODUCTION.md) environment -- you have several tools available to manage it. 
 
 ## Note
 
