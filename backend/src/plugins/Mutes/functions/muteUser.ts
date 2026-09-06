@@ -120,7 +120,7 @@ if (muteRole) {
   }
 
   if (!currentUserRoles.includes(muteRole)) {
-    pluginData.getPlugin(RoleManagerPlugin).addPriorityRole(member.id, muteRole);
+    await pluginData.getPlugin(RoleManagerPlugin).addPriorityRole(member.id, muteRole);
   }
 }
 
