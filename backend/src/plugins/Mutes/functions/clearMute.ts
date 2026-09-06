@@ -31,13 +31,15 @@ export async function clearMute(
       if (mute) {
         const muteRoleId = mute.mute_role || defaultMuteRole;
 
-        if (mute.type === MuteTypes.Role) {
-          if (muteRoleId) {
-            roleManagerPlugin.removePriorityRole(member.id, muteRoleId);
-          }
-        } else {
-          await member.timeout(null);
-        }
+        // Remove the muted role
+if (muteRoleId) {
+  roleManagerPlugin.removePriorityRole(member.id, muteRoleId);
+}
+
+// Remove the Discord timeout
+if (member.isCommunicationDisabled()) {
+  await member.timeout(null);
+}
 
         if (mute.roles_to_restore) {
           const guildRoles = pluginData.guild.roles.cache;
