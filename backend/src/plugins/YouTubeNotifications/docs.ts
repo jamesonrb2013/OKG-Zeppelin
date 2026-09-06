@@ -5,6 +5,6 @@ export const youtubeNotificationsPluginDocs: ZeppelinPluginDocs = {
   prettyName: "YouTube Notifications",
   description:
     "Posts notifications when a configured YouTube channel publishes a new video.",
-  type: "plugin",
+  type: "stable",
   configSchema: zYouTubeNotificationsConfig,
 };
