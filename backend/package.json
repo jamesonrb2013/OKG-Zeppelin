@@ -9,7 +9,7 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit --incremental false",
     "start-bot-dev": "node --enable-source-maps --stack-trace-limit=30 --trace-warnings --inspect=0.0.0.0:9229 dist/index.js",
-    "start-bot-prod": "node --enable-source-maps dist/syncApiOwners.js && node --enable-source-maps --stack-trace-limit=30 --trace-warnings dist/index.js",
+    "start-bot-prod": "node --enable-source-maps --stack-trace-limit=30 --trace-warnings dist/index.js"
     "watch-bot": "echo 'watch machine broke, have a nice day' && exit 1",
     "start-api-dev": "node --enable-source-maps --stack-trace-limit=30 --inspect=0.0.0.0:9239 dist/api/index.js",
     "start-api-prod": "node --enable-source-maps --stack-trace-limit=30 dist/api/index.js",
