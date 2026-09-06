@@ -137,10 +137,13 @@ export class ApiPermissionAssignments extends BaseRepository {
         permissions: [ApiPermissions.Owner],
         expires_at: null,
       });
-      await this.apiPermissions.insert({
-  guild_id: guildId,
-  type: ApiPermissionTypes.User,
-  target_id: newOwnerId,
-  permissions: [ApiPermissions.Owner],
-  expires_at: null,
-});
+            await this.apiPermissions.insert({
+        guild_id: guildId,
+        type: ApiPermissionTypes.User,
+        target_id: newOwnerId,
+        permissions: [ApiPermissions.Owner],
+        expires_at: null,
+      });
+    }
+  }
+}
