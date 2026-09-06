@@ -56,12 +56,12 @@ muteParams.timeoutExpiresAt = timeoutExpiresAt;
     }
 
     // Update timeout
-    if (member && (existingMute?.type === MuteTypes.Timeout || createdMute?.type === MuteTypes.Timeout)) {
-      if (!member.moderatable) return null;
+    if (member) {
+  if (!member.moderatable) return null;
 
-      await member.disableCommunicationUntil(timeoutExpiresAt).catch(noop);
-      await pluginData.state.mutes.updateTimeoutExpiresAt(userId, timeoutExpiresAt);
-    }
+  await member.disableCommunicationUntil(timeoutExpiresAt).catch(noop);
+  await pluginData.state.mutes.updateTimeoutExpiresAt(userId, timeoutExpiresAt);
+}
   } else {
     // Unmute immediately
     clearMute(pluginData, existingMute);
