@@ -107,7 +107,7 @@ export const YouTubeNotificationsPlugin =
               : "";
 
             await channel.send(
-              `${mention}🎬 **New BentleyBoovr video!**\n\n` +
+              `${mention}🎬 **New  video!**\n\n` +
                 `**${video.title}**\n\n` +
                 `🔗 https://www.youtube.com/watch?v=${video.id}`,
             );
