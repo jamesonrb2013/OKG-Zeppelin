@@ -6,22 +6,40 @@ import { backendDir } from "../paths.js";
 
 moment.tz.setDefault("UTC");
 
-const entities = path.relative(process.cwd(), path.resolve(backendDir, "dist/data/entities/*.js"));
-const migrations = path.relative(process.cwd(), path.resolve(backendDir, "dist/migrations/*.js"));
+const entities = path.relative(
+  process.cwd(),
+  path.resolve(backendDir, "dist/data/entities/*.js")
+);
+
+const migrations = path.relative(
+  process.cwd(),
+  path.resolve(backendDir, "dist/migrations/*.js")
+);
 
 export const dataSource = new DataSource({
   type: "mysql",
+
   host: env.DB_HOST || "mysql",
   port: env.DB_PORT || 3306,
+
   username: env.DB_USER || "zeppelin",
   password: env.DB_PASSWORD || env.DEVELOPMENT_MYSQL_PASSWORD,
   database: env.DB_DATABASE || "zeppelin",
+
   charset: "utf8mb4",
   supportBigNumbers: true,
   bigNumberStrings: true,
   dateStrings: true,
+
   synchronize: false,
+
+  // Give Aiven/MySQL enough time to establish the connection.
   connectTimeout: 15000,
+
+  // Aiven requires TLS for database connections.
+  ssl: {
+    rejectUnauthorized: false,
+  },
 
   logging: ["error", "warn"],
 
@@ -33,7 +51,10 @@ export const dataSource = new DataSource({
     typeCast(field, next) {
       if (field.type === "DATETIME") {
         const val = field.string();
-        return val != null ? moment.utc(val).format("YYYY-MM-DD HH:mm:ss") : null;
+
+        return val != null
+          ? moment.utc(val).format("YYYY-MM-DD HH:mm:ss")
+          : null;
       }
 
       return next();
