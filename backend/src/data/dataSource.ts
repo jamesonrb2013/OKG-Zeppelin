@@ -21,7 +21,7 @@ export const dataSource = new DataSource({
   bigNumberStrings: true,
   dateStrings: true,
   synchronize: false,
-  connectTimeout: 2000,
+  connectTimeout: 15000,
 
   logging: ["error", "warn"],
 
