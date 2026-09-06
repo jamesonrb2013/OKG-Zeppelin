@@ -96,6 +96,10 @@ export const availableGuildPlugins: ZeppelinGuildPluginInfo[] = [
     docs: autoReactionsPluginDocs,
   },
   {
+    plugin: YouTubeNotificationsPlugin,
+    docs: youtubeNotificationsPluginDocs,
+  },
+  {
     plugin: CasesPlugin,
     docs: casesPluginDocs,
     autoload: true,
