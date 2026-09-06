@@ -79,6 +79,8 @@ import { WelcomeMessagePlugin } from "./WelcomeMessage/WelcomeMessagePlugin.js";
 import { welcomeMessagePluginDocs } from "./WelcomeMessage/docs.js";
 import { CommandAliasesPlugin } from "./CommandAliases/CommandAliasesPlugin.js";
 import { commandAliasesPluginDocs } from "./CommandAliases/docs.js";
+import { YouTubeNotificationsPlugin } from "./YouTubeNotifications/YouTubeNotificationsPlugin.js";
+import { youtubeNotificationsPluginDocs } from "./YouTubeNotifications/docs.js";
 
 export const availableGuildPlugins: ZeppelinGuildPluginInfo[] = [
   {
