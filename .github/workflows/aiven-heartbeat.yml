@@ -1,27 +1,40 @@
 name: Aiven MySQL Heartbeat
-
 on:
   schedule:
     - cron: "*/15 * * * *"
   workflow_dispatch:
-
 jobs:
   heartbeat:
     runs-on: ubuntu-latest
-
     steps:
       - name: Install MySQL client
         run: |
           sudo apt-get update
           sudo apt-get install -y mysql-client
-
-      - name: Ping Aiven MySQL
+      - name: Ping primary Aiven MySQL
         env:
           MYSQL_HOST: ${{ secrets.AIVEN_DB_HOST }}
           MYSQL_PORT: ${{ secrets.AIVEN_DB_PORT }}
           MYSQL_USER: ${{ secrets.AIVEN_DB_USER }}
           MYSQL_PASSWORD: ${{ secrets.AIVEN_DB_PASSWORD }}
           MYSQL_DATABASE: ${{ secrets.AIVEN_DB_NAME }}
+        run: |
+          mysql \
+            --host="$MYSQL_HOST" \
+            --port="$MYSQL_PORT" \
+            --user="$MYSQL_USER" \
+            --password="$MYSQL_PASSWORD" \
+            --database="$MYSQL_DATABASE" \
+            --ssl-mode=REQUIRED \
+            --connect-timeout=15 \
+            -e "SELECT 1;"
+      - name: Ping Bentley Aiven MySQL
+        env:
+          MYSQL_HOST: ${{ secrets.BENTLEY_DB_HOST }}
+          MYSQL_PORT: ${{ secrets.BENTLEY_DB_PORT }}
+          MYSQL_USER: ${{ secrets.BENTLEY_DB_USER }}
+          MYSQL_PASSWORD: ${{ secrets.BENTLEY_DB_PASSWORD }}
+          MYSQL_DATABASE: ${{ secrets.BENTLEY_DB_NAME }}
         run: |
           mysql \
             --host="$MYSQL_HOST" \
