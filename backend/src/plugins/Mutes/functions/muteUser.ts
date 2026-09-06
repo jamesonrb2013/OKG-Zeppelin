@@ -94,51 +94,54 @@ export async function muteUser(
       rolesToRestore = currentUserRoles.filter((x) => (<string[]>restoreRoles).includes(x));
     }
 
-    if (muteType === MuteTypes.Role) {
-      // Verify the configured mute role is valid
-      const actualMuteRole = pluginData.guild.roles.cache.get(muteRole!);
-      if (!actualMuteRole) {
-        lock.unlock();
-        logs.logBotAlert({
-          body: `Cannot mute users, specified mute role Id is invalid`,
-        });
-        throw new RecoverablePluginError(ERRORS.INVALID_MUTE_ROLE_ID);
-      }
+// Apply BOTH the muted role and Discord timeout.
+if (muteRole) {
+  // Verify the configured mute role is valid
+  const actualMuteRole = pluginData.guild.roles.cache.get(muteRole);
 
-      // Verify the mute role is not above Zep's roles
-      const zep = await pluginData.guild.members.fetchMe();
-      const zepRoles = pluginData.guild.roles.cache.filter((x) => zep.roles.cache.has(x.id));
-      if (zepRoles.size === 0 || !zepRoles.some((zepRole) => zepRole.position > actualMuteRole.position)) {
-        lock.unlock();
-        logs.logBotAlert({
-          body: `Cannot mute user, specified mute role is above Zeppelin in the role hierarchy`,
-        });
-        throw new RecoverablePluginError(ERRORS.MUTE_ROLE_ABOVE_ZEP, pluginData.guild);
-      }
+  if (!actualMuteRole) {
+    lock.unlock();
+    logs.logBotAlert({
+      body: `Cannot mute users, specified mute role Id is invalid`,
+    });
+    throw new RecoverablePluginError(ERRORS.INVALID_MUTE_ROLE_ID);
+  }
 
-      if (!currentUserRoles.includes(muteRole!)) {
-        pluginData.getPlugin(RoleManagerPlugin).addPriorityRole(member.id, muteRole!);
-      }
-    } else {
-      if (!member.manageable) {
-        lock.unlock();
-        logs.logBotAlert({
-          body: `Cannot mute user, specified user is above Zeppelin in the role hierarchy`,
-        });
-        throw new RecoverablePluginError(ERRORS.USER_ABOVE_ZEP, pluginData.guild);
-      }
+  // Verify the mute role is below Zeppelin
+  const zep = await pluginData.guild.members.fetchMe();
+  const zepRoles = pluginData.guild.roles.cache.filter((x) => zep.roles.cache.has(x.id));
 
-      if (!member.moderatable) {
-        // redundant safety, since canActOn already checks this
-        lock.unlock();
-        logs.logBotAlert({
-          body: `Cannot mute user, specified user is not moderatable`,
-        });
-        throw new RecoverablePluginError(ERRORS.USER_NOT_MODERATABLE, pluginData.guild);
-      }
+  if (zepRoles.size === 0 || !zepRoles.some((zepRole) => zepRole.position > actualMuteRole.position)) {
+    lock.unlock();
+    logs.logBotAlert({
+      body: `Cannot mute user, specified mute role is above Zeppelin in the role hierarchy`,
+    });
+    throw new RecoverablePluginError(ERRORS.MUTE_ROLE_ABOVE_ZEP, pluginData.guild);
+  }
 
-      await member.disableCommunicationUntil(timeoutUntil).catch(noop);
-    }
+  if (!currentUserRoles.includes(muteRole)) {
+    pluginData.getPlugin(RoleManagerPlugin).addPriorityRole(member.id, muteRole);
+  }
+}
+
+// Always apply Discord timeout as well.
+if (!member.manageable) {
+  lock.unlock();
+  logs.logBotAlert({
+    body: `Cannot mute user, specified user is above Zeppelin in the role hierarchy`,
+  });
+  throw new RecoverablePluginError(ERRORS.USER_ABOVE_ZEP, pluginData.guild);
+}
+
+if (!member.moderatable) {
+  lock.unlock();
+  logs.logBotAlert({
+    body: `Cannot mute user, specified user is not moderatable`,
+  });
+  throw new RecoverablePluginError(ERRORS.USER_NOT_MODERATABLE, pluginData.guild);
+}
+
+await member.disableCommunicationUntil(timeoutUntil).catch(noop);
 
     // If enabled, move the user to the mute voice channel (e.g. afk - just to apply the voice perms from the mute role)
     const cfg = pluginData.config.get();
