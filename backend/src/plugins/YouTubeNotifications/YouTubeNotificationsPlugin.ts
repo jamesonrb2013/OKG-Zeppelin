@@ -60,15 +60,16 @@ export const YouTubeNotificationsPlugin =
     },
 
     async afterLoad(pluginData) {
-      const { guild, config, state } = pluginData;
+  const { guild, state } = pluginData;
+  const config = pluginData.config.get();
 
-      if (!config.enabled) {
-        return;
-      }
+  if (!config.enabled) {
+    return;
+  }
 
-      const channel = guild.channels.cache.get(
-        config.notification_channel,
-      );
+  const channel = guild.channels.cache.get(
+    config.notification_channel,
+  );
 
       if (!(channel instanceof TextChannel)) {
         console.error(
