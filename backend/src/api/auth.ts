@@ -9,6 +9,7 @@ import { ApiPermissionAssignments } from "../data/ApiPermissionAssignments.js";
 import { ApiUserInfo } from "../data/ApiUserInfo.js";
 import { ApiUserInfoData } from "../data/entities/ApiUserInfo.js";
 import { env } from "../env.js";
+import { isStaff } from "../staff.js";
 import { ok } from "./responses.js";
 
 interface IPassportApiUser {
