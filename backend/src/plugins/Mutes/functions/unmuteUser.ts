@@ -11,7 +11,7 @@ import { CaseArgs } from "../../Cases/types.js";
 import { LogsPlugin } from "../../Logs/LogsPlugin.js";
 import { MutesPluginType, UnmuteResult } from "../types.js";
 import { clearMute } from "./clearMute.js";
-import { getMuteType } from "./getDefaultMuteType.js";
+import { getDefaultMuteType } from "./getDefaultMuteType.js";
 import { getTimeoutExpiryTime } from "./getTimeoutExpiryTime.js";
 import { memberHasMutedRole } from "./memberHasMutedRole.js";
 
@@ -37,7 +37,7 @@ export async function unmuteUser(
     let createdMute: Mute | null = null;
 
     if (!existingMute) {
-      const MuteType = getMuteType(pluginData);
+      const MuteType = getDefaultMuteType(pluginData);
       const muteParams: AddMuteParams = {
         userId,
         type: MuteType,
