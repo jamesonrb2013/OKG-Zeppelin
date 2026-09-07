@@ -111,7 +111,12 @@ export const ModActionsPlugin = guildPlugin<ModActionsPluginType>()({
     modActionsSlashGroup({
       name: "mod",
       description: "Moderation actions",
-      defaultMemberPermissions: "0",
+
+      // Do not restrict the command at the Discord permission level.
+      // Zeppelin's role configuration (can_warn, can_mute, etc.)
+      // controls who can actually use each moderation command.
+      defaultMemberPermissions: null,
+
       subcommands: [
         AddCaseSlashCmd,
         BanSlashCmd,
@@ -188,6 +193,7 @@ export const ModActionsPlugin = guildPlugin<ModActionsPluginType>()({
 
     state.unloaded = false;
     state.ignoredEvents = [];
+
     // Massbans can take a while depending on rate limits,
     // so we're giving each massban 15 minutes to complete before launching the next massban
     state.massbanQueue = new Queue(15 * MINUTES);
