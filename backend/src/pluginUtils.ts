@@ -46,14 +46,17 @@ export function canActOn(
   if (member2.id === pluginData.client.user!.id) {
     return false;
   }
-  const isOwnerOrAdmin =
-    member2.id === member2.guild.ownerId || member2.permissions.has(PermissionsBitField.Flags.Administrator);
-  if (isOwnerOrAdmin && !allowAdmins) {
+
+  // The server owner is always protected from automated moderation.
+  if (member2.id === member2.guild.ownerId) {
     return false;
   }
 
+  // Moderation authority is determined by Zeppelin permission levels,
+  // not Discord's Administrator permission.
   const ourLevel = getMemberLevel(pluginData, member1);
   const memberLevel = getMemberLevel(pluginData, member2);
+
   return allowSameLevel ? ourLevel >= memberLevel : ourLevel > memberLevel;
 }
 
