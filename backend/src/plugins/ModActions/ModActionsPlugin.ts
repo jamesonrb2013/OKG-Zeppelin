@@ -115,7 +115,7 @@ export const ModActionsPlugin = guildPlugin<ModActionsPluginType>()({
       // Do not restrict the command at the Discord permission level.
       // Zeppelin's role configuration (can_warn, can_mute, etc.)
       // controls who can actually use each moderation command.
-      defaultMemberPermissions: null,
+
 
       subcommands: [
         AddCaseSlashCmd,
