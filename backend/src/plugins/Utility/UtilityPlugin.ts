@@ -70,6 +70,7 @@ export const UtilityPlugin = guildPlugin<UtilityPluginType>()({
         can_emojiinfo: true,
         can_snowflake: true,
         can_nickname: true,
+        can_dm: true,
         can_vcmove: true,
         can_vckick: true,
         can_help: true,
