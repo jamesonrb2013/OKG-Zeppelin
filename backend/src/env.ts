@@ -48,7 +48,7 @@ const envType = z.object({
   DB_PASSWORD: z.string().optional(),
   DB_DATABASE: z.string().optional(),
 
-  REDIS_URL: z.string().default("redis://redis:6379"),
+  REDIS_URL: z.string().min(1),
 
   DEVELOPMENT_MYSQL_PASSWORD: z.string().optional(),
 
