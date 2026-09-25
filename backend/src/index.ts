@@ -54,6 +54,10 @@ import {
 import { DecayingCounter } from "./utils/DecayingCounter.js";
 import { enableProfiling } from "./utils/easyProfiler.js";
 import { loadYamlSafely } from "./utils/loadYamlSafely.js";
+import {
+  announceCommand,
+  handleAnnounceCommand,
+} from "./slashCommands/announce.js";
 
 // Error handling
 let recentPluginErrors = 0;
