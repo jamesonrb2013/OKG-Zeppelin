@@ -407,9 +407,27 @@ connect().then(async () => {
     },
   });
 
-  client.once("clientReady", () => {
-    startUptimeCounter();
-  });
+  client.once("clientReady", async () => {
+  startUptimeCounter();
+
+  try {
+    await client.application?.commands.create(announceCommand.toJSON());
+
+    logger.info("Registered /announce slash command");
+  } catch (error) {
+    logger.error(`Failed to register /announce slash command: ${error}`);
+  }
+});
+
+client.on(Events.InteractionCreate, async (interaction) => {
+  if (!interaction.isChatInputCommand()) {
+    return;
+  }
+
+  if (interaction.commandName === "announce") {
+    await handleAnnounceCommand(interaction);
+  }
+});
 
   client.rest.on(RESTEvents.RateLimited, (data) => {
     logRateLimit(data);
