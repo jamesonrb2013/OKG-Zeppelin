@@ -411,7 +411,7 @@ connect().then(async () => {
   startUptimeCounter();
 
   try {
-    await client.application?.commands.create(announceCommand.toJSON());
+    await client.application?.commands.create(announceCommand.toJSON(), "1488682722606977175");
 
     logger.info("Registered /announce slash command");
   } catch (error) {
