@@ -412,6 +412,7 @@ connect().then(async () => {
 
   try {
     await client.application?.commands.create(announceCommand.toJSON(), "1488682722606977175");
+await client.application?.commands.create(announceCommand.toJSON(), "1545654977916043294");
 
     logger.info("Registered /announce slash command");
   } catch (error) {
