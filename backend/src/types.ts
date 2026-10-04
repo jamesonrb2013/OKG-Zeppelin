@@ -5,7 +5,11 @@ import { zSnowflake } from "./utils.js";
 export const zZeppelinGuildConfig = z.strictObject({
   // From BaseConfig
   prefix: z.string().optional(),
-  levels: z.record(zSnowflake, z.number()).optional(),
+
+  // Custom role-based permissions.
+  // Each Discord role ID maps directly to the permissions granted by that role.
+  role_permissions: z.record(zSnowflake, z.array(z.string())).optional(),
+
   plugins: z.record(z.string(), z.unknown()).optional(),
 });
 
