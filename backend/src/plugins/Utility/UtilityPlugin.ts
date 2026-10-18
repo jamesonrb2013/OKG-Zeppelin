@@ -17,6 +17,7 @@ import { BanSearchCmd } from "./commands/BanSearchCmd.js";
 import { ChannelInfoCmd } from "./commands/ChannelInfoCmd.js";
 import { CleanCmd } from "./commands/CleanCmd.js";
 import { ContextCmd } from "./commands/ContextCmd.js";
+import { DmCmd } from "./commands/DmCmd.js";
 import { EmojiInfoCmd } from "./commands/EmojiInfoCmd.js";
 import { HelpCmd } from "./commands/HelpCmd.js";
 import { InfoCmd } from "./commands/InfoCmd.js";
@@ -100,6 +101,7 @@ export const UtilityPlugin = guildPlugin<UtilityPluginType>()({
     ServerInfoCmd,
     NicknameResetCmd,
     NicknameCmd,
+    DmCmd,
     PingCmd,
     SourceCmd,
     ContextCmd,
