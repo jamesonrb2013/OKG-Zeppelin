@@ -52,6 +52,18 @@ export const announceCommand = new SlashCommandBuilder()
       ),
   )
 
+  .addUserOption((option) =>
+    option
+      .setName("user")
+      .setDescription("Optional specific user to ping"),
+  )
+
+  .addRoleOption((option) =>
+    option
+      .setName("role")
+      .setDescription("Optional specific role to ping"),
+  )
+
   .addStringOption((option) =>
     option
       .setName("image")
@@ -105,6 +117,8 @@ export async function handleAnnounceCommand(
     interaction.options.getString("color") ?? "#5865F2";
   const mention =
     interaction.options.getString("mention") ?? "none";
+  const user = interaction.options.getUser("user");
+  const role = interaction.options.getRole("role");
   const image = interaction.options.getString("image");
   const footer = interaction.options.getString("footer");
 
@@ -142,19 +156,28 @@ export async function handleAnnounceCommand(
     });
   }
 
-  const content =
+  const broadMention =
     mention === "everyone"
       ? "@everyone"
       : mention === "here"
         ? "@here"
         : undefined;
+  const content = [
+    broadMention,
+    role ? `<@&${role.id}>` : undefined,
+    user ? `<@${user.id}>` : undefined,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   try {
     await channel.send({
-      content,
+      content: content || undefined,
       embeds: [embed],
       allowedMentions: {
         parse: mention === "none" ? [] : ["everyone"],
+        users: user ? [user.id] : [],
+        roles: role ? [role.id] : [],
       },
     });
 
