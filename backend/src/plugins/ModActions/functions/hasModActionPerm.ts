@@ -21,7 +21,12 @@ async function hasModPermission(
     | undefined;
 
   if (rolePermissions && Object.keys(rolePermissions).length > 0) {
-    return member.roles.cache.some((role) => {
+    // Slash-command interaction members can have partial or stale role data.
+    // Fetch the current GuildMember just as the command wrapper does.
+    const currentMember = await pluginData.guild.members.fetch(member.id).catch(() => null);
+    const roles = currentMember?.roles.cache ?? member.roles.cache;
+
+    return roles.some((role) => {
       const grants = rolePermissions[role.id];
       return Array.isArray(grants) && (grants.includes("*") || grants.includes(permission));
     });
