@@ -60,7 +60,7 @@ import {
   handleAnnounceCommand,
 } from "./slashCommands/announce.js";
 
-const BOT_VERSION = "1.1.097";
+const BOT_VERSION = "1.1.098";
 
 // Error handling
 let recentPluginErrors = 0;
