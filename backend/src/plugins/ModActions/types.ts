@@ -6,6 +6,7 @@ import {
   guildPluginMessageCommand,
   guildPluginSlashCommand,
   guildPluginSlashGroup,
+  helpers,
   pluginUtils,
 } from "vety";
 import { z } from "zod";
@@ -173,5 +174,55 @@ export type ModActionType = "note" | "warn" | "mute" | "unmute" | "kick" | "ban"
 
 export const modActionsMsgCmd = guildPluginMessageCommand<ModActionsPluginType>();
 export const modActionsSlashGroup = guildPluginSlashGroup<ModActionsPluginType>();
-export const modActionsSlashCmd = guildPluginSlashCommand<ModActionsPluginType>();
+const rawModActionsSlashCmd = guildPluginSlashCommand<ModActionsPluginType>();
+
+// Register each moderation action as its own top-level slash command so Discord
+// can expose/disable commands individually (for example /mod-warn).
+// configPermission is enforced here against explicit role_permissions first;
+// legacy Zeppelin permission overrides remain the fallback when no role map exists.
+export const modActionsSlashCmd: any = (definition: any) => {
+  const permission = definition.configPermission as string | undefined;
+  const { configPermission: _configPermission, ...commandDefinition } = definition;
+  return rawModActionsSlashCmd({
+    ...commandDefinition,
+    name: definition.name.startsWith("mod-") ? definition.name : `mod-${definition.name}`,
+    async run(context: any) {
+      if (permission) {
+        const { interaction, pluginData } = context;
+        const rolePermissions = (pluginData.fullConfig as any)?.role_permissions as
+          | Record<string, string[]>
+          | undefined;
+        let allowed = false;
+
+        if (rolePermissions && Object.keys(rolePermissions).length > 0) {
+          const member = interaction.member;
+          const roleIds: string[] =
+            member && "roles" in member && member.roles?.cache
+              ? Array.from(member.roles.cache.keys())
+              : [];
+          allowed = roleIds.some((roleId) => {
+            const grants = rolePermissions[roleId];
+            return Array.isArray(grants) && (grants.includes("*") || grants.includes(permission));
+          });
+        } else {
+          const config = await pluginData.config.getMatchingConfig({
+            channel: interaction.channel,
+            member: interaction.member,
+          });
+          allowed = helpers.hasPermission(config, permission);
+        }
+
+        if (!allowed) {
+          await interaction.reply({
+            content: `You don't have permission to use /mod-${definition.name.replace(/^mod-/, "")}.`,
+            ephemeral: true,
+          });
+          return;
+        }
+      }
+
+      return commandDefinition.run(context);
+    },
+  });
+};
 export const modActionsEvt = guildPluginEventListener<ModActionsPluginType>();
