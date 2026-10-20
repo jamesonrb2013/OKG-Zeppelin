@@ -10,6 +10,10 @@ export const zZeppelinGuildConfig = z.strictObject({
   // Each Discord role ID maps directly to the permissions granted by that role.
   role_permissions: z.record(zSnowflake, z.array(z.string())).optional(),
 
+  // Optional numeric authority levels for moderation target hierarchy.
+  // Highest matching role level wins; unlisted members are level 0.
+  role_levels: z.record(zSnowflake, z.number().int().min(0).max(1000)).optional(),
+
   plugins: z.record(z.string(), z.unknown()).optional(),
 });
 
