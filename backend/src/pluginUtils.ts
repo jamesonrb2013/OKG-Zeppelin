@@ -52,14 +52,28 @@ export function canActOn(
     return false;
   }
 
-  // Custom role_permissions are the source of moderator authority in this
-  // deployment. When a moderator has an explicit action grant, allow actions
-  // against ordinary members even if Zeppelin's legacy level system gives
-  // both members level 0. Keep the owner protected above, and keep hierarchy
-  // enforcement whenever the target has an explicitly configured staff role.
-  const rolePermissions = (pluginData as any).fullConfig?.role_permissions as
-    | Record<string, string[]>
-    | undefined;
+  const fullConfig = (pluginData as any).fullConfig;
+  const rolePermissions = fullConfig?.role_permissions as Record<string, string[]> | undefined;
+  const roleLevels = fullConfig?.role_levels as Record<string, number> | undefined;
+
+  // If custom numeric role levels are configured, they become the authoritative
+  // hierarchy. Unlisted members have level 0. A member's highest configured
+  // role level is used when they hold multiple staff roles.
+  if (roleLevels && Object.keys(roleLevels).length > 0) {
+    const getConfiguredLevel = (member: GuildMember) =>
+      member.roles.cache.reduce((highest, role) => {
+        const level = roleLevels[role.id];
+        return typeof level === "number" && Number.isFinite(level) ? Math.max(highest, level) : highest;
+      }, 0);
+
+    const actorLevel = getConfiguredLevel(member1);
+    const targetLevel = getConfiguredLevel(member2);
+    return allowSameLevel ? actorLevel >= targetLevel : actorLevel > targetLevel;
+  }
+
+  // Backwards-compatible fallback for deployments that have not configured
+  // numeric role_levels yet: explicit permission roles may act on ordinary
+  // members, but must still respect legacy hierarchy for configured staff.
   if (rolePermissions && Object.keys(rolePermissions).length > 0) {
     const moderatorHasExplicitGrant = member1.roles.cache.some((role) => {
       const grants = rolePermissions[role.id];
