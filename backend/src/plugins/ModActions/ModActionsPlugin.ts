@@ -108,38 +108,28 @@ export const ModActionsPlugin = guildPlugin<ModActionsPluginType>()({
   events: [CreateBanCaseOnManualBanEvt, CreateUnbanCaseOnManualUnbanEvt, PostAlertOnMemberJoinEvt, AuditLogEvents],
 
   slashCommands: [
-    modActionsSlashGroup({
-      name: "mod",
-      description: "Moderation actions",
-
-      // Do not restrict the command at the Discord permission level.
-      // Zeppelin's role configuration (can_warn, can_mute, etc.)
-      // controls who can actually use each moderation command.
-
-
-      subcommands: [
-        AddCaseSlashCmd,
-        BanSlashCmd,
-        CaseSlashCmd,
-        CasesSlashCmd,
-        DeleteCaseSlashCmd,
-        ForceBanSlashCmd,
-        ForceMuteSlashCmd,
-        ForceUnmuteSlashCmd,
-        HideCaseSlashCmd,
-        KickSlashCmd,
-        MassBanSlashCmd,
-        MassMuteSlashSlashCmd,
-        MassUnbanSlashCmd,
-        MuteSlashCmd,
-        NoteSlashCmd,
-        UnbanSlashCmd,
-        UnhideCaseSlashCmd,
-        UnmuteSlashCmd,
-        UpdateSlashCmd,
-        WarnSlashCmd,
-      ],
-    }),
+    // Separate top-level commands let server admins configure visibility for
+    // each moderation action individually in Discord's Integrations settings.
+    AddCaseSlashCmd,
+    BanSlashCmd,
+    CaseSlashCmd,
+    CasesSlashCmd,
+    DeleteCaseSlashCmd,
+    ForceBanSlashCmd,
+    ForceMuteSlashCmd,
+    ForceUnmuteSlashCmd,
+    HideCaseSlashCmd,
+    KickSlashCmd,
+    MassBanSlashCmd,
+    MassMuteSlashSlashCmd,
+    MassUnbanSlashCmd,
+    MuteSlashCmd,
+    NoteSlashCmd,
+    UnbanSlashCmd,
+    UnhideCaseSlashCmd,
+    UnmuteSlashCmd,
+    UpdateSlashCmd,
+    WarnSlashCmd,
   ],
 
   messageCommands: [
