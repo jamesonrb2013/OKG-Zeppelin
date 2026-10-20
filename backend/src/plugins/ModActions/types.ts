@@ -195,11 +195,8 @@ export const modActionsSlashCmd: any = (definition: any) => {
         let allowed = false;
 
         if (rolePermissions && Object.keys(rolePermissions).length > 0) {
-          const member = interaction.member;
-          const roleIds: string[] =
-            member && "roles" in member && member.roles?.cache
-              ? Array.from(member.roles.cache.keys())
-              : [];
+          const guildMember = await pluginData.guild.members.fetch(interaction.user.id).catch(() => null);
+          const roleIds: string[] = guildMember ? Array.from(guildMember.roles.cache.keys()) : [];
           allowed = roleIds.some((roleId) => {
             const grants = rolePermissions[roleId];
             return Array.isArray(grants) && (grants.includes("*") || grants.includes(permission));
