@@ -52,9 +52,29 @@ export function canActOn(
     return false;
   }
 
-  // Keep target hierarchy on Zeppelin's existing hierarchy system. Explicit
-  // role_permissions grant actions; they do not automatically authorize acting
-  // on members with equal or higher moderation authority.
+  // Custom role_permissions are the source of moderator authority in this
+  // deployment. When a moderator has an explicit action grant, allow actions
+  // against ordinary members even if Zeppelin's legacy level system gives
+  // both members level 0. Keep the owner protected above, and keep hierarchy
+  // enforcement whenever the target has an explicitly configured staff role.
+  const rolePermissions = (pluginData as any).fullConfig?.role_permissions as
+    | Record<string, string[]>
+    | undefined;
+  if (rolePermissions && Object.keys(rolePermissions).length > 0) {
+    const moderatorHasExplicitGrant = member1.roles.cache.some((role) => {
+      const grants = rolePermissions[role.id];
+      return Array.isArray(grants) && (grants.includes("*") || grants.some((grant) => grant.startsWith("can_")));
+    });
+    const targetHasConfiguredAuthority = member2.roles.cache.some((role) => {
+      const grants = rolePermissions[role.id];
+      return Array.isArray(grants) && grants.length > 0;
+    });
+
+    if (moderatorHasExplicitGrant && !targetHasConfiguredAuthority) {
+      return true;
+    }
+  }
+
   const ourLevel = getMemberLevel(pluginData, member1);
   const memberLevel = getMemberLevel(pluginData, member2);
   return allowSameLevel ? ourLevel >= memberLevel : ourLevel > memberLevel;
