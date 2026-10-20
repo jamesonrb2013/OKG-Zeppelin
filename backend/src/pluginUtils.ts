@@ -52,10 +52,31 @@ export function canActOn(
     return false;
   }
 
-  // Moderation authority is determined by Zeppelin permission levels,
-  // not Discord's Administrator permission.
-  const ourLevel = getMemberLevel(pluginData, member1);
-  const memberLevel = getMemberLevel(pluginData, member2);
+  // Use configurable role levels when supplied in the guild config.
+  // The highest matching role level wins; unlisted members are level 0.
+  const fullConfig = (pluginData as any).fullConfig as
+    | { role_levels?: Record<string, number> }
+    | undefined;
+  const roleLevels = fullConfig?.role_levels;
+
+  let ourLevel: number;
+  let memberLevel: number;
+  if (roleLevels && Object.keys(roleLevels).length > 0) {
+    const getConfiguredLevel = (member: GuildMember) => {
+      let level = 0;
+      for (const role of member.roles.cache.values()) {
+        const configured = roleLevels[role.id];
+        if (typeof configured === "number" && configured > level) level = configured;
+      }
+      return level;
+    };
+    ourLevel = getConfiguredLevel(member1);
+    memberLevel = getConfiguredLevel(member2);
+  } else {
+    // Backwards-compatible fallback to Zeppelin's existing permission levels.
+    ourLevel = getMemberLevel(pluginData, member1);
+    memberLevel = getMemberLevel(pluginData, member2);
+  }
 
   return allowSameLevel ? ourLevel >= memberLevel : ourLevel > memberLevel;
 }
