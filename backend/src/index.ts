@@ -3,6 +3,7 @@
 import "./threadsSignalFix.js";
 
 import {
+  ActivityType,
   Client,
   Events,
   GatewayIntentBits,
@@ -58,6 +59,8 @@ import {
   announceCommand,
   handleAnnounceCommand,
 } from "./slashCommands/announce.js";
+
+const BOT_VERSION = "1.1.097";
 
 // Error handling
 let recentPluginErrors = 0;
@@ -409,6 +412,12 @@ connect().then(async () => {
 
   client.once("clientReady", async () => {
   startUptimeCounter();
+
+  // Keep the deployed bot version visible in Discord's activity status.
+  client.user?.setPresence({
+    activities: [{ name: `Version ${BOT_VERSION}`, type: ActivityType.Watching }],
+    status: "online",
+  });
 
   try {
     await client.application?.commands.create(announceCommand.toJSON(), "1488682722606977175");
