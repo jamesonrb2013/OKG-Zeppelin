@@ -27,7 +27,7 @@ OKG Manager includes native Discord support tickets in the Zeppelin bot.
 - Ticket controls are bot interactions; users cannot change ticket state merely by editing a channel name.
 - Transcript history is capped at 5,000 messages to protect memory use. Discord does not expose deleted messages to a later transcript.
 - This is the current native foundation. Advanced Ticket Tool parity—multiple panels/categories with per-panel forms, staff-only notes, service-level metrics, and a searchable dashboard ticket queue—still requires additional implementation.
-## Smoke-test checklist
+## Support workflow smoke-test checklist
 
 - [ ] Save Support settings and confirm the enabled state persists after reloading the dashboard.
 - [ ] Run `/support-panel` and confirm the panel appears in the selected channel.
