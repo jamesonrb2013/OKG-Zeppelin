@@ -64,6 +64,8 @@ import { selfGrantableRolesPluginDocs } from "./SelfGrantableRoles/docs.js";
 import { SlowmodePlugin } from "./Slowmode/SlowmodePlugin.js";
 import { slowmodePluginDocs } from "./Slowmode/docs.js";
 import { SpamPlugin } from "./Spam/SpamPlugin.js";
+import { SupportPlugin } from "./Support/SupportPlugin.js";
+import { supportPluginDocs } from "./Support/docs.js";
 import { spamPluginDocs } from "./Spam/docs.js";
 import { StarboardPlugin } from "./Starboard/StarboardPlugin.js";
 import { starboardPluginDocs } from "./Starboard/docs.js";
@@ -217,6 +219,10 @@ export const availableGuildPlugins: ZeppelinGuildPluginInfo[] = [
   {
     plugin: SpamPlugin,
     docs: spamPluginDocs,
+  },
+  {
+    plugin: SupportPlugin,
+    docs: supportPluginDocs,
   },
   {
     plugin: StarboardPlugin,
