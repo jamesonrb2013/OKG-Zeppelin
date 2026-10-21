@@ -34,7 +34,7 @@ const opts = [
 ];
 
 export const ForceMuteSlashCmd = modActionsSlashCmd({
-  name: "forcemute",
+  name: "admin-forcemute",
   configPermission: "can_mute",
   description: "Force-mute the specified user, even if they're not on the server",
   allowDms: false,
