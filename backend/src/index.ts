@@ -60,6 +60,7 @@ import {
   handleAnnounceCommand,
 } from "./slashCommands/announce.js";
 import { permissionLevelCommand, handlePermissionLevelCommand } from "./slashCommands/permissionLevel.js";
+import { handleSupportInteraction, handleSupportPanelCommand, supportPanelCommand } from "./slashCommands/support.js";
 
 const BOT_VERSION = "1.3.0";
 
@@ -513,7 +514,7 @@ Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
   }
 
   try {
-    const commandsToRegister = [announceCommand, permissionLevelCommand];
+    const commandsToRegister = [announceCommand, permissionLevelCommand, supportPanelCommand];
 
     // Register globally so the commands are available in every server where
     // the bot is installed, not only in two hard-coded guild IDs.
@@ -541,14 +542,43 @@ Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
       }
     }
 
-    logger.info("Registered /announce and /mod-permission-level globally and in joined servers");
+    logger.info("Registered /announce, /mod-permission-level, and /support-panel globally and in joined servers");
   } catch (error) {
     logger.error(`Failed to register slash commands: ${error}`);
   }
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
+  if (interaction.isButton() && interaction.customId.startsWith("okg_support:")) {
+    if (!interaction.guildId) return;
+    const configRow = await guildConfigs.getActiveByKey(`guild-${interaction.guildId}`);
+    let config: unknown = {};
+    if (configRow) {
+      try {
+        config = loadYamlSafely(configRow.config);
+      } catch (error) {
+        logger.error(`Failed to load guild config for support ticket interaction: ${error}`);
+      }
+    }
+    await handleSupportInteraction(interaction, config);
+    return;
+  }
+
   if (!interaction.isChatInputCommand()) {
+    return;
+  }
+
+  if (interaction.commandName === "support-panel") {
+    const configRow = await guildConfigs.getActiveByKey(`guild-${interaction.guildId}`);
+    let config: unknown = {};
+    if (configRow) {
+      try {
+        config = loadYamlSafely(configRow.config);
+      } catch (error) {
+        logger.error(`Failed to load guild config for /support-panel: ${error}`);
+      }
+    }
+    await handleSupportPanelCommand(interaction, config);
     return;
   }
 
