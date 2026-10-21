@@ -105,7 +105,8 @@ export async function hasPermission(
   // Explicit physical config is the sole source of permission grants.
   // An absent or empty role_permissions section grants nothing; numeric levels
   // and legacy/plugin defaults must never implicitly grant an action.
-  const member = matchParams.member as GuildMember | null | undefined;
+  const message = (matchParams as any).message;
+  const member = (matchParams.member as GuildMember | null | undefined) ?? message?.member ?? undefined;
   if (!member || !rolePermissions || Object.keys(rolePermissions).length === 0) {
     return false;
   }
