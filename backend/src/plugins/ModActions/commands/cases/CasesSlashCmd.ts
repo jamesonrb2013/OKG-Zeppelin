@@ -24,7 +24,7 @@ const opts = [
 ];
 
 export const CasesSlashCmd = modActionsSlashCmd({
-  name: "cases",
+  name: "mod-cases",
   configPermission: "can_view",
   description: "Show a list of cases the specified user has or the specified mod made",
   allowDms: false,
