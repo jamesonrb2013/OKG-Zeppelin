@@ -55,14 +55,13 @@ import {
 import { DecayingCounter } from "./utils/DecayingCounter.js";
 import { enableProfiling } from "./utils/easyProfiler.js";
 import { loadYamlSafely } from "./utils/loadYamlSafely.js";
-import { getGuildPrefix } from "./utils/getGuildPrefix.js";
 import {
   announceCommand,
   handleAnnounceCommand,
 } from "./slashCommands/announce.js";
 import { permissionLevelCommand, handlePermissionLevelCommand } from "./slashCommands/permissionLevel.js";
 
-const BOT_VERSION = "1.1.194";
+const BOT_VERSION = "1.1.195";
 
 // Error handling
 let recentPluginErrors = 0;
@@ -433,7 +432,7 @@ connect().then(async () => {
     const guildData = bot.getLoadedGuild(message.guild.id);
     if (!guildData) return;
 
-    const prefix = getGuildPrefix(guildData);
+    const prefix = "!";
     const trimmedContent = message.content.trimStart();
     const commandPrefix = `${prefix}o`;
     const isOCommand =
