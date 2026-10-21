@@ -14,7 +14,7 @@ const opts = [
 ];
 
 export const UpdateSlashCmd = modActionsSlashCmd({
-  name: "update",
+  name: "manage-update",
   configPermission: "can_note",
   description: "Update the specified case (or your latest case) by adding more notes to it",
   allowDms: false,
