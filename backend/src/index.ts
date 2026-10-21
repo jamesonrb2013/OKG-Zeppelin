@@ -61,7 +61,7 @@ import {
 } from "./slashCommands/announce.js";
 import { permissionLevelCommand, handlePermissionLevelCommand } from "./slashCommands/permissionLevel.js";
 
-const BOT_VERSION = "1.1.102";
+const BOT_VERSION = "1.1.103";
 
 // Error handling
 let recentPluginErrors = 0;
@@ -421,14 +421,37 @@ connect().then(async () => {
   });
 
   try {
-    await client.application?.commands.create(announceCommand.toJSON(), "1488682722606977175");
-await client.application?.commands.create(announceCommand.toJSON(), "1545654977916043294");
-    await client.application?.commands.create(permissionLevelCommand.toJSON(), "1488682722606977175");
-    await client.application?.commands.create(permissionLevelCommand.toJSON(), "1545654977916043294");
+    const commandsToRegister = [announceCommand, permissionLevelCommand];
 
-    logger.info("Registered /announce and /permission-level slash commands");
+    // Register globally so the commands are available in every server where
+    // the bot is installed, not only in two hard-coded guild IDs.
+    for (const command of commandsToRegister) {
+      const globalCommands = await client.application!.commands.fetch();
+      const existingGlobal = globalCommands.find((registered) => registered.name === command.name);
+      if (existingGlobal) {
+        await client.application!.commands.edit(existingGlobal.id, command.toJSON());
+      } else {
+        await client.application!.commands.create(command.toJSON());
+      }
+    }
+
+    // Also register guild-scoped copies for immediate visibility in every
+    // server the bot currently belongs to.
+    for (const guild of client.guilds.cache.values()) {
+      for (const command of commandsToRegister) {
+        const guildCommands = await client.application!.commands.fetch({ guildId: guild.id });
+        const existingGuild = guildCommands.find((registered) => registered.name === command.name);
+        if (existingGuild) {
+          await client.application!.commands.edit(existingGuild.id, command.toJSON(), guild.id);
+        } else {
+          await client.application!.commands.create(command.toJSON(), guild.id);
+        }
+      }
+    }
+
+    logger.info("Registered /announce and /permission-level globally and in joined servers");
   } catch (error) {
-    logger.error(`Failed to register /announce slash command: ${error}`);
+    logger.error(`Failed to register slash commands: ${error}`);
   }
 });
 
