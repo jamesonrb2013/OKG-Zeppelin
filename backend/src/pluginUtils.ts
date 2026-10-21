@@ -52,44 +52,30 @@ export function canActOn(
     return false;
   }
 
-  const fullConfig = (pluginData as any).fullConfig;
-  const rolePermissions = fullConfig?.role_permissions as Record<string, string[]> | undefined;
-  const roleLevels = fullConfig?.role_levels as Record<string, number> | undefined;
-
-  // Numeric levels are hierarchy ONLY: they never grant a command or action.
-  // They only decide whether an already-authorized moderator may target a member.
-  if (roleLevels && Object.keys(roleLevels).length > 0) {
-    const getConfiguredLevel = (member: GuildMember) =>
-      member.roles.cache.reduce((highest, role) => {
-        const level = roleLevels[role.id];
-        return typeof level === "number" && Number.isFinite(level) ? Math.max(highest, level) : highest;
-      }, 0);
-
-    const actorLevel = getConfiguredLevel(member1);
-    const targetLevel = getConfiguredLevel(member2);
-    return allowSameLevel ? actorLevel >= targetLevel : actorLevel > targetLevel;
-  }
-
-  // Backwards-compatible hierarchy when custom numeric levels are not configured.
-  // Explicit role_permissions may identify staff roles, but do not grant permissions here.
-  if (rolePermissions && Object.keys(rolePermissions).length > 0) {
-    const moderatorHasExplicitGrant = member1.roles.cache.some((role) => {
-      const grants = rolePermissions[role.id];
-      return Array.isArray(grants) && (grants.includes("*") || grants.some((grant) => grant.startsWith("can_")));
-    });
-    const targetHasConfiguredAuthority = member2.roles.cache.some((role) => {
-      const grants = rolePermissions[role.id];
-      return Array.isArray(grants) && grants.length > 0;
-    });
-
-    if (moderatorHasExplicitGrant && !targetHasConfiguredAuthority) {
-      return true;
-    }
-  }
-
+  // Custom numeric staff ranks are display-only and must not affect command authorization or targeting.
   const ourLevel = getMemberLevel(pluginData, member1);
   const memberLevel = getMemberLevel(pluginData, member2);
   return allowSameLevel ? ourLevel >= memberLevel : ourLevel > memberLevel;
+}
+
+/** Check explicit role_permissions grants using a freshly fetched guild member. */
+export async function hasExplicitRolePermission(
+  pluginData: AnyPluginData<any>,
+  memberId: string,
+  permission: string,
+): Promise<boolean> {
+  const rolePermissions = (pluginData as any).fullConfig?.role_permissions as
+    | Record<string, string[]>
+    | undefined;
+  if (!rolePermissions || Object.keys(rolePermissions).length === 0 || !pluginData.guild) return false;
+
+  const member = await pluginData.guild.members.fetch(memberId).catch(() => null);
+  if (!member) return false;
+
+  return member.roles.cache.some((role) => {
+    const grants = rolePermissions[role.id];
+    return Array.isArray(grants) && (grants.includes("*") || grants.includes(permission));
+  });
 }
 
 export async function hasPermission(
