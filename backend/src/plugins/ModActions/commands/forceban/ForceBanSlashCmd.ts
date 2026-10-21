@@ -17,7 +17,7 @@ const opts = [
 ];
 
 export const ForceBanSlashCmd = modActionsSlashCmd({
-  name: "forceban",
+  name: "admin-forceban",
   configPermission: "can_ban",
   description: "Force-ban the specified user, even if they aren't on the server",
   allowDms: false,
