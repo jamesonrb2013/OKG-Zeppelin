@@ -75,6 +75,14 @@ export const router = createRouter({
           component: () => import("./components/dashboard/GuildList.vue"),
         },
         {
+          path: "features/:guildId",
+          component: () => import("./components/dashboard/Features.vue"),
+        },
+        {
+          path: "features/:guildId/support/config",
+          component: () => import("./components/dashboard/SupportConfig.vue"),
+        },
+        {
           path: "guilds/:guildId/info",
           component: () => import("./components/dashboard/GuildInfo.vue"),
         },
