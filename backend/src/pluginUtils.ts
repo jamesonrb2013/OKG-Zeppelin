@@ -56,9 +56,8 @@ export function canActOn(
   const rolePermissions = fullConfig?.role_permissions as Record<string, string[]> | undefined;
   const roleLevels = fullConfig?.role_levels as Record<string, number> | undefined;
 
-  // If custom numeric role levels are configured, they become the authoritative
-  // hierarchy. Unlisted members have level 0. A member's highest configured
-  // role level is used when they hold multiple staff roles.
+  // Numeric levels are hierarchy ONLY: they never grant a command or action.
+  // They only decide whether an already-authorized moderator may target a member.
   if (roleLevels && Object.keys(roleLevels).length > 0) {
     const getConfiguredLevel = (member: GuildMember) =>
       member.roles.cache.reduce((highest, role) => {
@@ -71,9 +70,8 @@ export function canActOn(
     return allowSameLevel ? actorLevel >= targetLevel : actorLevel > targetLevel;
   }
 
-  // Backwards-compatible fallback for deployments that have not configured
-  // numeric role_levels yet: explicit permission roles may act on ordinary
-  // members, but must still respect legacy hierarchy for configured staff.
+  // Backwards-compatible hierarchy when custom numeric levels are not configured.
+  // Explicit role_permissions may identify staff roles, but do not grant permissions here.
   if (rolePermissions && Object.keys(rolePermissions).length > 0) {
     const moderatorHasExplicitGrant = member1.roles.cache.some((role) => {
       const grants = rolePermissions[role.id];
@@ -103,21 +101,23 @@ export async function hasPermission(
     | { role_permissions?: Record<string, string[]> }
     | undefined;
   const rolePermissions = fullConfig?.role_permissions;
-  if (rolePermissions && Object.keys(rolePermissions).length > 0) {
-    const member = matchParams.member as GuildMember | null | undefined;
-    if (!member) return false;
-    const roleIds = member.roles.cache.keys();
-    for (const roleId of roleIds) {
-      const grants = rolePermissions[roleId];
-      if (Array.isArray(grants) && (grants.includes("*") || grants.includes(permission))) {
-        return true;
-      }
-    }
+
+  // Explicit physical config is the sole source of permission grants.
+  // An absent or empty role_permissions section grants nothing; numeric levels
+  // and legacy/plugin defaults must never implicitly grant an action.
+  const member = matchParams.member as GuildMember | null | undefined;
+  if (!member || !rolePermissions || Object.keys(rolePermissions).length === 0) {
     return false;
   }
 
-  const config = await pluginData.config.getMatchingConfig(matchParams);
-  return helpers.hasPermission(config, permission);
+  for (const roleId of member.roles.cache.keys()) {
+    const grants = rolePermissions[roleId];
+    if (Array.isArray(grants) && (grants.includes("*") || grants.includes(permission))) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 export type GenericCommandSource = Message | CommandInteraction | ModalSubmitInteraction;
