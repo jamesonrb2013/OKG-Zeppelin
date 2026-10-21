@@ -172,52 +172,69 @@ export interface BanOptions {
 
 export type ModActionType = "note" | "warn" | "mute" | "unmute" | "kick" | "ban" | "unban";
 
-export const modActionsMsgCmd = guildPluginMessageCommand<ModActionsPluginType>();
+const rawModActionsMsgCmd = guildPluginMessageCommand<ModActionsPluginType>();
 export const modActionsSlashGroup = guildPluginSlashGroup<ModActionsPluginType>();
 const rawModActionsSlashCmd = guildPluginSlashCommand<ModActionsPluginType>();
 
-// Register each moderation action as its own top-level slash command so Discord
-// can expose/disable commands individually (for example /mod-warn).
-// configPermission is enforced here against explicit role_permissions first;
-// legacy Zeppelin permission overrides remain the fallback when no role map exists.
+// Message commands (including !o) require explicit role_permissions grants.
+// Numeric levels and legacy level-based overrides never grant moderation actions.
+export const modActionsMsgCmd: any = (definition: any) => {
+  const permission = definition.permission as string | undefined;
+  const { permission: _permission, ...commandDefinition } = definition;
+  return rawModActionsMsgCmd({
+    ...commandDefinition,
+    async run(context: any) {
+      if (permission) {
+        const { message, pluginData } = context;
+        const rolePermissions = (pluginData.fullConfig as any)?.role_permissions as
+          | Record<string, string[]>
+          | undefined;
+        const member = message.member ?? (await message.guild.members.fetch(message.author.id).catch(() => null));
+        const roleIds: string[] = member ? Array.from(member.roles.cache.keys()) : [];
+        const allowed = roleIds.some((roleId) => {
+          const grants = rolePermissions?.[roleId];
+          return Array.isArray(grants) && (grants.includes("*") || grants.includes(permission));
+        });
+
+        if (!allowed) {
+          await message.reply({ content: "You don\u0027t have permission to use !o " + (definition.trigger ?? "this command") + "." });
+          return;
+        }
+      }
+      return commandDefinition.run(context);
+    },
+  });
+};
+
+// Each moderation action is also exposed as a separate slash command.
+// Permissions come only from explicit role_permissions entries.
 export const modActionsSlashCmd: any = (definition: any) => {
   const permission = definition.configPermission as string | undefined;
   const { configPermission: _configPermission, ...commandDefinition } = definition;
   return rawModActionsSlashCmd({
     ...commandDefinition,
-    name: definition.name.startsWith("mod-") ? definition.name : `mod-${definition.name}`,
+    name: definition.name.startsWith("mod-") ? definition.name : "mod-" + definition.name,
     async run(context: any) {
       if (permission) {
         const { interaction, pluginData } = context;
         const rolePermissions = (pluginData.fullConfig as any)?.role_permissions as
           | Record<string, string[]>
           | undefined;
-        let allowed = false;
-
-        if (rolePermissions && Object.keys(rolePermissions).length > 0) {
-          const guildMember = await pluginData.guild.members.fetch(interaction.user.id).catch(() => null);
-          const roleIds: string[] = guildMember ? Array.from(guildMember.roles.cache.keys()) : [];
-          allowed = roleIds.some((roleId) => {
-            const grants = rolePermissions[roleId];
-            return Array.isArray(grants) && (grants.includes("*") || grants.includes(permission));
-          });
-        } else {
-          const config = await pluginData.config.getMatchingConfig({
-            channel: interaction.channel,
-            member: interaction.member,
-          });
-          allowed = helpers.hasPermission(config, permission);
-        }
+        const guildMember = await pluginData.guild.members.fetch(interaction.user.id).catch(() => null);
+        const roleIds: string[] = guildMember ? Array.from(guildMember.roles.cache.keys()) : [];
+        const allowed = roleIds.some((roleId) => {
+          const grants = rolePermissions?.[roleId];
+          return Array.isArray(grants) && (grants.includes("*") || grants.includes(permission));
+        });
 
         if (!allowed) {
           await interaction.reply({
-            content: `You don't have permission to use /mod-${definition.name.replace(/^mod-/, "")}.`,
+            content: "You don\u0027t have permission to use /mod-" + definition.name.replace(/^mod-/, "") + ".",
             ephemeral: true,
           });
           return;
         }
       }
-
       return commandDefinition.run(context);
     },
   });
