@@ -6,7 +6,6 @@ import {
   guildPluginMessageCommand,
   guildPluginSlashCommand,
   guildPluginSlashGroup,
-  helpers,
   pluginUtils,
 } from "vety";
 import { z } from "zod";
