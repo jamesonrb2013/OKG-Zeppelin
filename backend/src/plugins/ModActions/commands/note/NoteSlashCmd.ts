@@ -13,7 +13,7 @@ const opts = [
 ];
 
 export const NoteSlashCmd = modActionsSlashCmd({
-  name: "note",
+  name: "manage-note",
   configPermission: "can_note",
   description: "Add a note to the specified user",
   allowDms: false,
