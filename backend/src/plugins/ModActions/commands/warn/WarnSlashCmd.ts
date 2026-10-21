@@ -34,7 +34,7 @@ const opts = [
 ];
 
 export const WarnSlashCmd = modActionsSlashCmd({
-  name: "warn",
+  name: "mod-warn",
   configPermission: "can_warn",
   description: "Send a warning to the specified user",
   allowDms: false,
