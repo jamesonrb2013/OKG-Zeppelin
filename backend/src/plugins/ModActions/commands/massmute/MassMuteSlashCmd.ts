@@ -14,7 +14,7 @@ const opts = [
 ];
 
 export const MassMuteSlashSlashCmd = modActionsSlashCmd({
-  name: "massmute",
+  name: "admin-massmute",
   configPermission: "can_massmute",
   description: "Mass-mute a list of user IDs",
   allowDms: false,
