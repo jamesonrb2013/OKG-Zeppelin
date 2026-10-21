@@ -204,9 +204,10 @@ export const modActionsMsgCmd: any = (definition: any) => {
 export const modActionsSlashCmd: any = (definition: any) => {
   const permission = definition.configPermission as string | undefined;
   const { configPermission: _configPermission, ...commandDefinition } = definition;
+  const commandName = /^(mod|manage|admin)-/.test(definition.name) ? definition.name : "mod-" + definition.name;
   return rawModActionsSlashCmd({
     ...commandDefinition,
-    name: definition.name.startsWith("mod-") ? definition.name : "mod-" + definition.name,
+    name: commandName,
     async run(context: any) {
       if (permission) {
         const { interaction, pluginData } = context;
@@ -214,7 +215,7 @@ export const modActionsSlashCmd: any = (definition: any) => {
 
         if (!allowed) {
           await interaction.reply({
-            content: "You don\u0027t have permission to use /mod-" + definition.name.replace(/^mod-/, "") + ".",
+            content: "You don't have permission to use /" + commandName + ".",
             ephemeral: true,
           });
           return;
