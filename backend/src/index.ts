@@ -541,7 +541,7 @@ Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
       }
     }
 
-    logger.info("Registered /announce and /permission-level globally and in joined servers");
+    logger.info("Registered /announce and /mod-permission-level globally and in joined servers");
   } catch (error) {
     logger.error(`Failed to register slash commands: ${error}`);
   }
@@ -557,7 +557,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     return;
   }
 
-  if (interaction.commandName === "permission-level") {
+  if (interaction.commandName === "mod-permission-level") {
     const configRow = await guildConfigs.getActiveByKey(`guild-${interaction.guildId}`);
     let config: unknown = {};
     if (configRow) {
