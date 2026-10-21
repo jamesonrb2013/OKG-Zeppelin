@@ -436,7 +436,7 @@ connect().then(async () => {
 
     // Keep the deployed bot version visible in Discord's activity status.
     client.user?.setPresence({
-      activities: [{ name: `${BOT_VERSION} of OKG Manage DiscordOS`, type: ActivityType.Playing }],
+      activities: [{ name: `Version ${BOT_VERSION} of OKG Administrative BotOS`, type: ActivityType.Playing }],
       status: "online",
     });
 
