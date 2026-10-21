@@ -3,7 +3,7 @@ import { modActionsSlashCmd } from "../../types.js";
 import { actualUnhideCaseCmd } from "./actualUnhideCaseCmd.js";
 
 export const UnhideCaseSlashCmd = modActionsSlashCmd({
-  name: "unhidecase",
+  name: "manage-unhidecase",
   configPermission: "can_hidecase",
   description: "Un-hide the specified case",
   allowDms: false,
