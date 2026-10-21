@@ -8,6 +8,10 @@ import {
   ChatInputCommandInteraction,
   EmbedBuilder,
   GuildMember,
+  ModalBuilder,
+  ModalSubmitInteraction,
+  TextInputBuilder,
+  TextInputStyle,
   PermissionFlagsBits,
   SlashCommandBuilder,
   TextChannel,
@@ -128,6 +132,93 @@ export async function handleSupportPanelCommand(interaction: ChatInputCommandInt
   await interaction.reply({ content: `Support panel posted in <#${channel.id}>.`, ephemeral: true });
 }
 
+export async function handleSupportModal(interaction: ModalSubmitInteraction, rootConfig: unknown) {
+  if (!interaction.inGuild() || !interaction.guild) {
+    await interaction.reply({ content: "Support tickets only work inside a server.", ephemeral: true });
+    return;
+  }
+  const config = getSupportConfig(rootConfig);
+  if (!config) {
+    await interaction.reply({ content: "Support is currently disabled for this server.", ephemeral: true });
+    return;
+  }
+  if (!config.category_id) {
+    await interaction.reply({ content: "Support is missing its ticket category configuration.", ephemeral: true });
+    return;
+  }
+
+  const guild = interaction.guild;
+  const category = await guild.channels.fetch(config.category_id).catch(() => null);
+  if (!category || category.type !== ChannelType.GuildCategory) {
+    await interaction.reply({ content: "The configured ticket category could not be found. Ask an administrator to check Support settings.", ephemeral: true });
+    return;
+  }
+
+  const prefix = (config.ticket_prefix || "ticket").toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 12) || "ticket";
+  const openTickets = guild.channels.cache.filter((channel) => {
+    if (!(channel instanceof TextChannel) || !channel.topic?.startsWith("okg-support|")) return false;
+    const meta = ticketMetadata(channel);
+    return meta.owner === interaction.user.id && meta.status === "open";
+  });
+  const limit = Math.max(1, Math.min(10, config.max_open_tickets ?? 1));
+  if (openTickets.size >= limit) {
+    await interaction.reply({ content: `You already have ${openTickets.size} open ticket(s). Please continue in your existing ticket first.`, ephemeral: true });
+    return;
+  }
+
+  const subject = interaction.fields.getTextInputValue("subject").trim();
+  const details = interaction.fields.getTextInputValue("details").trim();
+  if (subject.length < 3 || details.length < 10) {
+    await interaction.reply({ content: "Please provide a subject and at least 10 characters of details.", ephemeral: true });
+    return;
+  }
+
+  await interaction.deferReply({ ephemeral: true });
+  const safeName = interaction.user.username.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").slice(0, 35) || "user";
+  const overwrites = [
+    { id: guild.id, deny: [PermissionFlagsBits.ViewChannel] },
+    {
+      id: interaction.user.id,
+      allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.AttachFiles, PermissionFlagsBits.EmbedLinks],
+    },
+    ...(config.support_role_ids ?? []).map((roleId) => ({
+      id: roleId,
+      allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.AttachFiles, PermissionFlagsBits.EmbedLinks],
+    })),
+  ];
+
+  try {
+    const ticket = await guild.channels.create({
+      name: `${prefix}-${safeName}-${interaction.user.id.slice(-4)}`.slice(0, 95),
+      type: ChannelType.GuildText,
+      parent: category.id,
+      topic: `okg-support|owner=${interaction.user.id}|claimed=none|status=open`,
+      permissionOverwrites: overwrites,
+      reason: `Support ticket opened by ${interaction.user.tag}`,
+    });
+    const welcome = new EmbedBuilder()
+      .setColor(0x5865f2)
+      .setTitle(subject.slice(0, 256))
+      .setDescription(details.slice(0, 4000))
+      .addFields(
+        { name: "Ticket owner", value: `<@${interaction.user.id}>`, inline: true },
+        { name: "Claimed by", value: "Not claimed yet", inline: true },
+      )
+      .setFooter({ text: "OKG Manager Support • Please keep replies in this ticket" })
+      .setTimestamp();
+    await ticket.send({
+      content: `<@${interaction.user.id}> ${(config.support_role_ids ?? []).map((id) => `<@&${id}>`).join(" ")}`.trim(),
+      embeds: [welcome],
+      components: [ticketButtons("open")],
+      allowedMentions: { users: [interaction.user.id], roles: config.support_role_ids ?? [] },
+    });
+    await interaction.editReply({ content: `Your ticket is ready: <#${ticket.id}>` });
+  } catch (error) {
+    console.error("[SUPPORT] Could not create ticket from form:", error);
+    await interaction.editReply({ content: "I could not create your ticket. Check the bot's Manage Channels, View Channel, and Send Messages permissions, plus the configured support role IDs." });
+  }
+}
+
 export async function handleSupportInteraction(interaction: ButtonInteraction, rootConfig: unknown) {
   if (!interaction.inGuild() || !interaction.guild) {
     await interaction.reply({ content: "Support tickets only work inside a server.", ephemeral: true });
@@ -141,106 +232,31 @@ export async function handleSupportInteraction(interaction: ButtonInteraction, r
 
   const guild = interaction.guild;
   if (interaction.customId === "okg_support:create") {
-    if (!config.category_id) {
-      await interaction.reply({
-        content: "Support is missing its ticket category configuration. Ask a server administrator.",
-        ephemeral: true,
-      });
-      return;
-    }
-    const category = await guild.channels.fetch(config.category_id).catch(() => null);
-    if (!category || category.type !== ChannelType.GuildCategory) {
-      await interaction.reply({
-        content:
-          "The configured ticket category could not be found. Ask an administrator to check the Support settings.",
-        ephemeral: true,
-      });
-      return;
-    }
-
-    const prefix =
-      (config.ticket_prefix || "ticket")
-        .toLowerCase()
-        .replace(/[^a-z0-9-]/g, "")
-        .slice(0, 12) || "ticket";
-    const openTickets = guild.channels.cache.filter((channel) => {
-      if (!(channel instanceof TextChannel) || !channel.topic?.startsWith("okg-support|")) return false;
-      return ticketMetadata(channel).owner === interaction.user.id && ticketMetadata(channel).status === "open";
-    });
-    const limit = Math.max(1, Math.min(10, config.max_open_tickets ?? 1));
-    if (openTickets.size >= limit) {
-      await interaction.reply({
-        content: `You already have ${openTickets.size} open ticket(s). Please continue in your existing ticket first.`,
-        ephemeral: true,
-      });
-      return;
-    }
-
-    await interaction.deferReply({ ephemeral: true });
-    const safeName =
-      interaction.user.username
-        .toLowerCase()
-        .replace(/[^a-z0-9-]/g, "-")
-        .replace(/-+/g, "-")
-        .slice(0, 35) || "user";
-    const overwrites = [
-      { id: guild.id, deny: [PermissionFlagsBits.ViewChannel] },
-      {
-        id: interaction.user.id,
-        allow: [
-          PermissionFlagsBits.ViewChannel,
-          PermissionFlagsBits.SendMessages,
-          PermissionFlagsBits.ReadMessageHistory,
-          PermissionFlagsBits.AttachFiles,
-          PermissionFlagsBits.EmbedLinks,
-        ],
-      },
-      ...(config.support_role_ids ?? []).map((roleId) => ({
-        id: roleId,
-        allow: [
-          PermissionFlagsBits.ViewChannel,
-          PermissionFlagsBits.SendMessages,
-          PermissionFlagsBits.ReadMessageHistory,
-          PermissionFlagsBits.AttachFiles,
-          PermissionFlagsBits.EmbedLinks,
-        ],
-      })),
-    ];
-    try {
-      const ticket = await guild.channels.create({
-        name: `${prefix}-${safeName}-${interaction.user.id.slice(-4)}`.slice(0, 95),
-        type: ChannelType.GuildText,
-        parent: category.id,
-        topic: `okg-support|owner=${interaction.user.id}|claimed=none|status=open`,
-        permissionOverwrites: overwrites,
-        reason: `Support ticket opened by ${interaction.user.tag}`,
-      });
-      const welcome = new EmbedBuilder()
-        .setColor(0x5865f2)
-        .setTitle("Support ticket opened")
-        .setDescription(
-          config.welcome_message || "Thanks for opening a ticket. Please describe what you need help with.",
-        )
-        .addFields(
-          { name: "Ticket owner", value: `<@${interaction.user.id}>`, inline: true },
-          { name: "Claimed by", value: "Not claimed yet", inline: true },
-        )
-        .setTimestamp();
-      await ticket.send({
-        content:
-          `<@${interaction.user.id}> ${(config.support_role_ids ?? []).map((id) => `<@&${id}>`).join(" ")}`.trim(),
-        embeds: [welcome],
-        components: [ticketButtons("open")],
-        allowedMentions: { users: [interaction.user.id], roles: config.support_role_ids ?? [] },
-      });
-      await interaction.editReply({ content: `Your ticket is ready: <#${ticket.id}>` });
-    } catch (error) {
-      console.error("[SUPPORT] Could not create ticket:", error);
-      await interaction.editReply({
-        content:
-          "I could not create your ticket. Check the bot's Manage Channels, View Channel, and Send Messages permissions, plus the configured support role IDs.",
-      });
-    }
+    const modal = new ModalBuilder()
+      .setCustomId("okg_support:create_modal")
+      .setTitle("Open a support ticket")
+      .addComponents(
+        new ActionRowBuilder<TextInputBuilder>().addComponents(
+          new TextInputBuilder()
+            .setCustomId("subject")
+            .setLabel("What do you need help with?")
+            .setStyle(TextInputStyle.Short)
+            .setMinLength(3)
+            .setMaxLength(100)
+            .setRequired(true),
+        ),
+        new ActionRowBuilder<TextInputBuilder>().addComponents(
+          new TextInputBuilder()
+            .setCustomId("details")
+            .setLabel("Describe the issue")
+            .setStyle(TextInputStyle.Paragraph)
+            .setMinLength(10)
+            .setMaxLength(1800)
+            .setPlaceholder("Include what happened and what you have already tried.")
+            .setRequired(true),
+        ),
+      );
+    await interaction.showModal(modal);
     return;
   }
 
