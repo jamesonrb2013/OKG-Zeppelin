@@ -5,7 +5,7 @@ import {
 } from "discord.js";
 
 export const permissionLevelCommand = new SlashCommandBuilder()
-  .setName("permission-level")
+  .setName("mod-permission-level")
   .setDescription("Check a member's configured staff level and role permissions")
   .addUserOption((option) =>
     option.setName("user").setDescription("Member to check (defaults to you)").setRequired(false),
@@ -29,7 +29,7 @@ export async function handlePermissionLevelCommand(interaction: ChatInputCommand
 
   if (!canUseCommand) {
     await interaction.reply({
-      content: "You need moderator-level case viewing permission to use /permission-level.",
+      content: "You need moderator-level case viewing permission to use /mod-permission-level.",
       ephemeral: true,
     });
     return;
