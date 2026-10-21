@@ -12,33 +12,19 @@ export const announceCommand = new SlashCommandBuilder()
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages.toString())
 
   .addChannelOption((option) =>
-    option
-      .setName("channel")
-      .setDescription("The channel where the announcement will be sent")
-      .setRequired(true),
+    option.setName("channel").setDescription("The channel where the announcement will be sent").setRequired(true),
   )
 
   .addStringOption((option) =>
-    option
-      .setName("title")
-      .setDescription("Announcement title")
-      .setRequired(true)
-      .setMaxLength(256),
+    option.setName("title").setDescription("Announcement title").setRequired(true).setMaxLength(256),
   )
 
   .addStringOption((option) =>
-    option
-      .setName("message")
-      .setDescription("Announcement message")
-      .setRequired(true)
-      .setMaxLength(4000),
+    option.setName("message").setDescription("Announcement message").setRequired(true).setMaxLength(4000),
   )
 
   .addStringOption((option) =>
-    option
-      .setName("color")
-      .setDescription("Embed color, for example #5865F2")
-      .setMaxLength(7),
+    option.setName("color").setDescription("Embed color, for example #5865F2").setMaxLength(7),
   )
 
   .addStringOption((option) =>
@@ -52,34 +38,15 @@ export const announceCommand = new SlashCommandBuilder()
       ),
   )
 
-  .addUserOption((option) =>
-    option
-      .setName("user")
-      .setDescription("Optional specific user to ping"),
-  )
+  .addUserOption((option) => option.setName("user").setDescription("Optional specific user to ping"))
 
-  .addRoleOption((option) =>
-    option
-      .setName("role")
-      .setDescription("Optional specific role to ping"),
-  )
+  .addRoleOption((option) => option.setName("role").setDescription("Optional specific role to ping"))
 
-  .addStringOption((option) =>
-    option
-      .setName("image")
-      .setDescription("Optional image URL"),
-  )
+  .addStringOption((option) => option.setName("image").setDescription("Optional image URL"))
 
-  .addStringOption((option) =>
-    option
-      .setName("footer")
-      .setDescription("Optional footer text")
-      .setMaxLength(2048),
-  );
+  .addStringOption((option) => option.setName("footer").setDescription("Optional footer text").setMaxLength(2048));
 
-export async function handleAnnounceCommand(
-  interaction: ChatInputCommandInteraction,
-) {
+export async function handleAnnounceCommand(interaction: ChatInputCommandInteraction) {
   if (!interaction.inGuild()) {
     await interaction.reply({
       content: "This command can only be used in a server.",
@@ -88,14 +55,9 @@ export async function handleAnnounceCommand(
     return;
   }
 
-  if (
-    !interaction.memberPermissions?.has(
-      PermissionFlagsBits.ManageMessages,
-    )
-  ) {
+  if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageMessages)) {
     await interaction.reply({
-      content:
-        "You need the **Manage Messages** permission to use `/announce`.",
+      content: "You need the **Manage Messages** permission to use `/announce`.",
       ephemeral: true,
     });
     return;
@@ -113,10 +75,8 @@ export async function handleAnnounceCommand(
 
   const title = interaction.options.getString("title", true);
   const message = interaction.options.getString("message", true);
-  const colorInput =
-    interaction.options.getString("color") ?? "#5865F2";
-  const mention =
-    interaction.options.getString("mention") ?? "none";
+  const colorInput = interaction.options.getString("color") ?? "#5865F2";
+  const mention = interaction.options.getString("mention") ?? "none";
   const user = interaction.options.getUser("user");
   const role = interaction.options.getRole("role");
   const image = interaction.options.getString("image");
@@ -124,8 +84,7 @@ export async function handleAnnounceCommand(
 
   if (!/^#[0-9A-Fa-f]{6}$/.test(colorInput)) {
     await interaction.reply({
-      content:
-        "Invalid color. Use a 6-digit hex color such as `#5865F2`.",
+      content: "Invalid color. Use a 6-digit hex color such as `#5865F2`.",
       ephemeral: true,
     });
     return;
@@ -156,17 +115,8 @@ export async function handleAnnounceCommand(
     });
   }
 
-  const broadMention =
-    mention === "everyone"
-      ? "@everyone"
-      : mention === "here"
-        ? "@here"
-        : undefined;
-  const content = [
-    broadMention,
-    role ? `<@&${role.id}>` : undefined,
-    user ? `<@${user.id}>` : undefined,
-  ]
+  const broadMention = mention === "everyone" ? "@everyone" : mention === "here" ? "@here" : undefined;
+  const content = [broadMention, role ? `<@&${role.id}>` : undefined, user ? `<@${user.id}>` : undefined]
     .filter(Boolean)
     .join(" ");
 
@@ -186,14 +136,10 @@ export async function handleAnnounceCommand(
       ephemeral: true,
     });
   } catch (error) {
-    console.error(
-      "[ANNOUNCE] Failed to send announcement:",
-      error,
-    );
+    console.error("[ANNOUNCE] Failed to send announcement:", error);
 
     await interaction.reply({
-      content:
-        "I could not send the announcement. Check my View Channel, Send Messages, and Embed Links permissions.",
+      content: "I could not send the announcement. Check my View Channel, Send Messages, and Embed Links permissions.",
       ephemeral: true,
     });
   }

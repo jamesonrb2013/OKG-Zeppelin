@@ -55,10 +55,7 @@ import {
 import { DecayingCounter } from "./utils/DecayingCounter.js";
 import { enableProfiling } from "./utils/easyProfiler.js";
 import { loadYamlSafely } from "./utils/loadYamlSafely.js";
-import {
-  announceCommand,
-  handleAnnounceCommand,
-} from "./slashCommands/announce.js";
+import { announceCommand, handleAnnounceCommand } from "./slashCommands/announce.js";
 import { permissionLevelCommand, handlePermissionLevelCommand } from "./slashCommands/permissionLevel.js";
 import { handleSupportInteraction, handleSupportPanelCommand, supportPanelCommand } from "./slashCommands/support.js";
 
@@ -413,10 +410,8 @@ connect().then(async () => {
     },
   });
 
-
   // The !o prefix feature is intentionally paused. Never dispatch commands through it.
-  const OKG_PREFIX_PAUSED_MESSAGE =
-    "⏸️ This feature is paused for now. Sorry. Paused by Coolkid_5701";
+  const OKG_PREFIX_PAUSED_MESSAGE = "⏸️ This feature is paused for now. Sorry. Paused by Coolkid_5701";
 
   client.on(Events.MessageCreate, async (message) => {
     if (!message.guild || !message.content || message.author.bot || message.webhookId) return;
@@ -425,8 +420,7 @@ connect().then(async () => {
     const commandPrefix = "!o";
     const isOCommand =
       trimmedContent.slice(0, commandPrefix.length).toLowerCase() === commandPrefix &&
-      (trimmedContent.length === commandPrefix.length ||
-        /\s/.test(trimmedContent.charAt(commandPrefix.length)));
+      (trimmedContent.length === commandPrefix.length || /\s/.test(trimmedContent.charAt(commandPrefix.length)));
 
     if (!isOCommand) return;
 
@@ -434,33 +428,33 @@ connect().then(async () => {
   });
 
   client.once("clientReady", async () => {
-  startUptimeCounter();
+    startUptimeCounter();
 
-  // Keep the deployed bot version visible in Discord's activity status.
-  client.user?.setPresence({
-    activities: [{ name: `Version ${BOT_VERSION}`, type: ActivityType.Watching }],
-    status: "online",
-  });
+    // Keep the deployed bot version visible in Discord's activity status.
+    client.user?.setPresence({
+      activities: [{ name: `Version ${BOT_VERSION}`, type: ActivityType.Watching }],
+      status: "online",
+    });
 
-  // Announce each deployed version once. Checking recent bot messages prevents
-  // duplicate announcements on ordinary restarts.
-  try {
-    const releaseChannel = await client.channels.fetch("1562496808838631556");
-    if (!releaseChannel || !releaseChannel.isTextBased() || !("messages" in releaseChannel)) {
-      logger.warn("Release announcement channel 1562496808838631556 is unavailable or not text-based");
-    } else {
-      // Discord's channel fetch union includes partial/DM channel types. This ID
-      // is our configured server announcement channel, so use its text-channel API.
-      const announcementChannel = releaseChannel as TextChannel;
-      const recentMessages = await announcementChannel.messages.fetch({ limit: 100 });
-      const alreadyAnnounced = recentMessages.some(
-        (message) => message.author.id === client.user!.id && message.content.startsWith(`## Version ${BOT_VERSION}`),
-      );
+    // Announce each deployed version once. Checking recent bot messages prevents
+    // duplicate announcements on ordinary restarts.
+    try {
+      const releaseChannel = await client.channels.fetch("1562496808838631556");
+      if (!releaseChannel || !releaseChannel.isTextBased() || !("messages" in releaseChannel)) {
+        logger.warn("Release announcement channel 1562496808838631556 is unavailable or not text-based");
+      } else {
+        // Discord's channel fetch union includes partial/DM channel types. This ID
+        // is our configured server announcement channel, so use its text-channel API.
+        const announcementChannel = releaseChannel as TextChannel;
+        const recentMessages = await announcementChannel.messages.fetch({ limit: 100 });
+        const alreadyAnnounced = recentMessages.some(
+          (message) => message.author.id === client.user!.id && message.content.startsWith(`## Version ${BOT_VERSION}`),
+        );
 
-      if (!alreadyAnnounced) {
-        const updatedTimestamp = Math.floor(Date.now() / 1000);
-        await announcementChannel.send({
-          content: `## Version ${BOT_VERSION}
+        if (!alreadyAnnounced) {
+          const updatedTimestamp = Math.floor(Date.now() / 1000);
+          await announcementChannel.send({
+            content: `## Version ${BOT_VERSION}
 
 - Finalized the existing moderation commands under exactly one name per tier: /mod-* for moderator+, /manage-* for management, and /admin-* for admin-only actions.
 - Removed obsolete unprefixed and incorrectly tier-prefixed moderation slash commands from global and guild registrations.
@@ -475,134 +469,163 @@ connect().then(async () => {
 - Kept the bot's Watching presence synced to the current version.
 
 Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
-          allowedMentions: { parse: [], users: [], roles: [], repliedUser: false },
-        });
-        logger.info(`Posted release announcement for version ${BOT_VERSION}`);
-      }
-    }
-  } catch (error) {
-    logger.error(`Failed to post release announcement for version ${BOT_VERSION}: ${error}`);
-  }
-
-  try {
-    // Remove obsolete moderation command names left behind by Discord's additive
-    // command registration. Only the tier-prefixed names in the current source remain.
-    const obsoleteModerationCommandNames = new Set([
-      "addcase", "ban", "kick", "note", "unban", "unhidecase", "update",
-      "deletecase", "forceban", "forcemute", "forceunmute", "massban", "massmute", "massunban",
-      "case", "cases", "hidecase", "mute", "unmute", "warn", "permission-level",
-      "mod-addcase", "mod-ban", "mod-kick", "mod-note", "mod-unban", "mod-unhidecase", "mod-update",
-      "mod-deletecase", "mod-forceban", "mod-forcemute", "mod-forceunmute",
-      "mod-massban", "mod-massmute", "mod-massunban",
-    ]);
-    const globalCommands = await client.application!.commands.fetch();
-    for (const registered of globalCommands.values()) {
-      if (obsoleteModerationCommandNames.has(registered.name)) {
-        await client.application!.commands.delete(registered.id);
-        logger.info(`Removed obsolete global slash command /${registered.name}`);
-      }
-    }
-
-    for (const guild of client.guilds.cache.values()) {
-      const guildCommands = await client.application!.commands.fetch({ guildId: guild.id });
-      for (const registered of guildCommands.values()) {
-        if (obsoleteModerationCommandNames.has(registered.name)) {
-          await client.application!.commands.delete(registered.id, guild.id);
-          logger.info(`Removed obsolete slash command /${registered.name} from guild ${guild.id}`);
+            allowedMentions: { parse: [], users: [], roles: [], repliedUser: false },
+          });
+          logger.info(`Posted release announcement for version ${BOT_VERSION}`);
         }
       }
+    } catch (error) {
+      logger.error(`Failed to post release announcement for version ${BOT_VERSION}: ${error}`);
     }
-  } catch (error) {
-    logger.error(`Failed to clean up obsolete moderation slash commands: ${error}`);
-  }
 
-  try {
-    const commandsToRegister = [announceCommand, permissionLevelCommand, supportPanelCommand];
-
-    // Register globally so the commands are available in every server where
-    // the bot is installed, not only in two hard-coded guild IDs.
-    for (const command of commandsToRegister) {
+    try {
+      // Remove obsolete moderation command names left behind by Discord's additive
+      // command registration. Only the tier-prefixed names in the current source remain.
+      const obsoleteModerationCommandNames = new Set([
+        "addcase",
+        "ban",
+        "kick",
+        "note",
+        "unban",
+        "unhidecase",
+        "update",
+        "deletecase",
+        "forceban",
+        "forcemute",
+        "forceunmute",
+        "massban",
+        "massmute",
+        "massunban",
+        "case",
+        "cases",
+        "hidecase",
+        "mute",
+        "unmute",
+        "warn",
+        "permission-level",
+        "mod-addcase",
+        "mod-ban",
+        "mod-kick",
+        "mod-note",
+        "mod-unban",
+        "mod-unhidecase",
+        "mod-update",
+        "mod-deletecase",
+        "mod-forceban",
+        "mod-forcemute",
+        "mod-forceunmute",
+        "mod-massban",
+        "mod-massmute",
+        "mod-massunban",
+      ]);
       const globalCommands = await client.application!.commands.fetch();
-      const existingGlobal = globalCommands.find((registered) => registered.name === command.name);
-      if (existingGlobal) {
-        await client.application!.commands.edit(existingGlobal.id, command.toJSON());
-      } else {
-        await client.application!.commands.create(command.toJSON());
-      }
-    }
-
-    // Also register guild-scoped copies for immediate visibility in every
-    // server the bot currently belongs to.
-    for (const guild of client.guilds.cache.values()) {
-      for (const command of commandsToRegister) {
-        const guildCommands = await client.application!.commands.fetch({ guildId: guild.id });
-        const existingGuild = guildCommands.find((registered) => registered.name === command.name);
-        if (existingGuild) {
-          await client.application!.commands.edit(existingGuild.id, command.toJSON(), guild.id);
-        } else {
-          await client.application!.commands.create(command.toJSON(), guild.id);
+      for (const registered of globalCommands.values()) {
+        if (obsoleteModerationCommandNames.has(registered.name)) {
+          await client.application!.commands.delete(registered.id);
+          logger.info(`Removed obsolete global slash command /${registered.name}`);
         }
       }
-    }
 
-    logger.info("Registered /announce, /mod-permission-level, and /support-panel globally and in joined servers");
-  } catch (error) {
-    logger.error(`Failed to register slash commands: ${error}`);
-  }
-});
-
-client.on(Events.InteractionCreate, async (interaction) => {
-  if (interaction.isButton() && interaction.customId.startsWith("okg_support:")) {
-    if (!interaction.guildId) return;
-    const configRow = await guildConfigs.getActiveByKey(`guild-${interaction.guildId}`);
-    let config: unknown = {};
-    if (configRow) {
-      try {
-        config = loadYamlSafely(configRow.config);
-      } catch (error) {
-        logger.error(`Failed to load guild config for support ticket interaction: ${error}`);
+      for (const guild of client.guilds.cache.values()) {
+        const guildCommands = await client.application!.commands.fetch({ guildId: guild.id });
+        for (const registered of guildCommands.values()) {
+          if (obsoleteModerationCommandNames.has(registered.name)) {
+            await client.application!.commands.delete(registered.id, guild.id);
+            logger.info(`Removed obsolete slash command /${registered.name} from guild ${guild.id}`);
+          }
+        }
       }
+    } catch (error) {
+      logger.error(`Failed to clean up obsolete moderation slash commands: ${error}`);
     }
-    await handleSupportInteraction(interaction, config);
-    return;
-  }
 
-  if (!interaction.isChatInputCommand()) {
-    return;
-  }
+    try {
+      const commandsToRegister = [announceCommand, permissionLevelCommand, supportPanelCommand];
 
-  if (interaction.commandName === "support-panel") {
-    const configRow = await guildConfigs.getActiveByKey(`guild-${interaction.guildId}`);
-    let config: unknown = {};
-    if (configRow) {
-      try {
-        config = loadYamlSafely(configRow.config);
-      } catch (error) {
-        logger.error(`Failed to load guild config for /support-panel: ${error}`);
+      // Register globally so the commands are available in every server where
+      // the bot is installed, not only in two hard-coded guild IDs.
+      for (const command of commandsToRegister) {
+        const globalCommands = await client.application!.commands.fetch();
+        const existingGlobal = globalCommands.find((registered) => registered.name === command.name);
+        if (existingGlobal) {
+          await client.application!.commands.edit(existingGlobal.id, command.toJSON());
+        } else {
+          await client.application!.commands.create(command.toJSON());
+        }
       }
-    }
-    await handleSupportPanelCommand(interaction, config);
-    return;
-  }
 
-  if (interaction.commandName === "announce") {
-    await handleAnnounceCommand(interaction);
-    return;
-  }
-
-  if (interaction.commandName === "mod-permission-level") {
-    const configRow = await guildConfigs.getActiveByKey(`guild-${interaction.guildId}`);
-    let config: unknown = {};
-    if (configRow) {
-      try {
-        config = loadYamlSafely(configRow.config);
-      } catch (error) {
-        logger.error(`Failed to load guild config for /permission-level: ${error}`);
+      // Also register guild-scoped copies for immediate visibility in every
+      // server the bot currently belongs to.
+      for (const guild of client.guilds.cache.values()) {
+        for (const command of commandsToRegister) {
+          const guildCommands = await client.application!.commands.fetch({ guildId: guild.id });
+          const existingGuild = guildCommands.find((registered) => registered.name === command.name);
+          if (existingGuild) {
+            await client.application!.commands.edit(existingGuild.id, command.toJSON(), guild.id);
+          } else {
+            await client.application!.commands.create(command.toJSON(), guild.id);
+          }
+        }
       }
+
+      logger.info("Registered /announce, /mod-permission-level, and /support-panel globally and in joined servers");
+    } catch (error) {
+      logger.error(`Failed to register slash commands: ${error}`);
     }
-    await handlePermissionLevelCommand(interaction, config);
-  }
-});
+  });
+
+  client.on(Events.InteractionCreate, async (interaction) => {
+    if (interaction.isButton() && interaction.customId.startsWith("okg_support:")) {
+      if (!interaction.guildId) return;
+      const configRow = await guildConfigs.getActiveByKey(`guild-${interaction.guildId}`);
+      let config: unknown = {};
+      if (configRow) {
+        try {
+          config = loadYamlSafely(configRow.config);
+        } catch (error) {
+          logger.error(`Failed to load guild config for support ticket interaction: ${error}`);
+        }
+      }
+      await handleSupportInteraction(interaction, config);
+      return;
+    }
+
+    if (!interaction.isChatInputCommand()) {
+      return;
+    }
+
+    if (interaction.commandName === "support-panel") {
+      const configRow = await guildConfigs.getActiveByKey(`guild-${interaction.guildId}`);
+      let config: unknown = {};
+      if (configRow) {
+        try {
+          config = loadYamlSafely(configRow.config);
+        } catch (error) {
+          logger.error(`Failed to load guild config for /support-panel: ${error}`);
+        }
+      }
+      await handleSupportPanelCommand(interaction, config);
+      return;
+    }
+
+    if (interaction.commandName === "announce") {
+      await handleAnnounceCommand(interaction);
+      return;
+    }
+
+    if (interaction.commandName === "mod-permission-level") {
+      const configRow = await guildConfigs.getActiveByKey(`guild-${interaction.guildId}`);
+      let config: unknown = {};
+      if (configRow) {
+        try {
+          config = loadYamlSafely(configRow.config);
+        } catch (error) {
+          logger.error(`Failed to load guild config for /permission-level: ${error}`);
+        }
+      }
+      await handlePermissionLevelCommand(interaction, config);
+    }
+  });
 
   client.rest.on(RESTEvents.RateLimited, (data) => {
     logRateLimit(data);

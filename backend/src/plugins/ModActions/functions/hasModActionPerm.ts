@@ -13,9 +13,7 @@ async function hasModPermission(
   channelId: Snowflake,
   permission: string,
 ): Promise<boolean> {
-  const rolePermissions = (pluginData.fullConfig as any)?.role_permissions as
-    | Record<string, string[]>
-    | undefined;
+  const rolePermissions = (pluginData.fullConfig as any)?.role_permissions as Record<string, string[]> | undefined;
 
   if (rolePermissions && Object.keys(rolePermissions).length > 0) {
     // Slash-command interaction members can have partial or stale role data.

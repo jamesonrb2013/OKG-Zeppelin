@@ -24,10 +24,7 @@ for (let attempt = 1; attempt <= 5; attempt++) {
     console.log("[REDIS] Connected successfully");
     break;
   } catch (error) {
-    console.error(
-      `[REDIS] Connection attempt ${attempt}/5 failed:`,
-      error,
-    );
+    console.error(`[REDIS] Connection attempt ${attempt}/5 failed:`, error);
 
     if (attempt < 5) {
       await new Promise((resolve) => setTimeout(resolve, 5000));

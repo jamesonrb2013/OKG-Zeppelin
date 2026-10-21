@@ -42,11 +42,11 @@ export async function unmuteUser(
       };
       const muteRole = pluginData.config.get().mute_role;
 
-if (muteRole) {
-  muteParams.muteRole = muteRole;
-}
+      if (muteRole) {
+        muteParams.muteRole = muteRole;
+      }
 
-muteParams.timeoutExpiresAt = timeoutExpiresAt;
+      muteParams.timeoutExpiresAt = timeoutExpiresAt;
       await pluginData.state.mutes.addMute(muteParams);
     } else {
       await pluginData.state.mutes.updateExpiryTime(userId, unmuteTime);
@@ -54,11 +54,11 @@ muteParams.timeoutExpiresAt = timeoutExpiresAt;
 
     // Update timeout
     if (member) {
-  if (!member.moderatable) return null;
+      if (!member.moderatable) return null;
 
-  await member.disableCommunicationUntil(timeoutExpiresAt).catch(noop);
-  await pluginData.state.mutes.updateTimeoutExpiresAt(userId, timeoutExpiresAt);
-}
+      await member.disableCommunicationUntil(timeoutExpiresAt).catch(noop);
+      await pluginData.state.mutes.updateTimeoutExpiresAt(userId, timeoutExpiresAt);
+    }
   } else {
     // Unmute immediately
     clearMute(pluginData, existingMute);

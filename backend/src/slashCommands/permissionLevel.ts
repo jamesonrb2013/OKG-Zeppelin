@@ -1,8 +1,4 @@
-import {
-  ChatInputCommandInteraction,
-  EmbedBuilder,
-  SlashCommandBuilder,
-} from "discord.js";
+import { ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from "discord.js";
 
 export const permissionLevelCommand = new SlashCommandBuilder()
   .setName("mod-permission-level")
@@ -17,9 +13,10 @@ export async function handlePermissionLevelCommand(interaction: ChatInputCommand
     return;
   }
 
-  const root = config && typeof config === "object"
-    ? config as { role_levels?: Record<string, number>; role_permissions?: Record<string, string[]> }
-    : {};
+  const root =
+    config && typeof config === "object"
+      ? (config as { role_levels?: Record<string, number>; role_permissions?: Record<string, string[]> })
+      : {};
   const rolePermissions = root.role_permissions ?? {};
   const invokingMember = await interaction.guild.members.fetch(interaction.user.id).catch(() => null);
   const canUseCommand = invokingMember?.roles.cache.some((role) => {
@@ -71,7 +68,9 @@ export async function handlePermissionLevelCommand(interaction: ChatInputCommand
       {
         name: "Hierarchy status",
         value: hasConfiguredLevels
-          ? (assignedLevels.length ? assignedLevels.join("\n") : "No configured staff-level role; defaults to **0**.")
+          ? assignedLevels.length
+            ? assignedLevels.join("\n")
+            : "No configured staff-level role; defaults to **0**."
           : "No `role_levels` are configured in the server config.",
       },
       {

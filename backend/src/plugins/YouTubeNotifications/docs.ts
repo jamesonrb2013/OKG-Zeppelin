@@ -3,8 +3,7 @@ import { zYouTubeNotificationsConfig } from "./types.js";
 
 export const youtubeNotificationsPluginDocs: ZeppelinPluginDocs = {
   prettyName: "YouTube Notifications",
-  description:
-    "Posts notifications when a configured YouTube channel publishes a new video.",
+  description: "Posts notifications when a configured YouTube channel publishes a new video.",
   type: "stable",
   configSchema: zYouTubeNotificationsConfig,
 };

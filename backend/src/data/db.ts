@@ -16,14 +16,10 @@ export function connect() {
 
           const initializedDataSource = await dataSource.initialize();
 
-          const tzResult = await initializedDataSource.query(
-            "SELECT TIMEDIFF(NOW(), UTC_TIMESTAMP) AS tz",
-          );
+          const tzResult = await initializedDataSource.query("SELECT TIMEDIFF(NOW(), UTC_TIMESTAMP) AS tz");
 
           if (tzResult[0].tz !== "00:00:00") {
-            throw new SimpleError(
-              `Database timezone must be UTC (detected ${tzResult[0].tz})`,
-            );
+            throw new SimpleError(`Database timezone must be UTC (detected ${tzResult[0].tz})`);
           }
 
           console.log("[DB] Connected successfully");
@@ -31,10 +27,7 @@ export function connect() {
         } catch (error) {
           lastError = error;
 
-          console.error(
-            `[DB] Connection attempt ${attempt}/5 failed:`,
-            error,
-          );
+          console.error(`[DB] Connection attempt ${attempt}/5 failed:`, error);
 
           if (dataSource.isInitialized) {
             try {

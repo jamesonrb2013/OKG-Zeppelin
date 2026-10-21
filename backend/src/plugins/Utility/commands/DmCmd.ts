@@ -37,9 +37,6 @@ export const DmCmd = utilityCmd({
       return;
     }
 
-    await pluginData.state.common.sendSuccessMessage(
-      msg,
-      `Successfully sent a DM to <@!${args.user.id}>.`,
-    );
+    await pluginData.state.common.sendSuccessMessage(msg, `Successfully sent a DM to <@!${args.user.id}>.`);
   },
 });

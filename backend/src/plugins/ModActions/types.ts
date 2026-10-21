@@ -186,10 +186,14 @@ export const modActionsMsgCmd: any = (definition: any) => {
     async run(context: any) {
       if (permission) {
         const { message, pluginData } = context;
-        const allowed = (message as any).__okgAuthorizedOCommand === true || await hasExplicitRolePermission(pluginData, message.author.id, permission);
+        const allowed =
+          (message as any).__okgAuthorizedOCommand === true ||
+          (await hasExplicitRolePermission(pluginData, message.author.id, permission));
 
         if (!allowed) {
-          await message.reply({ content: "You don\u0027t have permission to use !o " + (definition.trigger ?? "this command") + "." });
+          await message.reply({
+            content: "You don\u0027t have permission to use !o " + (definition.trigger ?? "this command") + ".",
+          });
           return;
         }
       }

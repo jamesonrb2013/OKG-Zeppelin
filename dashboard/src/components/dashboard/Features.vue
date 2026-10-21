@@ -21,7 +21,10 @@
             <h2 class="text-xl font-semibold">Support tickets</h2>
             <span class="text-xs rounded-full bg-indigo-500/20 text-indigo-200 px-2 py-1">New</span>
           </div>
-          <p class="text-gray-300 mt-2">Build your own Ticket Tool-style system: private ticket channels, staff claiming, close/reopen controls, transcripts, ticket limits, and custom messages.</p>
+          <p class="text-gray-300 mt-2">
+            Build your own Ticket Tool-style system: private ticket channels, staff claiming, close/reopen controls,
+            transcripts, ticket limits, and custom messages.
+          </p>
           <p class="text-indigo-300 font-semibold mt-4">Configure support →</p>
         </div>
       </div>

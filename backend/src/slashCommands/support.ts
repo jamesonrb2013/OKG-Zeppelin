@@ -73,23 +73,35 @@ export async function handleSupportPanelCommand(interaction: ChatInputCommandInt
     return;
   }
   if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
-    await interaction.reply({ content: "You need **Manage Server** permission to post the support panel.", ephemeral: true });
+    await interaction.reply({
+      content: "You need **Manage Server** permission to post the support panel.",
+      ephemeral: true,
+    });
     return;
   }
 
   const config = getSupportConfig(rootConfig);
   if (!config) {
-    await interaction.reply({ content: "Support is not enabled. Open OKG Manager → Features → Support, enable it, and save.", ephemeral: true });
+    await interaction.reply({
+      content: "Support is not enabled. Open OKG Manager → Features → Support, enable it, and save.",
+      ephemeral: true,
+    });
     return;
   }
   if (!config.panel_channel_id || !config.category_id) {
-    await interaction.reply({ content: "Set both the panel channel and ticket category in OKG Manager → Features → Support first.", ephemeral: true });
+    await interaction.reply({
+      content: "Set both the panel channel and ticket category in OKG Manager → Features → Support first.",
+      ephemeral: true,
+    });
     return;
   }
 
   const channel = await interaction.guild.channels.fetch(config.panel_channel_id).catch(() => null);
   if (!(channel instanceof TextChannel)) {
-    await interaction.reply({ content: "The configured panel channel was not found or is not a text channel.", ephemeral: true });
+    await interaction.reply({
+      content: "The configured panel channel was not found or is not a text channel.",
+      ephemeral: true,
+    });
     return;
   }
 
@@ -103,7 +115,11 @@ export async function handleSupportPanelCommand(interaction: ChatInputCommandInt
     embeds: [embed],
     components: [
       new ActionRowBuilder<ButtonBuilder>().addComponents(
-        new ButtonBuilder().setCustomId("okg_support:create").setLabel("Open a ticket").setStyle(ButtonStyle.Primary).setEmoji("🎫"),
+        new ButtonBuilder()
+          .setCustomId("okg_support:create")
+          .setLabel("Open a ticket")
+          .setStyle(ButtonStyle.Primary)
+          .setEmoji("🎫"),
       ),
     ],
     allowedMentions: { parse: [] },
@@ -125,28 +141,47 @@ export async function handleSupportInteraction(interaction: ButtonInteraction, r
   const guild = interaction.guild;
   if (interaction.customId === "okg_support:create") {
     if (!config.category_id) {
-      await interaction.reply({ content: "Support is missing its ticket category configuration. Ask a server administrator.", ephemeral: true });
+      await interaction.reply({
+        content: "Support is missing its ticket category configuration. Ask a server administrator.",
+        ephemeral: true,
+      });
       return;
     }
     const category = await guild.channels.fetch(config.category_id).catch(() => null);
     if (!category || category.type !== ChannelType.GuildCategory) {
-      await interaction.reply({ content: "The configured ticket category could not be found. Ask an administrator to check the Support settings.", ephemeral: true });
+      await interaction.reply({
+        content:
+          "The configured ticket category could not be found. Ask an administrator to check the Support settings.",
+        ephemeral: true,
+      });
       return;
     }
 
-    const prefix = (config.ticket_prefix || "ticket").toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 12) || "ticket";
+    const prefix =
+      (config.ticket_prefix || "ticket")
+        .toLowerCase()
+        .replace(/[^a-z0-9-]/g, "")
+        .slice(0, 12) || "ticket";
     const openTickets = guild.channels.cache.filter((channel) => {
       if (!(channel instanceof TextChannel) || !channel.topic?.startsWith("okg-support|")) return false;
       return ticketMetadata(channel).owner === interaction.user.id && ticketMetadata(channel).status === "open";
     });
     const limit = Math.max(1, Math.min(10, config.max_open_tickets ?? 1));
     if (openTickets.size >= limit) {
-      await interaction.reply({ content: `You already have ${openTickets.size} open ticket(s). Please continue in your existing ticket first.`, ephemeral: true });
+      await interaction.reply({
+        content: `You already have ${openTickets.size} open ticket(s). Please continue in your existing ticket first.`,
+        ephemeral: true,
+      });
       return;
     }
 
     await interaction.deferReply({ ephemeral: true });
-    const safeName = interaction.user.username.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").slice(0, 35) || "user";
+    const safeName =
+      interaction.user.username
+        .toLowerCase()
+        .replace(/[^a-z0-9-]/g, "-")
+        .replace(/-+/g, "-")
+        .slice(0, 35) || "user";
     const overwrites = [
       { id: guild.id, deny: [PermissionFlagsBits.ViewChannel] },
       {
@@ -182,14 +217,17 @@ export async function handleSupportInteraction(interaction: ButtonInteraction, r
       const welcome = new EmbedBuilder()
         .setColor(0x5865f2)
         .setTitle("Support ticket opened")
-        .setDescription(config.welcome_message || "Thanks for opening a ticket. Please describe what you need help with.")
+        .setDescription(
+          config.welcome_message || "Thanks for opening a ticket. Please describe what you need help with.",
+        )
         .addFields(
           { name: "Ticket owner", value: `<@${interaction.user.id}>`, inline: true },
           { name: "Claimed by", value: "Not claimed yet", inline: true },
         )
         .setTimestamp();
       await ticket.send({
-        content: `<@${interaction.user.id}> ${(config.support_role_ids ?? []).map((id) => `<@&${id}>`).join(" ")}`.trim(),
+        content:
+          `<@${interaction.user.id}> ${(config.support_role_ids ?? []).map((id) => `<@&${id}>`).join(" ")}`.trim(),
         embeds: [welcome],
         components: [ticketButtons("open")],
         allowedMentions: { users: [interaction.user.id], roles: config.support_role_ids ?? [] },
@@ -197,7 +235,10 @@ export async function handleSupportInteraction(interaction: ButtonInteraction, r
       await interaction.editReply({ content: `Your ticket is ready: <#${ticket.id}>` });
     } catch (error) {
       console.error("[SUPPORT] Could not create ticket:", error);
-      await interaction.editReply({ content: "I could not create your ticket. Check the bot's Manage Channels, View Channel, and Send Messages permissions, plus the configured support role IDs." });
+      await interaction.editReply({
+        content:
+          "I could not create your ticket. Check the bot's Manage Channels, View Channel, and Send Messages permissions, plus the configured support role IDs.",
+      });
     }
     return;
   }
@@ -229,7 +270,10 @@ export async function handleSupportInteraction(interaction: ButtonInteraction, r
       return;
     }
     await channel.setTopic(`okg-support|owner=${meta.owner}|claimed=${interaction.user.id}|status=open`);
-    await channel.send({ content: `🧑‍💻 <@${interaction.user.id}> claimed this ticket.`, allowedMentions: { users: [interaction.user.id] } });
+    await channel.send({
+      content: `🧑‍💻 <@${interaction.user.id}> claimed this ticket.`,
+      allowedMentions: { users: [interaction.user.id] },
+    });
     await interaction.reply({ content: "You have claimed this ticket.", ephemeral: true });
     return;
   }
@@ -237,7 +281,10 @@ export async function handleSupportInteraction(interaction: ButtonInteraction, r
   if (interaction.customId === "okg_support:close") {
     const isOwner = meta.owner === interaction.user.id;
     if (!isOwner && !hasStaffAccess(member, config)) {
-      await interaction.reply({ content: "Only the ticket owner or support team can close this ticket.", ephemeral: true });
+      await interaction.reply({
+        content: "Only the ticket owner or support team can close this ticket.",
+        ephemeral: true,
+      });
       return;
     }
     if (meta.status === "closed") {
@@ -251,21 +298,36 @@ export async function handleSupportInteraction(interaction: ButtonInteraction, r
       if (logChannel instanceof TextChannel) {
         const transcript = Array.from(messages.values())
           .sort((a, b) => a.createdTimestamp - b.createdTimestamp)
-          .map((message) => `[${new Date(message.createdTimestamp).toISOString()}] ${message.author.tag}: ${message.content || "[attachment/embed/no text]"}`)
+          .map(
+            (message) =>
+              `[${new Date(message.createdTimestamp).toISOString()}] ${message.author.tag}: ${message.content || "[attachment/embed/no text]"}`,
+          )
           .join("\n")
           .slice(0, 700_000);
-        await logChannel.send({
-          content: `Transcript for **#${channel.name}** • owner <@${meta.owner}> • closed by <@${interaction.user.id}>`,
-          files: [new AttachmentBuilder(Buffer.from(transcript || "No messages were available.", "utf8"), { name: `transcript-${channel.name}.txt` })],
-          allowedMentions: { parse: [] },
-        }).catch((error) => console.error("[SUPPORT] Transcript delivery failed:", error));
+        await logChannel
+          .send({
+            content: `Transcript for **#${channel.name}** • owner <@${meta.owner}> • closed by <@${interaction.user.id}>`,
+            files: [
+              new AttachmentBuilder(Buffer.from(transcript || "No messages were available.", "utf8"), {
+                name: `transcript-${channel.name}.txt`,
+              }),
+            ],
+            allowedMentions: { parse: [] },
+          })
+          .catch((error) => console.error("[SUPPORT] Transcript delivery failed:", error));
       }
     }
     await channel.setTopic(`okg-support|owner=${meta.owner}|claimed=${meta.claimed}|status=closed`);
     await channel.permissionOverwrites.edit(meta.owner!, { SendMessages: false }).catch(() => null);
     await channel.setName(`closed-${channel.name}`.slice(0, 100)).catch(() => null);
-    await channel.send({ content: `🔒 Ticket closed by <@${interaction.user.id}>. Support staff can reopen or delete it below.`, components: [ticketButtons("closed")], allowedMentions: { users: [interaction.user.id] } });
-    await interaction.editReply({ content: "Ticket closed. A transcript was sent to the configured log channel if one is set." });
+    await channel.send({
+      content: `🔒 Ticket closed by <@${interaction.user.id}>. Support staff can reopen or delete it below.`,
+      components: [ticketButtons("closed")],
+      allowedMentions: { users: [interaction.user.id] },
+    });
+    await interaction.editReply({
+      content: "Ticket closed. A transcript was sent to the configured log channel if one is set.",
+    });
     return;
   }
 
@@ -275,13 +337,22 @@ export async function handleSupportInteraction(interaction: ButtonInteraction, r
       return;
     }
     if (meta.status !== "closed" || !meta.owner) {
-      await interaction.reply({ content: "This ticket is not closed or its owner could not be identified.", ephemeral: true });
+      await interaction.reply({
+        content: "This ticket is not closed or its owner could not be identified.",
+        ephemeral: true,
+      });
       return;
     }
-    await channel.permissionOverwrites.edit(meta.owner, { ViewChannel: true, SendMessages: true, ReadMessageHistory: true }).catch(() => null);
+    await channel.permissionOverwrites
+      .edit(meta.owner, { ViewChannel: true, SendMessages: true, ReadMessageHistory: true })
+      .catch(() => null);
     await channel.setTopic(`okg-support|owner=${meta.owner}|claimed=${meta.claimed}|status=open`);
     await channel.setName(channel.name.replace(/^closed-/, "").slice(0, 100)).catch(() => null);
-    await channel.send({ content: `🔓 Ticket reopened by <@${interaction.user.id}>.`, components: [ticketButtons("open")], allowedMentions: { users: [interaction.user.id] } });
+    await channel.send({
+      content: `🔓 Ticket reopened by <@${interaction.user.id}>.`,
+      components: [ticketButtons("open")],
+      allowedMentions: { users: [interaction.user.id] },
+    });
     await interaction.reply({ content: "Ticket reopened.", ephemeral: true });
     return;
   }
