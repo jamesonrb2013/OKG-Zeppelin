@@ -61,7 +61,7 @@ import {
 } from "./slashCommands/announce.js";
 import { permissionLevelCommand, handlePermissionLevelCommand } from "./slashCommands/permissionLevel.js";
 
-const BOT_VERSION = "1.1.197";
+const BOT_VERSION = "1.2.98";
 
 // Error handling
 let recentPluginErrors = 0;
@@ -457,8 +457,11 @@ connect().then(async () => {
         await releaseChannel.send({
           content: `## Version ${BOT_VERSION}
 
-- Paused the \`!o {command}\` prefix feature; it now replies with the pause notice instead of executing commands.
-- Added automatic version announcements to this channel when a new version goes live.
+- Corrected version numbering: every 100 patch increments roll into the next minor version (1.1.198 is displayed as 1.2.98).
+- Kept the \`!o {command}\` prefix feature safely paused; it replies with the pause notice instead of executing commands.
+- Added automatic version announcements when a new version starts, with duplicate checks to avoid reposting on normal restarts.
+- Fixed release announcements so Discord Announcement channels can be used, not only standard text channels.
+- Kept the bot's Watching presence synced to the current version.
 
 Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
           allowedMentions: { parse: [], users: [], roles: [], repliedUser: false },
