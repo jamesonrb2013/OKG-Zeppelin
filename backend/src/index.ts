@@ -447,21 +447,24 @@ connect().then(async () => {
     if (!releaseChannel || !releaseChannel.isTextBased() || !("messages" in releaseChannel)) {
       logger.warn("Release announcement channel 1562496808838631556 is unavailable or not text-based");
     } else {
-      const recentMessages = await releaseChannel.messages.fetch({ limit: 100 });
+      // Discord's channel fetch union includes partial/DM channel types. This ID
+      // is our configured server announcement channel, so use its text-channel API.
+      const announcementChannel = releaseChannel as TextChannel;
+      const recentMessages = await announcementChannel.messages.fetch({ limit: 100 });
       const alreadyAnnounced = recentMessages.some(
         (message) => message.author.id === client.user!.id && message.content.startsWith(`## Version ${BOT_VERSION}`),
       );
 
       if (!alreadyAnnounced) {
         const updatedTimestamp = Math.floor(Date.now() / 1000);
-        await releaseChannel.send({
+        await announcementChannel.send({
           content: `## Version ${BOT_VERSION}
 
 - Renamed the existing moderation slash commands by staff tier without adding duplicate commands: /mod-* for moderator+, /manage-* for management, and /admin-* for admin-only actions.
 - Applied the requested tiers: management for addcase, ban, kick, note, unban, unhidecase, and update; admin for deletecase, forceban, forcemute, forceunmute, massban, massmute, and massunban; moderator+ for case, cases, hidecase, mute, unmute, warn, and permission-level.
 - Updated slash-command permission errors to show each command's actual new name.
-- Restricted `/permission-level` to members granted moderator case-view permission (or *).
-- Kept `/announce` under its existing announcement permission check.
+- Restricted \x60/permission-level\x60 to members granted moderator case-view permission (or *).
+- Kept \x60/announce\x60 under its existing announcement permission check.
 - Kept the !o {command} prefix feature safely paused; it replies with the pause notice instead of executing commands.
 - Kept automatic version announcements with duplicate prevention and support for Discord Announcement channels.
 - Kept the bot's Watching presence synced to the current version.
