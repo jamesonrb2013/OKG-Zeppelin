@@ -17,7 +17,6 @@ import {
   MessageFlags,
   MessageFlagsString,
   ModalSubmitInteraction,
-  PermissionsBitField,
   TextBasedChannel,
 } from "discord.js";
 import {
@@ -41,7 +40,7 @@ export function canActOn(
   member1: GuildMember,
   member2: GuildMember,
   allowSameLevel = false,
-  allowAdmins = false,
+  _allowAdmins = false,
 ) {
   if (member2.id === pluginData.client.user!.id) {
     return false;
