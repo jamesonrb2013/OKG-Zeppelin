@@ -36,7 +36,7 @@ const opts = [
 ];
 
 export const MuteSlashCmd = modActionsSlashCmd({
-  name: "mute",
+  name: "mod-mute",
   configPermission: "can_mute",
   description: "Mute the specified member",
   allowDms: false,
