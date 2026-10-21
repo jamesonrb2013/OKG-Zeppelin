@@ -3,12 +3,9 @@ import { GuildPluginData } from "vety";
 import { ModActionsPluginType } from "../types.js";
 
 /**
- * Check the custom role_permissions map first, because command visibility in
- * Discord Integrations is only a visibility setting and does not grant the
- * bot-side permission needed by Zeppelin's moderation action handlers.
- *
- * If no custom role map is configured, retain Zeppelin's existing per-plugin
- * can_* config behavior for backwards compatibility.
+ * Check only explicit role_permissions grants. An absent or empty map grants
+ * no manual moderation permissions; numeric levels and legacy config defaults
+ * must never grant moderation actions.
  */
 async function hasModPermission(
   pluginData: GuildPluginData<ModActionsPluginType>,
@@ -32,8 +29,7 @@ async function hasModPermission(
     });
   }
 
-  const config = await pluginData.config.getMatchingConfig({ member, channelId });
-  return Boolean((config as any)[permission]);
+  return false;
 }
 
 export function hasNotePermission(
