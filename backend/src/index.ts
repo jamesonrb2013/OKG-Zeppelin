@@ -61,7 +61,7 @@ import {
 } from "./slashCommands/announce.js";
 import { permissionLevelCommand, handlePermissionLevelCommand } from "./slashCommands/permissionLevel.js";
 
-const BOT_VERSION = "1.2.98";
+const BOT_VERSION = "1.2.99";
 
 // Error handling
 let recentPluginErrors = 0;
@@ -457,10 +457,13 @@ connect().then(async () => {
         await releaseChannel.send({
           content: `## Version ${BOT_VERSION}
 
-- Corrected version numbering: every 100 patch increments roll into the next minor version (1.1.198 is displayed as 1.2.98).
-- Kept the \`!o {command}\` prefix feature safely paused; it replies with the pause notice instead of executing commands.
-- Added automatic version announcements when a new version starts, with duplicate checks to avoid reposting on normal restarts.
-- Fixed release announcements so Discord Announcement channels can be used, not only standard text channels.
+- Renamed the existing moderation slash commands by staff tier without adding duplicate commands: `/mod-*` for moderator+, `/manage-*` for management, and `/admin-*` for admin-only actions.
+- Applied the requested tiers: management for addcase, ban, kick, note, unban, unhidecase, and update; admin for deletecase, forceban, forcemute, forceunmute, massban, massmute, and massunban; moderator+ for case, cases, hidecase, mute, unmute, warn, and permission-level.
+- Updated slash-command permission errors to show each command's actual new name.
+- Restricted `/permission-level` to members granted moderator case-view permission (or `*`).
+- Kept `/announce` under its existing announcement permission check.
+- Kept the `!o {command}` prefix feature safely paused; it replies with the pause notice instead of executing commands.
+- Kept automatic version announcements with duplicate prevention and support for Discord Announcement channels.
 - Kept the bot's Watching presence synced to the current version.
 
 Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
