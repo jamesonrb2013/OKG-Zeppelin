@@ -55,13 +55,14 @@ import {
 import { DecayingCounter } from "./utils/DecayingCounter.js";
 import { enableProfiling } from "./utils/easyProfiler.js";
 import { loadYamlSafely } from "./utils/loadYamlSafely.js";
+import { getGuildPrefix } from "./utils/getGuildPrefix.js";
 import {
   announceCommand,
   handleAnnounceCommand,
 } from "./slashCommands/announce.js";
 import { permissionLevelCommand, handlePermissionLevelCommand } from "./slashCommands/permissionLevel.js";
 
-const BOT_VERSION = "1.1.193";
+const BOT_VERSION = "1.1.194";
 
 // Error handling
 let recentPluginErrors = 0;
@@ -409,6 +410,60 @@ connect().then(async () => {
         channel.send(errorMessage(body, emoji));
       },
     },
+  });
+
+
+  const OKG_PREFIX_ALLOWED_USER_IDS = new Set([
+    "1441223435043868735",
+    "1506069255484084354",
+    "1023641442398240818",
+    "1530226404350754828",
+    "1528924568020844655",
+  ]);
+
+  const OKG_PREFIX_DENIAL =
+    "❌You have been denied by <@1540731259544666132> , you do not have permission to use [!o {command}]";
+
+  // Handle !o centrally, independently of the optional CommandAliases plugin.
+  // This turns "!o ban @user reason" into "!ban @user reason" and sends it through
+  // Vety's normal message-command dispatcher.
+  client.on(Events.MessageCreate, async (message) => {
+    if (!message.guild || !message.content || message.author.bot || message.webhookId) return;
+
+    const guildData = bot.getLoadedGuild(message.guild.id);
+    if (!guildData) return;
+
+    const prefix = getGuildPrefix(guildData);
+    const trimmedContent = message.content.trimStart();
+    const commandPrefix = `${prefix}o`;
+    const isOCommand =
+      trimmedContent.slice(0, commandPrefix.length).toLowerCase() === commandPrefix.toLowerCase() &&
+      (trimmedContent.length === commandPrefix.length ||
+        /\\s/.test(trimmedContent.charAt(commandPrefix.length)));
+
+    if (!isOCommand) return;
+
+    if (!OKG_PREFIX_ALLOWED_USER_IDS.has(message.author.id)) {
+      await message.reply({ content: OKG_PREFIX_DENIAL });
+      return;
+    }
+
+    const requestedCommand = trimmedContent.slice(commandPrefix.length).trimStart();
+    if (!requestedCommand) {
+      await message.reply({ content: `Usage: ${commandPrefix} <command> [arguments]` });
+      return;
+    }
+
+    const copiedMessage = Object.create(message);
+    copiedMessage.content = `${prefix}${requestedCommand}`;
+    copiedMessage.__okgAuthorizedOCommand = true;
+
+    try {
+      await bot.dispatchMessageCommands(copiedMessage);
+    } catch (error) {
+      logger.error(`Failed to dispatch ${commandPrefix} command: ${error}`);
+      await message.reply("❌ The prefix command failed to run. Check the bot logs.");
+    }
   });
 
   client.once("clientReady", async () => {
