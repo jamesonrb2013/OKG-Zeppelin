@@ -52,6 +52,7 @@ function ticketButtons(status: "open" | "closed") {
   if (status === "open") {
     buttons.addComponents(
       new ButtonBuilder().setCustomId("okg_support:claim").setLabel("Claim ticket").setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId("okg_support:unclaim").setLabel("Unclaim").setStyle(ButtonStyle.Secondary),
       new ButtonBuilder().setCustomId("okg_support:close").setLabel("Close ticket").setStyle(ButtonStyle.Danger),
     );
   } else {
@@ -256,6 +257,29 @@ export async function handleSupportInteraction(interaction: ButtonInteraction, r
     return;
   }
 
+  if (interaction.customId === "okg_support:unclaim") {
+    if (!hasStaffAccess(member, config)) {
+      await interaction.reply({ content: "Only the configured support team can unclaim tickets.", ephemeral: true });
+      return;
+    }
+    if (meta.status !== "open") {
+      await interaction.reply({ content: "This ticket is closed. Reopen it before changing its assignment.", ephemeral: true });
+      return;
+    }
+    if (meta.claimed === "none") {
+      await interaction.reply({ content: "This ticket is not currently claimed.", ephemeral: true });
+      return;
+    }
+    if (meta.claimed !== interaction.user.id && !member.permissions.has(PermissionFlagsBits.ManageChannels) && !member.permissions.has(PermissionFlagsBits.Administrator)) {
+      await interaction.reply({ content: "Only the assigned staff member or a server manager can unclaim this ticket.", ephemeral: true });
+      return;
+    }
+    await channel.setTopic(`okg-support|owner=${meta.owner}|claimed=none|status=open`);
+    await channel.send({ content: `↩️ <@${interaction.user.id}> unclaimed this ticket.`, allowedMentions: { users: [interaction.user.id] } });
+    await interaction.reply({ content: "Ticket unclaimed and returned to the support queue.", ephemeral: true });
+    return;
+  }
+
   if (interaction.customId === "okg_support:claim") {
     if (!hasStaffAccess(member, config)) {
       await interaction.reply({ content: "Only the configured support team can claim tickets.", ephemeral: true });
@@ -318,7 +342,9 @@ export async function handleSupportInteraction(interaction: ButtonInteraction, r
       }
     }
     await channel.setTopic(`okg-support|owner=${meta.owner}|claimed=${meta.claimed}|status=closed`);
-    await channel.permissionOverwrites.edit(meta.owner!, { SendMessages: false }).catch(() => null);
+    if (meta.owner) {
+      await channel.permissionOverwrites.edit(meta.owner, { SendMessages: false }).catch(() => null);
+    }
     await channel.setName(`closed-${channel.name}`.slice(0, 100)).catch(() => null);
     await channel.send({
       content: `🔒 Ticket closed by <@${interaction.user.id}>. Support staff can reopen or delete it below.`,
