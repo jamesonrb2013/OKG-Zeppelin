@@ -316,21 +316,39 @@ export async function handleSupportInteraction(interaction: ButtonInteraction, r
       return;
     }
     await interaction.deferReply({ ephemeral: true });
-    const messages = await channel.messages.fetch({ limit: 100 }).catch(() => null);
-    if (messages && config.log_channel_id) {
+    // Fetch history in pages so long tickets are not silently truncated at 100 messages.
+    // A hard cap prevents runaway memory use in unusually large channels.
+    const transcriptLines: string[] = [];
+    let before: string | undefined;
+    let fetchedCount = 0;
+    while (fetchedCount < 5000) {
+      const page = await channel.messages.fetch({ limit: 100, ...(before ? { before } : {}) }).catch((error) => {
+        console.error("[SUPPORT] Transcript history fetch failed:", error);
+        return null;
+      });
+      if (!page || page.size === 0) break;
+      const ordered = Array.from(page.values()).sort((a, b) => a.createdTimestamp - b.createdTimestamp);
+      for (const message of ordered) {
+        const body = message.content?.trim() || "";
+        const extras = [
+          ...Array.from(message.attachments.values()).map((item) => `[attachment] ${item.url}`),
+          ...message.embeds.map((embed) => embed.title || embed.description || "[embed]"),
+        ];
+        transcriptLines.push(
+          `[${new Date(message.createdTimestamp).toISOString()}] ${message.author.tag} (${message.author.id})${message.author.bot ? " [BOT]" : ""}: ${body || (extras.length ? "" : "[no text]")}${extras.length ? `\\n  ${extras.join("\\n  ")}` : ""}`,
+        );
+      }
+      fetchedCount += page.size;
+      before = page.last()?.id;
+      if (page.size < 100 || !before) break;
+    }
+    const transcript = transcriptLines.join("\\n").slice(0, 7_500_000);
+    if (config.log_channel_id) {
       const logChannel = await guild.channels.fetch(config.log_channel_id).catch(() => null);
       if (logChannel instanceof TextChannel) {
-        const transcript = Array.from(messages.values())
-          .sort((a, b) => a.createdTimestamp - b.createdTimestamp)
-          .map(
-            (message) =>
-              `[${new Date(message.createdTimestamp).toISOString()}] ${message.author.tag}: ${message.content || "[attachment/embed/no text]"}`,
-          )
-          .join("\n")
-          .slice(0, 700_000);
         await logChannel
           .send({
-            content: `Transcript for **#${channel.name}** • owner <@${meta.owner}> • closed by <@${interaction.user.id}>`,
+            content: `Transcript for **#${channel.name}** • owner ${meta.owner ? `<@${meta.owner}>` : "unknown"} • closed by <@${interaction.user.id}> • ${fetchedCount} messages${fetchedCount >= 5000 ? " (5,000-message safety cap reached)" : ""}`,
             files: [
               new AttachmentBuilder(Buffer.from(transcript || "No messages were available.", "utf8"), {
                 name: `transcript-${channel.name}.txt`,
@@ -339,6 +357,8 @@ export async function handleSupportInteraction(interaction: ButtonInteraction, r
             allowedMentions: { parse: [] },
           })
           .catch((error) => console.error("[SUPPORT] Transcript delivery failed:", error));
+      } else {
+        console.warn("[SUPPORT] Transcript log channel is missing or is not a text channel.");
       }
     }
     await channel.setTopic(`okg-support|owner=${meta.owner}|claimed=${meta.claimed}|status=closed`);
