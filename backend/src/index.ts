@@ -64,7 +64,7 @@ import {
   supportPanelCommand,
 } from "./slashCommands/support.js";
 
-const BOT_VERSION = "1.3.2";
+const BOT_VERSION = "1.3.3";
 
 // Error handling
 let recentPluginErrors = 0;
@@ -436,7 +436,7 @@ connect().then(async () => {
 
     // Keep the deployed bot version visible in Discord's activity status.
     client.user?.setPresence({
-      activities: [{ name: `Running ${BOT_VERSION} of OKG Manage OS`, type: ActivityType.Playing }],
+      activities: [{ name: `Running ${BOT_VERSION} of OKG Manage DiscordOS`, type: ActivityType.Playing }],
       status: "online",
     });
 
@@ -458,7 +458,9 @@ connect().then(async () => {
         if (!alreadyAnnounced) {
           const updatedTimestamp = Math.floor(Date.now() / 1000);
           await announcementChannel.send({
-            content: `## Version ${BOT_VERSION}
+            content: `<@&1562533677664305183>
+
+## Version ${BOT_VERSION}
 
 - Finalized the existing moderation commands under exactly one name per tier: /mod-* for moderator+, /manage-* for management, and /admin-* for admin-only actions.
 - Removed obsolete unprefixed and incorrectly tier-prefixed moderation slash commands from global and guild registrations.
@@ -472,10 +474,10 @@ connect().then(async () => {
 - Kept \x60/announce\x60 under its existing announcement permission check.
 - Kept the !o {command} prefix feature safely paused; it replies with the pause notice instead of executing commands.
 - Kept automatic version announcements with duplicate prevention and support for Discord Announcement channels.
-- Kept the bot's Watching presence synced to the current version.
+- Set the bot's Playing presence to “Running {version} of OKG Manage DiscordOS”.
 
 Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
-            allowedMentions: { parse: [], users: [], roles: [], repliedUser: false },
+            allowedMentions: { parse: [], users: [], roles: ["1562533677664305183"], repliedUser: false },
           });
           logger.info(`Posted release announcement for version ${BOT_VERSION}`);
         }
