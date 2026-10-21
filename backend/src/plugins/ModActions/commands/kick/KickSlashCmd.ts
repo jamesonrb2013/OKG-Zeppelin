@@ -38,7 +38,7 @@ const opts = [
 ];
 
 export const KickSlashCmd = modActionsSlashCmd({
-  name: "kick",
+  name: "manage-kick",
   configPermission: "can_kick",
   description: "Kick the specified member",
   allowDms: false,
