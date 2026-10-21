@@ -17,7 +17,7 @@ const opts = [
 ];
 
 export const UnbanSlashCmd = modActionsSlashCmd({
-  name: "unban",
+  name: "manage-unban",
   configPermission: "can_unban",
   description: "Unban the specified member",
   allowDms: false,
