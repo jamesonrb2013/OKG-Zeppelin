@@ -444,8 +444,8 @@ connect().then(async () => {
   // duplicate announcements on ordinary restarts.
   try {
     const releaseChannel = await client.channels.fetch("1562496808838631556");
-    if (!(releaseChannel instanceof TextChannel)) {
-      logger.warn("Release announcement channel 1562496808838631556 is unavailable or is not a text channel");
+    if (!releaseChannel || !("send" in releaseChannel) || !("messages" in releaseChannel)) {
+      logger.warn("Release announcement channel 1562496808838631556 is unavailable or cannot receive messages");
     } else {
       const recentMessages = await releaseChannel.messages.fetch({ limit: 100 });
       const alreadyAnnounced = recentMessages.some(
