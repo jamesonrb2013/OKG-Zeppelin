@@ -61,7 +61,7 @@ import {
 } from "./slashCommands/announce.js";
 import { permissionLevelCommand, handlePermissionLevelCommand } from "./slashCommands/permissionLevel.js";
 
-const BOT_VERSION = "1.1.196";
+const BOT_VERSION = "1.1.197";
 
 // Error handling
 let recentPluginErrors = 0;
@@ -412,57 +412,23 @@ connect().then(async () => {
   });
 
 
-  const OKG_PREFIX_ALLOWED_USER_IDS = new Set([
-    "1441223435043868735",
-    "1506069255484084354",
-    "1023641442398240818",
-    "1530226404350754828",
-    "1528924568020844655",
-  ]);
+  // The !o prefix feature is intentionally paused. Never dispatch commands through it.
+  const OKG_PREFIX_PAUSED_MESSAGE =
+    "⏸️ This feature is paused for now. Sorry. Paused by Coolkid_5701";
 
-  const OKG_PREFIX_DENIAL =
-    "❌You have been denied by <@1540731259544666132> , you do not have permission to use [!o {command}]";
-
-  // Handle !o centrally, independently of the optional CommandAliases plugin.
-  // This turns "!o ban @user reason" into "!ban @user reason" and sends it through
-  // Vety's normal message-command dispatcher.
   client.on(Events.MessageCreate, async (message) => {
     if (!message.guild || !message.content || message.author.bot || message.webhookId) return;
 
-    const guildData = bot.getLoadedGuild(message.guild.id);
-    if (!guildData) return;
-
-    const prefix = "!";
     const trimmedContent = message.content.trimStart();
-    const commandPrefix = `${prefix}o`;
+    const commandPrefix = "!o";
     const isOCommand =
-      trimmedContent.slice(0, commandPrefix.length).toLowerCase() === commandPrefix.toLowerCase() &&
+      trimmedContent.slice(0, commandPrefix.length).toLowerCase() === commandPrefix &&
       (trimmedContent.length === commandPrefix.length ||
-        /\s/.test(trimmedContent.charAt(commandPrefix.length)));
+        /\\s/.test(trimmedContent.charAt(commandPrefix.length)));
 
     if (!isOCommand) return;
 
-    if (!OKG_PREFIX_ALLOWED_USER_IDS.has(message.author.id)) {
-      await message.reply({ content: OKG_PREFIX_DENIAL });
-      return;
-    }
-
-    const requestedCommand = trimmedContent.slice(commandPrefix.length).trimStart();
-    if (!requestedCommand) {
-      await message.reply({ content: `Usage: ${commandPrefix} <command> [arguments]` });
-      return;
-    }
-
-    const copiedMessage = Object.create(message);
-    copiedMessage.content = `${prefix}${requestedCommand}`;
-    copiedMessage.__okgAuthorizedOCommand = true;
-
-    try {
-      await bot.dispatchMessageCommands(copiedMessage);
-    } catch (error) {
-      logger.error(`Failed to dispatch ${commandPrefix} command: ${error}`);
-      await message.reply("❌ The prefix command failed to run. Check the bot logs.");
-    }
+    await message.reply({ content: OKG_PREFIX_PAUSED_MESSAGE });
   });
 
   client.once("clientReady", async () => {
@@ -473,6 +439,36 @@ connect().then(async () => {
     activities: [{ name: `Version ${BOT_VERSION}`, type: ActivityType.Watching }],
     status: "online",
   });
+
+  // Announce each deployed version once. Checking recent bot messages prevents
+  // duplicate announcements on ordinary restarts.
+  try {
+    const releaseChannel = await client.channels.fetch("1562496808838631556");
+    if (!(releaseChannel instanceof TextChannel)) {
+      logger.warn("Release announcement channel 1562496808838631556 is unavailable or is not a text channel");
+    } else {
+      const recentMessages = await releaseChannel.messages.fetch({ limit: 100 });
+      const alreadyAnnounced = recentMessages.some(
+        (message) => message.author.id === client.user!.id && message.content.startsWith(`## Version ${BOT_VERSION}`),
+      );
+
+      if (!alreadyAnnounced) {
+        const updatedTimestamp = Math.floor(Date.now() / 1000);
+        await releaseChannel.send({
+          content: `## Version ${BOT_VERSION}
+
+- Paused the \`!o {command}\` prefix feature; it now replies with the pause notice instead of executing commands.
+- Added automatic version announcements to this channel when a new version goes live.
+
+Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
+          allowedMentions: { parse: [], users: [], roles: [], repliedUser: false },
+        });
+        logger.info(`Posted release announcement for version ${BOT_VERSION}`);
+      }
+    }
+  } catch (error) {
+    logger.error(`Failed to post release announcement for version ${BOT_VERSION}: ${error}`);
+  }
 
   try {
     const commandsToRegister = [announceCommand, permissionLevelCommand];
