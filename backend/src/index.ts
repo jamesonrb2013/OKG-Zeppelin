@@ -59,7 +59,6 @@ import { announceCommand, handleAnnounceCommand } from "./slashCommands/announce
 import { permissionLevelCommand, handlePermissionLevelCommand } from "./slashCommands/permissionLevel.js";
 import { handleSupportInteraction, handleSupportPanelCommand, supportPanelCommand } from "./slashCommands/support.js";
 
-// [format-repo] CI formats all existing files alongside the support ticket release.
 const BOT_VERSION = "1.3.1";
 
 // Error handling
