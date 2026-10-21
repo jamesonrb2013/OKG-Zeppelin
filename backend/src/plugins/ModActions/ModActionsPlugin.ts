@@ -72,7 +72,7 @@ import { offModActionsEvent } from "./functions/offModActionsEvent.js";
 import { onModActionsEvent } from "./functions/onModActionsEvent.js";
 import { updateCase } from "./functions/updateCase.js";
 import { warnMember } from "./functions/warnMember.js";
-import { ModActionsPluginType, modActionsSlashGroup, zModActionsConfig } from "./types.js";
+import { ModActionsPluginType, zModActionsConfig } from "./types.js";
 
 export const ModActionsPlugin = guildPlugin<ModActionsPluginType>()({
   name: "mod_actions",
