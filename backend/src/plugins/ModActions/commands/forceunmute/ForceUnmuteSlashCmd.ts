@@ -18,7 +18,7 @@ const opts = [
 ];
 
 export const ForceUnmuteSlashCmd = modActionsSlashCmd({
-  name: "forceunmute",
+  name: "admin-forceunmute",
   configPermission: "can_mute",
   description: "Force-unmute the specified user, even if they're not on the server",
   allowDms: false,
