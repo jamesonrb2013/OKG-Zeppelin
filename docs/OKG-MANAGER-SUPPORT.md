@@ -1,5 +1,7 @@
 # OKG Manager Support
 
+Bot version: **1.3.2**
+
 OKG Manager includes native Discord support tickets in the Zeppelin bot.
 
 ## Configure
