@@ -150,11 +150,18 @@ export async function handleSupportModal(interaction: ModalSubmitInteraction, ro
   const guild = interaction.guild;
   const category = await guild.channels.fetch(config.category_id).catch(() => null);
   if (!category || category.type !== ChannelType.GuildCategory) {
-    await interaction.reply({ content: "The configured ticket category could not be found. Ask an administrator to check Support settings.", ephemeral: true });
+    await interaction.reply({
+      content: "The configured ticket category could not be found. Ask an administrator to check Support settings.",
+      ephemeral: true,
+    });
     return;
   }
 
-  const prefix = (config.ticket_prefix || "ticket").toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 12) || "ticket";
+  const prefix =
+    (config.ticket_prefix || "ticket")
+      .toLowerCase()
+      .replace(/[^a-z0-9-]/g, "")
+      .slice(0, 12) || "ticket";
   const openTickets = guild.channels.cache.filter((channel) => {
     if (!(channel instanceof TextChannel) || !channel.topic?.startsWith("okg-support|")) return false;
     const meta = ticketMetadata(channel);
@@ -162,28 +169,51 @@ export async function handleSupportModal(interaction: ModalSubmitInteraction, ro
   });
   const limit = Math.max(1, Math.min(10, config.max_open_tickets ?? 1));
   if (openTickets.size >= limit) {
-    await interaction.reply({ content: `You already have ${openTickets.size} open ticket(s). Please continue in your existing ticket first.`, ephemeral: true });
+    await interaction.reply({
+      content: `You already have ${openTickets.size} open ticket(s). Please continue in your existing ticket first.`,
+      ephemeral: true,
+    });
     return;
   }
 
   const subject = interaction.fields.getTextInputValue("subject").trim();
   const details = interaction.fields.getTextInputValue("details").trim();
   if (subject.length < 3 || details.length < 10) {
-    await interaction.reply({ content: "Please provide a subject and at least 10 characters of details.", ephemeral: true });
+    await interaction.reply({
+      content: "Please provide a subject and at least 10 characters of details.",
+      ephemeral: true,
+    });
     return;
   }
 
   await interaction.deferReply({ ephemeral: true });
-  const safeName = interaction.user.username.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").slice(0, 35) || "user";
+  const safeName =
+    interaction.user.username
+      .toLowerCase()
+      .replace(/[^a-z0-9-]/g, "-")
+      .replace(/-+/g, "-")
+      .slice(0, 35) || "user";
   const overwrites = [
     { id: guild.id, deny: [PermissionFlagsBits.ViewChannel] },
     {
       id: interaction.user.id,
-      allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.AttachFiles, PermissionFlagsBits.EmbedLinks],
+      allow: [
+        PermissionFlagsBits.ViewChannel,
+        PermissionFlagsBits.SendMessages,
+        PermissionFlagsBits.ReadMessageHistory,
+        PermissionFlagsBits.AttachFiles,
+        PermissionFlagsBits.EmbedLinks,
+      ],
     },
     ...(config.support_role_ids ?? []).map((roleId) => ({
       id: roleId,
-      allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.AttachFiles, PermissionFlagsBits.EmbedLinks],
+      allow: [
+        PermissionFlagsBits.ViewChannel,
+        PermissionFlagsBits.SendMessages,
+        PermissionFlagsBits.ReadMessageHistory,
+        PermissionFlagsBits.AttachFiles,
+        PermissionFlagsBits.EmbedLinks,
+      ],
     })),
   ];
 
@@ -215,7 +245,10 @@ export async function handleSupportModal(interaction: ModalSubmitInteraction, ro
     await interaction.editReply({ content: `Your ticket is ready: <#${ticket.id}>` });
   } catch (error) {
     console.error("[SUPPORT] Could not create ticket from form:", error);
-    await interaction.editReply({ content: "I could not create your ticket. Check the bot's Manage Channels, View Channel, and Send Messages permissions, plus the configured support role IDs." });
+    await interaction.editReply({
+      content:
+        "I could not create your ticket. Check the bot's Manage Channels, View Channel, and Send Messages permissions, plus the configured support role IDs.",
+    });
   }
 }
 
@@ -279,19 +312,32 @@ export async function handleSupportInteraction(interaction: ButtonInteraction, r
       return;
     }
     if (meta.status !== "open") {
-      await interaction.reply({ content: "This ticket is closed. Reopen it before changing its assignment.", ephemeral: true });
+      await interaction.reply({
+        content: "This ticket is closed. Reopen it before changing its assignment.",
+        ephemeral: true,
+      });
       return;
     }
     if (meta.claimed === "none") {
       await interaction.reply({ content: "This ticket is not currently claimed.", ephemeral: true });
       return;
     }
-    if (meta.claimed !== interaction.user.id && !member.permissions.has(PermissionFlagsBits.ManageChannels) && !member.permissions.has(PermissionFlagsBits.Administrator)) {
-      await interaction.reply({ content: "Only the assigned staff member or a server manager can unclaim this ticket.", ephemeral: true });
+    if (
+      meta.claimed !== interaction.user.id &&
+      !member.permissions.has(PermissionFlagsBits.ManageChannels) &&
+      !member.permissions.has(PermissionFlagsBits.Administrator)
+    ) {
+      await interaction.reply({
+        content: "Only the assigned staff member or a server manager can unclaim this ticket.",
+        ephemeral: true,
+      });
       return;
     }
     await channel.setTopic(`okg-support|owner=${meta.owner}|claimed=none|status=open`);
-    await channel.send({ content: `↩️ <@${interaction.user.id}> unclaimed this ticket.`, allowedMentions: { users: [interaction.user.id] } });
+    await channel.send({
+      content: `↩️ <@${interaction.user.id}> unclaimed this ticket.`,
+      allowedMentions: { users: [interaction.user.id] },
+    });
     await interaction.reply({ content: "Ticket unclaimed and returned to the support queue.", ephemeral: true });
     return;
   }

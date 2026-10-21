@@ -57,7 +57,12 @@ import { enableProfiling } from "./utils/easyProfiler.js";
 import { loadYamlSafely } from "./utils/loadYamlSafely.js";
 import { announceCommand, handleAnnounceCommand } from "./slashCommands/announce.js";
 import { permissionLevelCommand, handlePermissionLevelCommand } from "./slashCommands/permissionLevel.js";
-import { handleSupportInteraction, handleSupportModal, handleSupportPanelCommand, supportPanelCommand } from "./slashCommands/support.js";
+import {
+  handleSupportInteraction,
+  handleSupportModal,
+  handleSupportPanelCommand,
+  supportPanelCommand,
+} from "./slashCommands/support.js";
 
 const BOT_VERSION = "1.3.2";
 
