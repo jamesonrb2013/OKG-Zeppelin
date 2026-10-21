@@ -457,12 +457,12 @@ connect().then(async () => {
         await releaseChannel.send({
           content: `## Version ${BOT_VERSION}
 
-- Renamed the existing moderation slash commands by staff tier without adding duplicate commands: `/mod-*` for moderator+, `/manage-*` for management, and `/admin-*` for admin-only actions.
+- Renamed the existing moderation slash commands by staff tier without adding duplicate commands: /mod-* for moderator+, /manage-* for management, and /admin-* for admin-only actions.
 - Applied the requested tiers: management for addcase, ban, kick, note, unban, unhidecase, and update; admin for deletecase, forceban, forcemute, forceunmute, massban, massmute, and massunban; moderator+ for case, cases, hidecase, mute, unmute, warn, and permission-level.
 - Updated slash-command permission errors to show each command's actual new name.
-- Restricted `/permission-level` to members granted moderator case-view permission (or `*`).
+- Restricted `/permission-level` to members granted moderator case-view permission (or *).
 - Kept `/announce` under its existing announcement permission check.
-- Kept the `!o {command}` prefix feature safely paused; it replies with the pause notice instead of executing commands.
+- Kept the !o {command} prefix feature safely paused; it replies with the pause notice instead of executing commands.
 - Kept automatic version announcements with duplicate prevention and support for Discord Announcement channels.
 - Kept the bot's Watching presence synced to the current version.
 
