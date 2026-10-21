@@ -39,7 +39,7 @@ const opts = [
 ];
 
 export const BanSlashCmd = modActionsSlashCmd({
-  name: "ban",
+  name: "manage-ban",
   configPermission: "can_ban",
   description: "Ban or Tempban the specified member",
   allowDms: false,
