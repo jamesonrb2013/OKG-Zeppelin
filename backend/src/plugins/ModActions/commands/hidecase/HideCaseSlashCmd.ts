@@ -3,7 +3,7 @@ import { modActionsSlashCmd } from "../../types.js";
 import { actualHideCaseCmd } from "./actualHideCaseCmd.js";
 
 export const HideCaseSlashCmd = modActionsSlashCmd({
-  name: "hidecase",
+  name: "mod-hidecase",
   configPermission: "can_hidecase",
   description: "Hide the specified case so it doesn't appear in !cases or !info",
   allowDms: false,
