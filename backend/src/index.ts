@@ -61,7 +61,7 @@ import {
 } from "./slashCommands/announce.js";
 import { permissionLevelCommand, handlePermissionLevelCommand } from "./slashCommands/permissionLevel.js";
 
-const BOT_VERSION = "1.1.196";
+const BOT_VERSION = "1.1.197";
 
 // Error handling
 let recentPluginErrors = 0;
@@ -442,10 +442,11 @@ connect().then(async () => {
 
     if (!isOCommand) return;
 
-    if (!OKG_PREFIX_ALLOWED_USER_IDS.has(message.author.id)) {
-      await message.reply({ content: OKG_PREFIX_DENIAL });
-      return;
-    }
+    // !o is a prefix alias, not a blanket staff allowlist. Let the command's
+    // own permission wrapper decide whether this member may run that action.
+    // The trusted allowlist only marks explicitly trusted accounts for the
+    // existing owner/staff bypass; ordinary moderators must pass role_permissions.
+    const isTrustedPrefixUser = OKG_PREFIX_ALLOWED_USER_IDS.has(message.author.id);
 
     const requestedCommand = trimmedContent.slice(commandPrefix.length).trimStart();
     if (!requestedCommand) {
@@ -455,7 +456,7 @@ connect().then(async () => {
 
     const copiedMessage = Object.create(message);
     copiedMessage.content = `${prefix}${requestedCommand}`;
-    copiedMessage.__okgAuthorizedOCommand = true;
+    if (isTrustedPrefixUser) copiedMessage.__okgAuthorizedOCommand = true;
 
     try {
       await bot.dispatchMessageCommands(copiedMessage);
