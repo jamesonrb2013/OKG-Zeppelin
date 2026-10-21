@@ -14,7 +14,7 @@ const opts = [
 ];
 
 export const MassUnbanSlashCmd = modActionsSlashCmd({
-  name: "massunban",
+  name: "admin-massunban",
   configPermission: "can_massunban",
   description: "Mass-unban a list of user IDs",
   allowDms: false,
