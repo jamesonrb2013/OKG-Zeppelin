@@ -15,6 +15,8 @@ jobs:
         run: pnpm run lint
       - name: Check formatting
         run: pnpm run format:check
+      - name: Build shared types
+        run: pnpm --filter @zeppelinbot/shared run build
       - name: Type-check backend
         run: pnpm --filter @zeppelinbot/backend run typecheck
       - name: Type-check dashboard
