@@ -6,7 +6,7 @@ import { actualDeleteCaseCmd } from "./actualDeleteCaseCmd.js";
 const opts = [slashOptions.boolean({ name: "force", description: "Whether or not to force delete", required: false })];
 
 export const DeleteCaseSlashCmd = modActionsSlashCmd({
-  name: "deletecase",
+  name: "admin-deletecase",
   configPermission: "can_deletecase",
   description: "Delete the specified case. This operation can *not* be reversed.",
   allowDms: false,
