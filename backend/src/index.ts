@@ -61,7 +61,7 @@ import {
 } from "./slashCommands/announce.js";
 import { permissionLevelCommand, handlePermissionLevelCommand } from "./slashCommands/permissionLevel.js";
 
-const BOT_VERSION = "1.1.197";
+const BOT_VERSION = "1.1.199";
 
 // Error handling
 let recentPluginErrors = 0;
@@ -420,12 +420,33 @@ connect().then(async () => {
     "1528924568020844655",
   ]);
 
-  const OKG_PREFIX_DENIAL =
-    "❌You have been denied by <@1540731259544666132> , you do not have permission to use [!o {command}]";
+  const OKG_PREFIX_COMMAND_PERMISSIONS: Record<string, string> = {
+    warn: "can_warn",
+    mute: "can_mute",
+    unmute: "can_mute",
+    ban: "can_ban",
+    tempban: "can_ban",
+    forceban: "can_massban",
+    kick: "can_kick",
+    unban: "can_unban",
+    note: "can_note",
+    addcase: "can_addcase",
+    massban: "can_massban",
+    massmute: "can_massmute",
+    massunban: "can_massunban",
+    hidecase: "can_hidecase",
+    unhidecase: "can_hidecase",
+    deletecase: "can_deletecase",
+    case: "can_view",
+    cases: "can_view",
+  };
 
-  // Handle !o centrally, independently of the optional CommandAliases plugin.
-  // This turns "!o ban @user reason" into "!ban @user reason" and sends it through
-  // Vety's normal message-command dispatcher.
+  const OKG_PREFIX_DENIAL =
+    "❌ You don't have permission to use that !o command.";
+
+  // Handle !o centrally so it works even when the optional CommandAliases plugin is disabled.
+  // Authorization is checked before dispatch; only explicitly granted role_permissions can
+  // authorize ordinary members. Trusted owner/staff accounts retain the intended bypass.
   client.on(Events.MessageCreate, async (message) => {
     if (!message.guild || !message.content || message.author.bot || message.webhookId) return;
 
@@ -438,15 +459,9 @@ connect().then(async () => {
     const isOCommand =
       trimmedContent.slice(0, commandPrefix.length).toLowerCase() === commandPrefix.toLowerCase() &&
       (trimmedContent.length === commandPrefix.length ||
-        /\s/.test(trimmedContent.charAt(commandPrefix.length)));
+        /\\s/.test(trimmedContent.charAt(commandPrefix.length)));
 
     if (!isOCommand) return;
-
-    // !o is a prefix alias, not a blanket staff allowlist. Let the command's
-    // own permission wrapper decide whether this member may run that action.
-    // The trusted allowlist only marks explicitly trusted accounts for the
-    // existing owner/staff bypass; ordinary moderators must pass role_permissions.
-    const isTrustedPrefixUser = OKG_PREFIX_ALLOWED_USER_IDS.has(message.author.id);
 
     const requestedCommand = trimmedContent.slice(commandPrefix.length).trimStart();
     if (!requestedCommand) {
@@ -454,9 +469,43 @@ connect().then(async () => {
       return;
     }
 
+    const commandName = requestedCommand.split(/\\s+/, 1)[0].toLowerCase();
+    const isTrustedPrefixUser = OKG_PREFIX_ALLOWED_USER_IDS.has(message.author.id);
+    let authorized = isTrustedPrefixUser;
+
+    // Read-only help is available to everyone; moderation actions require an explicit grant.
+    if (!authorized && ["help", "commands"].includes(commandName)) {
+      await message.reply({ content: "Available prefix format: !o <command> [arguments]. Moderation commands require their matching role_permissions grant." });
+      return;
+    }
+
+    if (!authorized) {
+      const permission = OKG_PREFIX_COMMAND_PERMISSIONS[commandName];
+      const rolePermissions =
+        (guildData as any).config?.role_permissions ??
+        (guildData as any).fullConfig?.role_permissions;
+
+      if (permission && rolePermissions && typeof rolePermissions === "object") {
+        const member = message.member ?? (await message.guild.members.fetch(message.author.id).catch(() => null));
+        if (member) {
+          authorized = member.roles.cache.some((role) => {
+            const grants = rolePermissions[role.id];
+            return Array.isArray(grants) && (grants.includes("*") || grants.includes(permission));
+          });
+        }
+      }
+    }
+
+    if (!authorized) {
+      await message.reply({ content: OKG_PREFIX_DENIAL });
+      return;
+    }
+
+    // Mark only after the central authorization check succeeds. The command wrapper
+    // consumes this flag because plugin config context differs across message dispatch.
     const copiedMessage = Object.create(message);
     copiedMessage.content = `${prefix}${requestedCommand}`;
-    if (isTrustedPrefixUser) copiedMessage.__okgAuthorizedOCommand = true;
+    copiedMessage.__okgAuthorizedOCommand = true;
 
     try {
       await bot.dispatchMessageCommands(copiedMessage);
