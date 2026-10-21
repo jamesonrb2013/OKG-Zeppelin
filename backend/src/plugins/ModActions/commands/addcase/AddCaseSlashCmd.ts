@@ -18,7 +18,7 @@ const opts = [
 ];
 
 export const AddCaseSlashCmd = modActionsSlashCmd({
-  name: "addcase",
+  name: "manage-addcase",
   configPermission: "can_addcase",
   description: "Add an arbitrary case to the specified user without taking any action",
   allowDms: false,
