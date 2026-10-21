@@ -438,7 +438,7 @@ connect().then(async () => {
     const isOCommand =
       trimmedContent.slice(0, commandPrefix.length).toLowerCase() === commandPrefix.toLowerCase() &&
       (trimmedContent.length === commandPrefix.length ||
-        /\\s/.test(trimmedContent.charAt(commandPrefix.length)));
+        /\s/.test(trimmedContent.charAt(commandPrefix.length)));
 
     if (!isOCommand) return;
 
