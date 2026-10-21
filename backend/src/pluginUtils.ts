@@ -67,9 +67,10 @@ export async function hasExplicitRolePermission(
   const rolePermissions = (pluginData as any).fullConfig?.role_permissions as
     | Record<string, string[]>
     | undefined;
-  if (!rolePermissions || Object.keys(rolePermissions).length === 0 || !pluginData.guild) return false;
+  const guild = (pluginData as any).guild;
+  if (!rolePermissions || Object.keys(rolePermissions).length === 0 || !guild) return false;
 
-  const member = await pluginData.guild.members.fetch(memberId).catch(() => null);
+  const member = await guild.members.fetch(memberId).catch(() => null);
   if (!member) return false;
 
   return member.roles.cache.some((role) => {
