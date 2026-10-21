@@ -19,6 +19,7 @@ import { Case } from "../../data/entities/Case.js";
 import { UserNotificationMethod, UserNotificationResult } from "../../utils.js";
 import { CaseArgs } from "../Cases/types.js";
 import { CommonPlugin } from "../Common/CommonPlugin.js";
+import { hasExplicitRolePermission } from "../../pluginUtils.js";
 
 export type AttachmentLinkReactionType = "none" | "warn" | "restrict" | null;
 
@@ -186,15 +187,7 @@ export const modActionsMsgCmd: any = (definition: any) => {
     async run(context: any) {
       if (permission) {
         const { message, pluginData } = context;
-        const rolePermissions = (pluginData.fullConfig as any)?.role_permissions as
-          | Record<string, string[]>
-          | undefined;
-        const member = message.member ?? (await message.guild.members.fetch(message.author.id).catch(() => null));
-        const roleIds: string[] = member ? Array.from(member.roles.cache.keys()) : [];
-        const allowed = roleIds.some((roleId) => {
-          const grants = rolePermissions?.[roleId];
-          return Array.isArray(grants) && (grants.includes("*") || grants.includes(permission));
-        });
+        const allowed = await hasExplicitRolePermission(pluginData, message.author.id, permission);
 
         if (!allowed) {
           await message.reply({ content: "You don\u0027t have permission to use !o " + (definition.trigger ?? "this command") + "." });
@@ -217,15 +210,7 @@ export const modActionsSlashCmd: any = (definition: any) => {
     async run(context: any) {
       if (permission) {
         const { interaction, pluginData } = context;
-        const rolePermissions = (pluginData.fullConfig as any)?.role_permissions as
-          | Record<string, string[]>
-          | undefined;
-        const guildMember = await pluginData.guild.members.fetch(interaction.user.id).catch(() => null);
-        const roleIds: string[] = guildMember ? Array.from(guildMember.roles.cache.keys()) : [];
-        const allowed = roleIds.some((roleId) => {
-          const grants = rolePermissions?.[roleId];
-          return Array.isArray(grants) && (grants.includes("*") || grants.includes(permission));
-        });
+        const allowed = await hasExplicitRolePermission(pluginData, interaction.user.id, permission);
 
         if (!allowed) {
           await interaction.reply({
