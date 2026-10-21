@@ -443,9 +443,12 @@ connect().then(async () => {
   // Announce each deployed version once. Checking recent bot messages prevents
   // duplicate announcements on ordinary restarts.
   try {
-    const releaseChannel = await client.channels.fetch("1562496808838631556");
-    if (!releaseChannel || !("send" in releaseChannel) || !("messages" in releaseChannel)) {
-      logger.warn("Release announcement channel 1562496808838631556 is unavailable or cannot receive messages");
+    // Discord announcement channels are text-based channels too. Type the
+    // fetched channel as TextChannel for the shared send/messages API; this is
+    // only a TypeScript compatibility cast and does not restrict runtime types.
+    const releaseChannel = (await client.channels.fetch("1562496808838631556")) as TextChannel | null;
+    if (!releaseChannel) {
+      logger.warn("Release announcement channel 1562496808838631556 is unavailable");
     } else {
       const recentMessages = await releaseChannel.messages.fetch({ limit: 100 });
       const alreadyAnnounced = recentMessages.some(
