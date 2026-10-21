@@ -57,7 +57,7 @@ import { enableProfiling } from "./utils/easyProfiler.js";
 import { loadYamlSafely } from "./utils/loadYamlSafely.js";
 import { announceCommand, handleAnnounceCommand } from "./slashCommands/announce.js";
 import { permissionLevelCommand, handlePermissionLevelCommand } from "./slashCommands/permissionLevel.js";
-import { handleSupportInteraction, handleSupportPanelCommand, supportPanelCommand } from "./slashCommands/support.js";
+import { handleSupportInteraction, handleSupportModal, handleSupportPanelCommand, supportPanelCommand } from "./slashCommands/support.js";
 
 const BOT_VERSION = "1.3.1";
 
@@ -574,6 +574,21 @@ Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
   });
 
   client.on(Events.InteractionCreate, async (interaction) => {
+    if (interaction.isModalSubmit() && interaction.customId === "okg_support:create_modal") {
+      if (!interaction.guildId) return;
+      const configRow = await guildConfigs.getActiveByKey(`guild-${interaction.guildId}`);
+      let config: unknown = {};
+      if (configRow) {
+        try {
+          config = loadYamlSafely(configRow.config);
+        } catch (error) {
+          logger.error(`Failed to load guild config for support ticket form: ${error}`);
+        }
+      }
+      await handleSupportModal(interaction, config);
+      return;
+    }
+
     if (interaction.isButton() && interaction.customId.startsWith("okg_support:")) {
       if (!interaction.guildId) return;
       const configRow = await guildConfigs.getActiveByKey(`guild-${interaction.guildId}`);
