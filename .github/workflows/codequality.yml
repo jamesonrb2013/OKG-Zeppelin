@@ -19,5 +19,5 @@ jobs:
         run: pnpm --filter @zeppelinbot/shared run build
       - name: Type-check backend
         run: pnpm --filter @zeppelinbot/backend run typecheck
-      - name: Type-check dashboard
-        run: pnpm --filter @zeppelinbot/dashboard run typecheck
+      - name: Build dashboard
+        run: pnpm --filter @zeppelinbot/dashboard run build
