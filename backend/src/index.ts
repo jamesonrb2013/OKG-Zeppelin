@@ -59,7 +59,7 @@ import { announceCommand, handleAnnounceCommand } from "./slashCommands/announce
 import { permissionLevelCommand, handlePermissionLevelCommand } from "./slashCommands/permissionLevel.js";
 import { handleSupportInteraction, handleSupportModal, handleSupportPanelCommand, supportPanelCommand } from "./slashCommands/support.js";
 
-const BOT_VERSION = "1.3.1";
+const BOT_VERSION = "1.3.2";
 
 // Error handling
 let recentPluginErrors = 0;
@@ -457,7 +457,9 @@ connect().then(async () => {
 
 - Finalized the existing moderation commands under exactly one name per tier: /mod-* for moderator+, /manage-* for management, and /admin-* for admin-only actions.
 - Removed obsolete unprefixed and incorrectly tier-prefixed moderation slash commands from global and guild registrations.
-- Added native OKG Support tickets with private channels, staff claiming, close/reopen/delete controls, ticket limits, custom panel and welcome text, and optional transcript logging.
+- Upgraded native OKG Support with private tickets, staff claim/unclaim, close/reopen/delete controls, per-user open-ticket limits, and configurable panel/welcome text.
+- Added a required ticket intake form for a subject and detailed issue description before creating a ticket.
+- Expanded ticket transcripts to paginate through up to 5,000 messages and include author IDs, attachment URLs, and embed summaries.
 - Added OKG Manager Features → Support settings and the /support-panel command to publish the configured ticket panel.
 - Applied the requested tiers: management for addcase, ban, kick, note, unban, unhidecase, and update; admin for deletecase, forceban, forcemute, forceunmute, massban, massmute, and massunban; moderator+ for case, cases, hidecase, mute, unmute, warn, and permission-level.
 - Updated slash-command permission errors to show each command's actual new name.
