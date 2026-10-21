@@ -59,8 +59,9 @@ import {
   announceCommand,
   handleAnnounceCommand,
 } from "./slashCommands/announce.js";
+import { permissionLevelCommand, handlePermissionLevelCommand } from "./slashCommands/permissionLevel.js";
 
-const BOT_VERSION = "1.1.101";
+const BOT_VERSION = "1.1.102";
 
 // Error handling
 let recentPluginErrors = 0;
@@ -422,8 +423,10 @@ connect().then(async () => {
   try {
     await client.application?.commands.create(announceCommand.toJSON(), "1488682722606977175");
 await client.application?.commands.create(announceCommand.toJSON(), "1545654977916043294");
+    await client.application?.commands.create(permissionLevelCommand.toJSON(), "1488682722606977175");
+    await client.application?.commands.create(permissionLevelCommand.toJSON(), "1545654977916043294");
 
-    logger.info("Registered /announce slash command");
+    logger.info("Registered /announce and /permission-level slash commands");
   } catch (error) {
     logger.error(`Failed to register /announce slash command: ${error}`);
   }
@@ -436,6 +439,20 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
   if (interaction.commandName === "announce") {
     await handleAnnounceCommand(interaction);
+    return;
+  }
+
+  if (interaction.commandName === "permission-level") {
+    const configRow = await guildConfigs.getActiveByKey(`guild-${interaction.guildId}`);
+    let config: unknown = {};
+    if (configRow) {
+      try {
+        config = loadYamlSafely(configRow.config);
+      } catch (error) {
+        logger.error(`Failed to load guild config for /permission-level: ${error}`);
+      }
+    }
+    await handlePermissionLevelCommand(interaction, config);
   }
 });
 
