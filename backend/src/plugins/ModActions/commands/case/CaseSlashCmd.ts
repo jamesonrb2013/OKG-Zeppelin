@@ -7,7 +7,7 @@ const opts = [
 ];
 
 export const CaseSlashCmd = modActionsSlashCmd({
-  name: "case",
+  name: "mod-case",
   configPermission: "can_view",
   description: "Show information about a specific case",
   allowDms: false,
