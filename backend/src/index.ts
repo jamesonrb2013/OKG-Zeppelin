@@ -61,7 +61,7 @@ import {
 } from "./slashCommands/announce.js";
 import { permissionLevelCommand, handlePermissionLevelCommand } from "./slashCommands/permissionLevel.js";
 
-const BOT_VERSION = "1.2.99";
+const BOT_VERSION = "1.3.0";
 
 // Error handling
 let recentPluginErrors = 0;
@@ -460,7 +460,8 @@ connect().then(async () => {
         await announcementChannel.send({
           content: `## Version ${BOT_VERSION}
 
-- Renamed the existing moderation slash commands by staff tier without adding duplicate commands: /mod-* for moderator+, /manage-* for management, and /admin-* for admin-only actions.
+- Finalized the existing moderation commands under exactly one name per tier: /mod-* for moderator+, /manage-* for management, and /admin-* for admin-only actions.
+- Removed obsolete unprefixed and incorrectly tier-prefixed moderation slash commands from global and guild registrations.
 - Applied the requested tiers: management for addcase, ban, kick, note, unban, unhidecase, and update; admin for deletecase, forceban, forcemute, forceunmute, massban, massmute, and massunban; moderator+ for case, cases, hidecase, mute, unmute, warn, and permission-level.
 - Updated slash-command permission errors to show each command's actual new name.
 - Restricted \x60/permission-level\x60 to members granted moderator case-view permission (or *).
@@ -477,6 +478,38 @@ Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
     }
   } catch (error) {
     logger.error(`Failed to post release announcement for version ${BOT_VERSION}: ${error}`);
+  }
+
+  try {
+    // Remove obsolete moderation command names left behind by Discord's additive
+    // command registration. Only the tier-prefixed names in the current source remain.
+    const obsoleteModerationCommandNames = new Set([
+      "addcase", "ban", "kick", "note", "unban", "unhidecase", "update",
+      "deletecase", "forceban", "forcemute", "forceunmute", "massban", "massmute", "massunban",
+      "case", "cases", "hidecase", "mute", "unmute", "warn", "permission-level",
+      "mod-addcase", "mod-ban", "mod-kick", "mod-note", "mod-unban", "mod-unhidecase", "mod-update",
+      "mod-deletecase", "mod-forceban", "mod-forcemute", "mod-forceunmute",
+      "mod-massban", "mod-massmute", "mod-massunban",
+    ]);
+    const globalCommands = await client.application!.commands.fetch();
+    for (const registered of globalCommands.values()) {
+      if (obsoleteModerationCommandNames.has(registered.name)) {
+        await client.application!.commands.delete(registered.id);
+        logger.info(`Removed obsolete global slash command /${registered.name}`);
+      }
+    }
+
+    for (const guild of client.guilds.cache.values()) {
+      const guildCommands = await client.application!.commands.fetch({ guildId: guild.id });
+      for (const registered of guildCommands.values()) {
+        if (obsoleteModerationCommandNames.has(registered.name)) {
+          await client.application!.commands.delete(registered.id, guild.id);
+          logger.info(`Removed obsolete slash command /${registered.name} from guild ${guild.id}`);
+        }
+      }
+    }
+  } catch (error) {
+    logger.error(`Failed to clean up obsolete moderation slash commands: ${error}`);
   }
 
   try {
