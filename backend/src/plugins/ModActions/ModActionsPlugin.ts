@@ -79,32 +79,6 @@ export const ModActionsPlugin = guildPlugin<ModActionsPluginType>()({
 
   dependencies: () => [TimeAndDatePlugin, CasesPlugin, MutesPlugin, LogsPlugin],
   configSchema: zModActionsConfig,
-  defaultOverrides: [
-    {
-      level: ">=50",
-      config: {
-        can_note: true,
-        can_warn: true,
-        can_mute: true,
-        can_kick: true,
-        can_ban: true,
-        can_unban: true,
-        can_view: true,
-        can_addcase: true,
-      },
-    },
-    {
-      level: ">=100",
-      config: {
-        can_massunban: true,
-        can_massban: true,
-        can_massmute: true,
-        can_hidecase: true,
-        can_act_as_other: true,
-      },
-    },
-  ],
-
   events: [CreateBanCaseOnManualBanEvt, CreateUnbanCaseOnManualUnbanEvt, PostAlertOnMemberJoinEvt, AuditLogEvents],
 
   slashCommands: [
