@@ -7,7 +7,6 @@ import {
   ChannelType,
   ChatInputCommandInteraction,
   EmbedBuilder,
-  Guild,
   GuildMember,
   PermissionFlagsBits,
   SlashCommandBuilder,
