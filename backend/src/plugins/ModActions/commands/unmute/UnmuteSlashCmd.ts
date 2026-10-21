@@ -21,7 +21,7 @@ const opts = [
 ];
 
 export const UnmuteSlashCmd = modActionsSlashCmd({
-  name: "unmute",
+  name: "mod-unmute",
   configPermission: "can_mute",
   description: "Unmute the specified member",
   allowDms: false,
