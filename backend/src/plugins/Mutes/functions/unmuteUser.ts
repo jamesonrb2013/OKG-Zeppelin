@@ -2,7 +2,6 @@ import { Snowflake } from "discord.js";
 import { GuildPluginData } from "vety";
 import { CaseTypes } from "../../../data/CaseTypes.js";
 import { AddMuteParams } from "../../../data/GuildMutes.js";
-import { MuteTypes } from "../../../data/MuteTypes.js";
 import { Mute } from "../../../data/entities/Mute.js";
 import { humanizeDuration } from "../../../humanizeDuration.js";
 import { noop, resolveMember, resolveUser } from "../../../utils.js";
@@ -34,7 +33,6 @@ export async function unmuteUser(
     // Schedule timed unmute (= just update the mute's duration)
     const muteExpiresAt = Date.now() + unmuteTime;
     const timeoutExpiresAt = getTimeoutExpiryTime(muteExpiresAt);
-    let createdMute: Mute | null = null;
 
     if (!existingMute) {
       const MuteType = getDefaultMuteType(pluginData);
@@ -50,7 +48,7 @@ if (muteRole) {
 }
 
 muteParams.timeoutExpiresAt = timeoutExpiresAt;
-      createdMute = await pluginData.state.mutes.addMute(muteParams);
+      await pluginData.state.mutes.addMute(muteParams);
     } else {
       await pluginData.state.mutes.updateExpiryTime(userId, unmuteTime);
     }
