@@ -17,6 +17,24 @@ export async function handlePermissionLevelCommand(interaction: ChatInputCommand
     return;
   }
 
+  const root = config && typeof config === "object"
+    ? config as { role_levels?: Record<string, number>; role_permissions?: Record<string, string[]> }
+    : {};
+  const rolePermissions = root.role_permissions ?? {};
+  const invokingMember = await interaction.guild.members.fetch(interaction.user.id).catch(() => null);
+  const canUseCommand = invokingMember?.roles.cache.some((role) => {
+    const grants = rolePermissions[role.id];
+    return Array.isArray(grants) && (grants.includes("*") || grants.includes("can_view"));
+  });
+
+  if (!canUseCommand) {
+    await interaction.reply({
+      content: "You need moderator-level case viewing permission to use /permission-level.",
+      ephemeral: true,
+    });
+    return;
+  }
+
   const targetUser = interaction.options.getUser("user") ?? interaction.user;
   const target = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
   if (!target) {
@@ -24,11 +42,7 @@ export async function handlePermissionLevelCommand(interaction: ChatInputCommand
     return;
   }
 
-  const root = config && typeof config === "object"
-    ? config as { role_levels?: Record<string, number>; role_permissions?: Record<string, string[]> }
-    : {};
   const roleLevels = root.role_levels ?? {};
-  const rolePermissions = root.role_permissions ?? {};
   const hasConfiguredLevels = Object.keys(roleLevels).length > 0;
   const memberLevel = target.roles.cache.reduce((highest, role) => {
     const level = roleLevels[role.id];
