@@ -61,7 +61,7 @@ import {
 } from "./slashCommands/announce.js";
 import { permissionLevelCommand, handlePermissionLevelCommand } from "./slashCommands/permissionLevel.js";
 
-const BOT_VERSION = "1.1.105";;
+const BOT_VERSION = "1.1.187";
 
 // Error handling
 let recentPluginErrors = 0;
