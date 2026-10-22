@@ -68,7 +68,7 @@ export function initInviteCodesAPI(router: express.Router) {
     const code = String(req.body?.code || "")
       .trim()
       .toUpperCase()
-      .replace(/\\s/g, "");
+      .replace(/\s/g, "");
     if (!CODE_PATTERN.test(code)) {
       return res.status(400).json({ error: "That invitation code is invalid, expired, revoked, or has no uses left." });
     }
