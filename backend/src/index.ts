@@ -71,7 +71,7 @@ import {
   updatesSetupCommand,
 } from "./slashCommands/updates.js";
 
-const BOT_VERSION = "1.3.4";
+const BOT_VERSION = "1.3.5";
 
 // Error handling
 let recentPluginErrors = 0;
@@ -518,7 +518,6 @@ Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
 
     try {
       // Remove obsolete moderation command names left behind by Discord's additive
-      // command registration. Only the tier-prefixed names in the current source remain.
       const obsoleteModerationCommandNames = new Set([
         "addcase",
         "ban",
@@ -556,28 +555,7 @@ Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
         "mod-massmute",
         "mod-massunban",
       ]);
-      const globalCommands = await client.application!.commands.fetch();
-      for (const registered of globalCommands.values()) {
-        if (obsoleteModerationCommandNames.has(registered.name)) {
-          await client.application!.commands.delete(registered.id);
-          logger.info(`Removed obsolete global slash command /${registered.name}`);
-        }
-      }
 
-      for (const guild of client.guilds.cache.values()) {
-        const guildCommands = await client.application!.commands.fetch({ guildId: guild.id });
-        for (const registered of guildCommands.values()) {
-          if (obsoleteModerationCommandNames.has(registered.name)) {
-            await client.application!.commands.delete(registered.id, guild.id);
-            logger.info(`Removed obsolete slash command /${registered.name} from guild ${guild.id}`);
-          }
-        }
-      }
-    } catch (error) {
-      logger.error(`Failed to clean up obsolete moderation slash commands: ${error}`);
-    }
-
-    try {
       const commandsToRegister = [
         announceCommand,
         permissionLevelCommand,
@@ -585,37 +563,56 @@ Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
         updatesSetupCommand,
         updatesConfigCommand,
       ];
+      const managedCommandNames = new Set([
+        ...obsoleteModerationCommandNames,
+        ...commandsToRegister.map((command) => command.name),
+      ]);
 
-      // Register globally so the commands are available in every server where
-      // the bot is installed, not only in two hard-coded guild IDs.
-      for (const command of commandsToRegister) {
+      // Remove obsolete global moderation aliases and duplicate guild-scoped
+      // copies. Discord shows global and guild commands with the same name twice.
+      try {
         const globalCommands = await client.application!.commands.fetch();
-        const existingGlobal = globalCommands.find((registered) => registered.name === command.name);
-        if (existingGlobal) {
-          await client.application!.commands.edit(existingGlobal.id, command.toJSON());
-        } else {
-          await client.application!.commands.create(command.toJSON());
-        }
-      }
-
-      // Also register guild-scoped copies for immediate visibility in every
-      // server the bot currently belongs to.
-      for (const guild of client.guilds.cache.values()) {
-        for (const command of commandsToRegister) {
-          const guildCommands = await client.application!.commands.fetch({ guildId: guild.id });
-          const existingGuild = guildCommands.find((registered) => registered.name === command.name);
-          if (existingGuild) {
-            await client.application!.commands.edit(existingGuild.id, command.toJSON(), guild.id);
-          } else {
-            await client.application!.commands.create(command.toJSON(), guild.id);
+        for (const registered of globalCommands.values()) {
+          if (obsoleteModerationCommandNames.has(registered.name)) {
+            await client.application!.commands.delete(registered.id);
+            logger.info(\`Removed obsolete global slash command /\${registered.name}\`);
           }
         }
+
+        for (const guild of client.guilds.cache.values()) {
+          const guildCommands = await client.application!.commands.fetch({ guildId: guild.id });
+          for (const registered of guildCommands.values()) {
+            if (managedCommandNames.has(registered.name)) {
+              await client.application!.commands.delete(registered.id, guild.id);
+              logger.info(
+                \`Removed duplicate/obsolete guild slash command /\${registered.name} from guild \${guild.id}\`,
+              );
+            }
+          }
+        }
+      } catch (error) {
+        logger.error(\`Failed to clean up duplicate/obsolete slash commands: \${error}\`);
       }
 
-      logger.info("Registered /announce, /mod-permission-level, /support-panel, /updates-setup, and /updates-config globally and in joined servers");
-    } catch (error) {
-      logger.error(`Failed to register slash commands: ${error}`);
-    }
+      try {
+        // Register these commands globally only. Do not create guild-scoped
+        // copies, which appear beside the global commands as duplicates.
+        for (const command of commandsToRegister) {
+          const globalCommands = await client.application!.commands.fetch();
+          const existingGlobal = globalCommands.find((registered) => registered.name === command.name);
+          if (existingGlobal) {
+            await client.application!.commands.edit(existingGlobal.id, command.toJSON());
+          } else {
+            await client.application!.commands.create(command.toJSON());
+          }
+        }
+
+        logger.info(
+          "Registered /announce, /mod-permission-level, /support-panel, /updates-setup, and /updates-config globally (one copy each)",
+        );
+      } catch (error) {
+        logger.error(\`Failed to register slash commands: \${error}\`);
+      }
   });
 
   client.on(Events.InteractionCreate, async (interaction) => {
