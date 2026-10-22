@@ -23,7 +23,7 @@ function validStaff(req: Request, res: Response) {
 }
 
 export function initInviteCodesAPI(router: express.Router) {
-  void dataSource.query(`
+  const tableReady = dataSource.query(`
     CREATE TABLE IF NOT EXISTS okg_manager_invite_codes (
       id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
       code_hash CHAR(64) NOT NULL UNIQUE,
@@ -39,9 +39,11 @@ export function initInviteCodesAPI(router: express.Router) {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `).catch((error) => {
     console.error("Failed to initialize OKG invite-code table:", error);
+    throw error;
   });
 
   router.post("/invite-codes/redeem", async (req: Request, res: Response) => {
+    await tableReady;
     const key = String(req.ip || req.socket.remoteAddress || "unknown");
     const now = Date.now();
     const entry = attempts.get(key);
@@ -76,6 +78,7 @@ export function initInviteCodesAPI(router: express.Router) {
   const adminRouter = express.Router();
   adminRouter.use(...apiTokenAuthHandlers());
   adminRouter.get("/", async (req: Request, res: Response) => {
+    await tableReady;
     if (!validStaff(req, res)) return;
     const codes = await dataSource.query(
       "SELECT id, code_hint AS codeHint, max_uses AS maxUses, used_count AS usedCount, expires_at AS expiresAt, revoked_at AS revokedAt, last_used_at AS lastUsedAt, created_at AS createdAt FROM okg_manager_invite_codes ORDER BY created_at DESC LIMIT 100",
@@ -83,6 +86,7 @@ export function initInviteCodesAPI(router: express.Router) {
     return res.json({ codes });
   });
   adminRouter.post("/", async (req: Request, res: Response) => {
+    await tableReady;
     if (!validStaff(req, res)) return;
     const maxUses = Number(req.body?.maxUses ?? 1);
     const expiresInDays = Number(req.body?.expiresInDays ?? 30);
@@ -110,6 +114,7 @@ export function initInviteCodesAPI(router: express.Router) {
     });
   });
   adminRouter.post("/:id/revoke", async (req: Request, res: Response) => {
+    await tableReady;
     if (!validStaff(req, res)) return;
     const id = Number(req.params.id);
     if (!Number.isSafeInteger(id) || id < 1) return res.status(400).json({ error: "Invalid invite code." });
