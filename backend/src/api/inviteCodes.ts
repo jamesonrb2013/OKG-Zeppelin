@@ -23,7 +23,8 @@ function validStaff(req: Request, res: Response) {
 }
 
 export function initInviteCodesAPI(router: express.Router) {
-  const tableReady = dataSource.query(`
+  const tableReady = dataSource
+    .query(`
     CREATE TABLE IF NOT EXISTS okg_manager_invite_codes (
       id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
       code_hash CHAR(64) NOT NULL UNIQUE,
@@ -37,10 +38,11 @@ export function initInviteCodesAPI(router: express.Router) {
       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       INDEX idx_okg_invite_active (revoked_at, expires_at)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-  `).catch((error) => {
-    console.error("Failed to initialize OKG invite-code table:", error);
-    throw error;
-  });
+  `)
+    .catch((error) => {
+      console.error("Failed to initialize OKG invite-code table:", error);
+      throw error;
+    });
 
   router.post("/invite-codes/redeem", async (req: Request, res: Response) => {
     await tableReady;
@@ -53,14 +55,19 @@ export function initInviteCodesAPI(router: express.Router) {
     if (!entry || entry.resetAt <= now) attempts.set(key, { count: 1, resetAt: now + 15 * 60 * 1000 });
     else entry.count += 1;
 
-    const code = String(req.body?.code || "").trim().toUpperCase().replace(/\s/g, "");
+    const code = String(req.body?.code || "")
+      .trim()
+      .toUpperCase()
+      .replace(/\s/g, "");
     if (!CODE_PATTERN.test(code)) {
       return res.status(400).json({ error: "That invitation code is invalid, expired, revoked, or has no uses left." });
     }
 
     const installUrl = process.env.OKG_MANAGER_INSTALL_URL;
     if (!installUrl || !installUrl.startsWith("https://discord.com/oauth2/authorize?")) {
-      return res.status(503).json({ error: "Invitations are not ready for installation yet. Please try again after OKG finishes setup." });
+      return res
+        .status(503)
+        .json({ error: "Invitations are not ready for installation yet. Please try again after OKG finishes setup." });
     }
 
     const codeHash = crypto.createHash("sha256").update(code).digest("hex");
