@@ -9,6 +9,9 @@
         <router-link to="/dashboard">
           <h1 class="font-semibold">Zeppelin Dashboard</h1>
         </router-link>
+        <router-link to="/dashboard/invites" class="ml-4 rounded bg-indigo-700 hover:bg-indigo-600 px-3 py-1.5 text-sm">
+          Invite codes
+        </router-link>
       </div>
 
       <div class="flex-1 flex items-center flex-wrap">
