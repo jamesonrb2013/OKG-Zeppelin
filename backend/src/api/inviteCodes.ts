@@ -29,7 +29,6 @@ export function initInviteCodesAPI(router: express.Router) {
       id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
       code_hash CHAR(64) NOT NULL UNIQUE,
       code_hint VARCHAR(24) NOT NULL,
-      target_guild_id VARCHAR(32) NOT NULL DEFAULT '1488682722606977175',
       created_by VARCHAR(32) NOT NULL,
       max_uses INT UNSIGNED NOT NULL DEFAULT 1,
       used_count INT UNSIGNED NOT NULL DEFAULT 0,
@@ -40,21 +39,20 @@ export function initInviteCodesAPI(router: express.Router) {
       INDEX idx_okg_invite_active (revoked_at, expires_at)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `)
-    .then(async () => {
-      // Existing installs may have created this table before server IDs were added.
-      try {
-        await dataSource.query(
-          "ALTER TABLE okg_manager_invite_codes ADD COLUMN target_guild_id VARCHAR(32) NOT NULL DEFAULT '1488682722606977175'",
-        );
-      } catch (error) {
-        const dbError = error as { code?: string; message?: string };
-        if (dbError.code !== "ER_DUP_FIELDNAME" && !dbError.message?.includes("Duplicate column name")) {
-          throw error;
-        }
-      }
-    })
+    .then(() =>
+      // Keep per-invitation server targets in a separate table so existing installs
+      // upgrade without schema-alter permissions or downtime.
+      dataSource.query(`
+        CREATE TABLE IF NOT EXISTS okg_manager_invite_targets (
+          code_hash CHAR(64) NOT NULL PRIMARY KEY,
+          target_guild_id VARCHAR(32) NOT NULL,
+          created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_okg_invite_target_guild (target_guild_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `),
+    )
     .catch((error) => {
-      console.error("Failed to initialize OKG invite-code table:", error);
+      console.error("Failed to initialize OKG invite-code tables:", error);
       throw error;
     });
 
@@ -79,7 +77,7 @@ export function initInviteCodesAPI(router: express.Router) {
 
     const codeHash = crypto.createHash("sha256").update(code).digest("hex");
     const matches = await dataSource.query(
-      "SELECT target_guild_id AS targetGuildId FROM okg_manager_invite_codes WHERE code_hash = ? AND revoked_at IS NULL AND used_count < max_uses AND (expires_at IS NULL OR expires_at > NOW()) LIMIT 1",
+      "SELECT targets.target_guild_id AS targetGuildId FROM okg_manager_invite_codes codes INNER JOIN okg_manager_invite_targets targets ON targets.code_hash = codes.code_hash WHERE codes.code_hash = ? AND codes.revoked_at IS NULL AND codes.used_count < codes.max_uses AND (codes.expires_at IS NULL OR codes.expires_at > NOW()) LIMIT 1",
       [codeHash],
     );
     const targetGuildId = String(matches?.[0]?.targetGuildId || "");
@@ -130,7 +128,7 @@ export function initInviteCodesAPI(router: express.Router) {
     await tableReady;
     if (!validStaff(req, res)) return;
     const codes = await dataSource.query(
-      "SELECT id, code_hint AS codeHint, target_guild_id AS targetGuildId, max_uses AS maxUses, used_count AS usedCount, expires_at AS expiresAt, revoked_at AS revokedAt, last_used_at AS lastUsedAt, created_at AS createdAt FROM okg_manager_invite_codes ORDER BY created_at DESC LIMIT 100",
+      "SELECT codes.id, codes.code_hint AS codeHint, targets.target_guild_id AS targetGuildId, codes.max_uses AS maxUses, codes.used_count AS usedCount, codes.expires_at AS expiresAt, codes.revoked_at AS revokedAt, codes.last_used_at AS lastUsedAt, codes.created_at AS createdAt FROM okg_manager_invite_codes codes LEFT JOIN okg_manager_invite_targets targets ON targets.code_hash = codes.code_hash ORDER BY codes.created_at DESC LIMIT 100",
     );
     return res.json({ codes });
   });
@@ -155,8 +153,12 @@ export function initInviteCodesAPI(router: express.Router) {
     const codeHint = `${code.slice(0, 8)}…${code.slice(-4)}`;
     const expiresAt = expiresInDays === 0 ? null : new Date(Date.now() + expiresInDays * 86400000);
     await dataSource.query(
-      "INSERT INTO okg_manager_invite_codes (code_hash, code_hint, target_guild_id, created_by, max_uses, expires_at) VALUES (?, ?, ?, ?, ?, ?)",
-      [codeHash, codeHint, targetGuildId, req.user!.userId, maxUses, expiresAt],
+      "INSERT INTO okg_manager_invite_codes (code_hash, code_hint, created_by, max_uses, expires_at) VALUES (?, ?, ?, ?, ?)",
+      [codeHash, codeHint, req.user!.userId, maxUses, expiresAt],
+    );
+    await dataSource.query(
+      "INSERT INTO okg_manager_invite_targets (code_hash, target_guild_id) VALUES (?, ?)",
+      [codeHash, targetGuildId],
     );
     return res.status(201).json({
       code,
