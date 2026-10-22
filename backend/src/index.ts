@@ -63,8 +63,15 @@ import {
   handleSupportPanelCommand,
   supportPanelCommand,
 } from "./slashCommands/support.js";
+import {
+  handleUpdatesConfig,
+  handleUpdatesSetup,
+  postGuildUpdate,
+  updatesConfigCommand,
+  updatesSetupCommand,
+} from "./slashCommands/updates.js";
 
-const BOT_VERSION = "1.3.3";
+const BOT_VERSION = "1.3.4";
 
 // Error handling
 let recentPluginErrors = 0;
@@ -440,7 +447,29 @@ connect().then(async () => {
       status: "online",
     });
 
-    // Announce each deployed version once. Checking recent bot messages prevents
+    // Announce this release to per-server update channels configured with /updates-setup.
+    // The channel topic stores the optional ping role, so settings survive bot restarts.
+    for (const guild of client.guilds.cache.values()) {
+      try {
+        const channels = await guild.channels.fetch();
+        const updateChannel = channels.find(
+          (channel): channel is TextChannel =>
+            channel instanceof TextChannel && channel.topic?.startsWith("okg-updates|role=") === true,
+        );
+        if (!updateChannel) continue;
+        const recent = await updateChannel.messages.fetch({ limit: 100 });
+        const releaseTitle = `## OKG Administrative BotOS — Version ${BOT_VERSION}`;
+        if (recent.some((message) => message.author.id === client.user!.id && message.content.includes(releaseTitle))) {
+          continue;
+        }
+        await postGuildUpdate(updateChannel, BOT_VERSION);
+        logger.info(`Posted version ${BOT_VERSION} update in guild ${guild.id}`);
+      } catch (error) {
+        logger.warn(`Could not post bot update for guild ${guild.id}: ${error}`);
+      }
+    }
+
+    // Announce each deployed version once to the maintainer release channel. Checking recent bot messages prevents
     // duplicate announcements on ordinary restarts.
     try {
       const releaseChannel = await client.channels.fetch("1562496808838631556");
@@ -468,6 +497,7 @@ connect().then(async () => {
 - Added a required ticket intake form for a subject and detailed issue description before creating a ticket.
 - Expanded ticket transcripts to paginate through up to 5,000 messages and include author IDs, attachment URLs, and embed summaries.
 - Added OKG Manager Features → Support settings and the /support-panel command to publish the configured ticket panel.
+- Added /updates-setup to create a per-server bot update channel and /updates-config to set or disable its release ping role.
 - Applied the requested tiers: management for addcase, ban, kick, note, unban, unhidecase, and update; admin for deletecase, forceban, forcemute, forceunmute, massban, massmute, and massunban; moderator+ for case, cases, hidecase, mute, unmute, warn, and permission-level.
 - Updated slash-command permission errors to show each command's actual new name.
 - Restricted \x60/permission-level\x60 to members granted moderator case-view permission (or *).
@@ -548,7 +578,13 @@ Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
     }
 
     try {
-      const commandsToRegister = [announceCommand, permissionLevelCommand, supportPanelCommand];
+      const commandsToRegister = [
+        announceCommand,
+        permissionLevelCommand,
+        supportPanelCommand,
+        updatesSetupCommand,
+        updatesConfigCommand,
+      ];
 
       // Register globally so the commands are available in every server where
       // the bot is installed, not only in two hard-coded guild IDs.
@@ -576,7 +612,7 @@ Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
         }
       }
 
-      logger.info("Registered /announce, /mod-permission-level, and /support-panel globally and in joined servers");
+      logger.info("Registered /announce, /mod-permission-level, /support-panel, /updates-setup, and /updates-config globally and in joined servers");
     } catch (error) {
       logger.error(`Failed to register slash commands: ${error}`);
     }
@@ -628,6 +664,16 @@ Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
         }
       }
       await handleSupportPanelCommand(interaction, config);
+      return;
+    }
+
+    if (interaction.commandName === "updates-setup") {
+      await handleUpdatesSetup(interaction);
+      return;
+    }
+
+    if (interaction.commandName === "updates-config") {
+      await handleUpdatesConfig(interaction);
       return;
     }
 
