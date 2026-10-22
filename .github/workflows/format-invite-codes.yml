@@ -1,0 +1,33 @@
+name: Format invite-code changes
+
+on:
+  push:
+    branches:
+      - feature/okg-manager-invite-codes
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: feature/okg-manager-invite-codes
+      - uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2
+        with:
+          cache: true
+      - name: Format changed and already-flagged files
+        run: pnpm exec oxfmt backend/src/api/inviteCodes.ts dashboard/src/components/InviteLanding.vue dashboard/src/components/dashboard/InviteCodes.vue backend/src/index.ts backend/src/slashCommands/updates.ts
+      - name: Commit formatting
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backend/src/api/inviteCodes.ts dashboard/src/components/InviteLanding.vue dashboard/src/components/dashboard/InviteCodes.vue backend/src/index.ts backend/src/slashCommands/updates.ts
+          if git diff --cached --quiet; then
+            echo "No formatting changes needed."
+          else
+            git commit -m "Format invite-code gate sources [skip ci]"
+            git push origin HEAD:feature/okg-manager-invite-codes
+          fi
