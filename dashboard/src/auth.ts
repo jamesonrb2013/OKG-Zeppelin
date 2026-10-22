@@ -24,6 +24,27 @@ export const loginCallbackGuard: NavigationGuard = async (to, from, next) => {
   return next();
 };
 
+
+export const staffOnlyGuard: NavigationGuard = async (to, from, next) => {
+  if (!(await isAuthenticated())) {
+    window.location.href = `${window.API_URL}/auth/login`;
+    return next(false);
+  }
+
+  try {
+    const response = await fetch(`${window.API_URL}/staff/status`, {
+      headers: { "X-Api-Key": RootStore.state.auth.apiKey || "" },
+    });
+    if (!response.ok) return next("/dashboard");
+    const result = await response.json();
+    if (result?.isStaff === true) return next();
+  } catch {
+    // Fail closed: never show the owner-only page if staff status cannot be verified.
+  }
+
+  return next("/dashboard");
+};
+
 export const authRedirectGuard: NavigationGuard = async (to, form, next) => {
   if (await isAuthenticated()) return next("/dashboard");
   window.location.href = `${window.API_URL}/auth/login`;
