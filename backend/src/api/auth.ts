@@ -1,3 +1,4 @@
+import { ApiPermissions } from "@zeppelinbot/shared/apiPermissions.js";
 import express, { Request, Response } from "express";
 import https from "https";
 import { pick } from "lodash-es";
@@ -102,7 +103,10 @@ export function initAuth(router: express.Router) {
           const discordGuilds = await simpleDiscordAPIRequest(accessToken, "users/@me/guilds");
           for (const guild of discordGuilds) {
             if (guild.owner === true && (await allowedGuilds.isAllowed(guild.id))) {
-              await apiPermissionAssignments.applyOwnerChange(guild.id, user.id);
+              const existingOwner = await apiPermissionAssignments.getByGuildAndUserId(guild.id, user.id);
+              if (!existingOwner?.permissions.includes(ApiPermissions.Owner)) {
+                await apiPermissionAssignments.applyOwnerChange(guild.id, user.id);
+              }
             }
           }
         } catch (error) {
