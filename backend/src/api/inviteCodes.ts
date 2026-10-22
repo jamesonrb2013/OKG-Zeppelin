@@ -100,7 +100,6 @@ export function initInviteCodesAPI(router: express.Router) {
     installUrl.searchParams.set("guild_id", targetGuildId);
     installUrl.searchParams.set("disable_guild_select", "true");
 
-    const codeHash = crypto.createHash("sha256").update(code).digest("hex");
     const result = await dataSource.query(
       "UPDATE okg_manager_invite_codes SET used_count = used_count + 1, last_used_at = NOW() WHERE code_hash = ? AND revoked_at IS NULL AND used_count < max_uses AND (expires_at IS NULL OR expires_at > NOW())",
       [codeHash],
