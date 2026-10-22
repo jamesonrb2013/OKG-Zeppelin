@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import express, { Request, Response } from "express";
 import { dataSource } from "../data/dataSource.js";
-import { isStaff } from "../staff.js";
+import { isInviteAdmin } from "../staff.js";
 import { apiTokenAuthHandlers } from "./auth.js";
 
 const CODE_PATTERN = /^OKG-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/;
@@ -15,8 +15,8 @@ function makeCodePart() {
 
 function validStaff(req: Request, res: Response) {
   const userId = req.user?.userId;
-  if (!userId || !isStaff(userId)) {
-    res.status(403).json({ error: "Only OKG dashboard owners can manage invite codes." });
+  if (!userId || !isInviteAdmin(userId)) {
+    res.status(403).json({ error: "Only the OKG owner can manage invite codes." });
     return false;
   }
   return true;
@@ -40,8 +40,6 @@ export function initInviteCodesAPI(router: express.Router) {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `)
     .then(() =>
-      // Keep per-invitation server targets in a separate table so existing installs
-      // upgrade without schema-alter permissions or downtime.
       dataSource.query(`
         CREATE TABLE IF NOT EXISTS okg_manager_invite_targets (
           code_hash CHAR(64) NOT NULL PRIMARY KEY,
@@ -70,7 +68,7 @@ export function initInviteCodesAPI(router: express.Router) {
     const code = String(req.body?.code || "")
       .trim()
       .toUpperCase()
-      .replace(/\s/g, "");
+      .replace(/\\s/g, "");
     if (!CODE_PATTERN.test(code)) {
       return res.status(400).json({ error: "That invitation code is invalid, expired, revoked, or has no uses left." });
     }
@@ -81,11 +79,10 @@ export function initInviteCodesAPI(router: express.Router) {
       [codeHash],
     );
     const targetGuildId = String(matches?.[0]?.targetGuildId || "");
-    if (!/^\d{17,20}$/.test(targetGuildId)) {
+    if (!/^\\d{17,20}$/.test(targetGuildId)) {
       return res.status(400).json({ error: "That invitation code is invalid, expired, revoked, or has no uses left." });
     }
 
-    // Every invitation is locked to the server ID selected by an OKG staff member.
     const configuredInstallUrl = process.env.OKG_MANAGER_INSTALL_URL;
     const validConfiguredUrl = configuredInstallUrl?.startsWith("https://discord.com/oauth2/authorize?")
       ? configuredInstallUrl
@@ -138,7 +135,7 @@ export function initInviteCodesAPI(router: express.Router) {
     const maxUses = Number(req.body?.maxUses ?? 1);
     const expiresInDays = Number(req.body?.expiresInDays ?? 30);
     const targetGuildId = String(req.body?.targetGuildId ?? "").trim();
-    if (!/^\d{17,20}$/.test(targetGuildId)) {
+    if (!/^\\d{17,20}$/.test(targetGuildId)) {
       return res.status(400).json({ error: "Enter a valid Discord server ID (17–20 digits)." });
     }
     if (!Number.isInteger(maxUses) || maxUses < 1 || maxUses > 100) {
