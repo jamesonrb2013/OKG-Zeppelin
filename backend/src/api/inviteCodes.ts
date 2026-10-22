@@ -29,6 +29,7 @@ export function initInviteCodesAPI(router: express.Router) {
       id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
       code_hash CHAR(64) NOT NULL UNIQUE,
       code_hint VARCHAR(24) NOT NULL,
+      target_guild_id VARCHAR(32) NOT NULL DEFAULT '1488682722606977175',
       created_by VARCHAR(32) NOT NULL,
       max_uses INT UNSIGNED NOT NULL DEFAULT 1,
       used_count INT UNSIGNED NOT NULL DEFAULT 0,
@@ -63,21 +64,41 @@ export function initInviteCodesAPI(router: express.Router) {
       return res.status(400).json({ error: "That invitation code is invalid, expired, revoked, or has no uses left." });
     }
 
-    // Prefer a custom install URL when configured, but do not require one.
-    // Discord's OAuth2 installation URL can be built from the application client ID.
+    const codeHash = crypto.createHash("sha256").update(code).digest("hex");
+    const matches = await dataSource.query(
+      "SELECT target_guild_id AS targetGuildId FROM okg_manager_invite_codes WHERE code_hash = ? AND revoked_at IS NULL AND used_count < max_uses AND (expires_at IS NULL OR expires_at > NOW()) LIMIT 1",
+      [codeHash],
+    );
+    const targetGuildId = String(matches?.[0]?.targetGuildId || "");
+    if (!/^\\d{17,20}$/.test(targetGuildId)) {
+      return res.status(400).json({ error: "That invitation code is invalid, expired, revoked, or has no uses left." });
+    }
+
+    // Every invitation is locked to the server ID selected by an OKG staff member.
     const configuredInstallUrl = process.env.OKG_MANAGER_INSTALL_URL;
-    const clientId = process.env.CLIENT_ID;
-    const installUrl =
-      configuredInstallUrl?.startsWith("https://discord.com/oauth2/authorize?")
-        ? configuredInstallUrl
-        : clientId
-          ? `https://discord.com/oauth2/authorize?client_id=${encodeURIComponent(clientId)}&permissions=8&scope=bot%20applications.commands&guild_id=1488682722606977175&disable_guild_select=true`
-          : null;
-    if (!installUrl) {
+    const validConfiguredUrl = configuredInstallUrl?.startsWith("https://discord.com/oauth2/authorize?")
+      ? configuredInstallUrl
+      : null;
+    let clientId = process.env.CLIENT_ID;
+    if (!clientId && validConfiguredUrl) {
+      try {
+        clientId = new URL(validConfiguredUrl).searchParams.get("client_id") || undefined;
+      } catch {
+        clientId = undefined;
+      }
+    }
+    if (!clientId) {
       return res.status(503).json({
         error: "Discord installation is not configured. Please contact an OKG administrator.",
       });
     }
+
+    const installUrl = new URL(validConfiguredUrl || "https://discord.com/oauth2/authorize");
+    installUrl.searchParams.set("client_id", clientId);
+    installUrl.searchParams.set("permissions", installUrl.searchParams.get("permissions") || "8");
+    installUrl.searchParams.set("scope", "bot applications.commands");
+    installUrl.searchParams.set("guild_id", targetGuildId);
+    installUrl.searchParams.set("disable_guild_select", "true");
 
     const codeHash = crypto.createHash("sha256").update(code).digest("hex");
     const result = await dataSource.query(
@@ -88,7 +109,7 @@ export function initInviteCodesAPI(router: express.Router) {
       return res.status(400).json({ error: "That invitation code is invalid, expired, revoked, or has no uses left." });
     }
 
-    return res.json({ ok: true, installUrl });
+    return res.json({ ok: true, installUrl: installUrl.toString() });
   });
 
   const adminRouter = express.Router();
@@ -97,7 +118,7 @@ export function initInviteCodesAPI(router: express.Router) {
     await tableReady;
     if (!validStaff(req, res)) return;
     const codes = await dataSource.query(
-      "SELECT id, code_hint AS codeHint, max_uses AS maxUses, used_count AS usedCount, expires_at AS expiresAt, revoked_at AS revokedAt, last_used_at AS lastUsedAt, created_at AS createdAt FROM okg_manager_invite_codes ORDER BY created_at DESC LIMIT 100",
+      "SELECT id, code_hint AS codeHint, target_guild_id AS targetGuildId, max_uses AS maxUses, used_count AS usedCount, expires_at AS expiresAt, revoked_at AS revokedAt, last_used_at AS lastUsedAt, created_at AS createdAt FROM okg_manager_invite_codes ORDER BY created_at DESC LIMIT 100",
     );
     return res.json({ codes });
   });
@@ -106,6 +127,10 @@ export function initInviteCodesAPI(router: express.Router) {
     if (!validStaff(req, res)) return;
     const maxUses = Number(req.body?.maxUses ?? 1);
     const expiresInDays = Number(req.body?.expiresInDays ?? 30);
+    const targetGuildId = String(req.body?.targetGuildId ?? "").trim();
+    if (!/^\\d{17,20}$/.test(targetGuildId)) {
+      return res.status(400).json({ error: "Enter a valid Discord server ID (17–20 digits)." });
+    }
     if (!Number.isInteger(maxUses) || maxUses < 1 || maxUses > 100) {
       return res.status(400).json({ error: "Maximum uses must be between 1 and 100." });
     }
@@ -118,12 +143,13 @@ export function initInviteCodesAPI(router: express.Router) {
     const codeHint = `${code.slice(0, 8)}…${code.slice(-4)}`;
     const expiresAt = expiresInDays === 0 ? null : new Date(Date.now() + expiresInDays * 86400000);
     await dataSource.query(
-      "INSERT INTO okg_manager_invite_codes (code_hash, code_hint, created_by, max_uses, expires_at) VALUES (?, ?, ?, ?, ?)",
-      [codeHash, codeHint, req.user!.userId, maxUses, expiresAt],
+      "INSERT INTO okg_manager_invite_codes (code_hash, code_hint, target_guild_id, created_by, max_uses, expires_at) VALUES (?, ?, ?, ?, ?, ?)",
+      [codeHash, codeHint, targetGuildId, req.user!.userId, maxUses, expiresAt],
     );
     return res.status(201).json({
       code,
       codeHint,
+      targetGuildId,
       maxUses,
       expiresAt,
       warning: "Copy this code now. The full code is only shown once.",
