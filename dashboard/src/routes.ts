@@ -1,11 +1,13 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { authGuard, authRedirectGuard, loginCallbackGuard } from "./auth";
 import Splash from "./components/Splash.vue";
+import InviteLanding from "./components/InviteLanding.vue";
 
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: "/", component: Splash },
+    { path: "/invite", component: InviteLanding },
 
     { path: "/login", components: {}, beforeEnter: authRedirectGuard },
     { path: "/login-callback", component: {}, beforeEnter: loginCallbackGuard },
@@ -81,6 +83,10 @@ export const router = createRouter({
         {
           path: "features/:guildId/support/config",
           component: () => import("./components/dashboard/SupportConfig.vue"),
+        },
+        {
+          path: "invites",
+          component: () => import("./components/dashboard/InviteCodes.vue"),
         },
         {
           path: "guilds/:guildId/info",
