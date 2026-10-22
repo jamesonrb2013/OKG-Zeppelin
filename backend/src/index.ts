@@ -313,6 +313,17 @@ connect().then(async () => {
   const allowedGuilds = new AllowedGuilds();
   const guildConfigs = new Configs();
 
+  // When a server redeems an OKG invite and adds the bot, keep its dashboard metadata current.
+  client.on(Events.GuildCreate, async (guild) => {
+    try {
+      if (!(await allowedGuilds.isAllowed(guild.id))) return;
+      await allowedGuilds.updateInfo(guild.id, guild.name, guild.iconURL(), guild.ownerId);
+      logger.info(`Synced dashboard metadata for allowed guild ${guild.id}`);
+    } catch (error) {
+      logger.warn(`Could not sync dashboard metadata for guild ${guild.id}: ${error}`);
+    }
+  });
+
   const bot = new Vety(client, {
     guildPlugins: availableGuildPlugins.map((obj) => obj.plugin),
     globalPlugins: availableGlobalPlugins.map((obj) => obj.plugin),
@@ -439,6 +450,17 @@ connect().then(async () => {
   });
 
   client.once("clientReady", async () => {
+    // Refresh the names, icons, and owner IDs of already-allowed servers on every startup.
+    for (const guild of client.guilds.cache.values()) {
+      try {
+        if (await allowedGuilds.isAllowed(guild.id)) {
+          await allowedGuilds.updateInfo(guild.id, guild.name, guild.iconURL(), guild.ownerId);
+        }
+      } catch (error) {
+        logger.warn(`Could not refresh dashboard metadata for guild ${guild.id}: ${error}`);
+      }
+    }
+
     startUptimeCounter();
 
     // Keep the deployed bot version visible in Discord's activity status.
