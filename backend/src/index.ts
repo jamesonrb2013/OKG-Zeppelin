@@ -71,7 +71,7 @@ import {
   updatesSetupCommand,
 } from "./slashCommands/updates.js";
 
-const BOT_VERSION = "1.3.5";
+const BOT_VERSION = "1.3.6";
 
 // Error handling
 let recentPluginErrors = 0;
@@ -481,7 +481,7 @@ connect().then(async () => {
         const announcementChannel = releaseChannel as TextChannel;
         const recentMessages = await announcementChannel.messages.fetch({ limit: 100 });
         const alreadyAnnounced = recentMessages.some(
-          (message) => message.author.id === client.user!.id && message.content.startsWith(`## Version ${BOT_VERSION}`),
+          (message) => message.author.id === client.user!.id && message.content.includes(`## Version ${BOT_VERSION}`),
         );
 
         if (!alreadyAnnounced) {
