@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import express, { Request, Response } from "express";
+import { AllowedGuilds } from "../data/AllowedGuilds.js";
 import { dataSource } from "../data/dataSource.js";
 import { isInviteAdmin } from "../staff.js";
 import { apiTokenAuthHandlers } from "./auth.js";
@@ -23,6 +24,7 @@ function validStaff(req: Request, res: Response) {
 }
 
 export function initInviteCodesAPI(router: express.Router) {
+  const allowedGuilds = new AllowedGuilds();
   const tableReady = dataSource
     .query(`
     CREATE TABLE IF NOT EXISTS okg_manager_invite_codes (
@@ -114,6 +116,12 @@ export function initInviteCodesAPI(router: express.Router) {
     );
     if (!result?.affectedRows) {
       return res.status(400).json({ error: "That invitation code is invalid, expired, revoked, or has no uses left." });
+    }
+
+    // Redeeming an owner-created, server-bound invite activates that server for the bot.
+    // The code can only target a specific validated Discord guild ID.
+    if (!(await allowedGuilds.isAllowed(targetGuildId))) {
+      await allowedGuilds.add(targetGuildId);
     }
 
     return res.json({ ok: true, installUrl: installUrl.toString() });
