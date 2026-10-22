@@ -70,7 +70,7 @@ export function initInviteCodesAPI(router: express.Router) {
       [codeHash],
     );
     const targetGuildId = String(matches?.[0]?.targetGuildId || "");
-    if (!/^\\d{17,20}$/.test(targetGuildId)) {
+    if (!/^\d{17,20}$/.test(targetGuildId)) {
       return res.status(400).json({ error: "That invitation code is invalid, expired, revoked, or has no uses left." });
     }
 
@@ -127,7 +127,7 @@ export function initInviteCodesAPI(router: express.Router) {
     const maxUses = Number(req.body?.maxUses ?? 1);
     const expiresInDays = Number(req.body?.expiresInDays ?? 30);
     const targetGuildId = String(req.body?.targetGuildId ?? "").trim();
-    if (!/^\\d{17,20}$/.test(targetGuildId)) {
+    if (!/^\d{17,20}$/.test(targetGuildId)) {
       return res.status(400).json({ error: "Enter a valid Discord server ID (17–20 digits)." });
     }
     if (!Number.isInteger(maxUses) || maxUses < 1 || maxUses > 100) {
