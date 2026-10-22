@@ -322,7 +322,8 @@ connect().then(async () => {
         try {
           const alertChannel = await client.channels.fetch(alertChannelId);
           if (alertChannel?.isTextBased() && "send" in alertChannel) {
-            await alertChannel.send({
+            const alertTextChannel = alertChannel as TextChannel;
+            await alertTextChannel.send({
               content:
                 `🚨 **OKG Manager unauthorized-server alert**\n` +
                 `The bot was added to a server that is not authorized and is leaving now.\n\n` +
