@@ -111,6 +111,7 @@ export function initAuth(router: express.Router) {
         }
 
         // Make sure the user is able to access at least 1 guild
+        const permissions = await apiPermissionAssignments.getByUserId(user.id);
         if (permissions.length === 0 && !isStaff(user.id)) {
           cb(null, {});
           return;
