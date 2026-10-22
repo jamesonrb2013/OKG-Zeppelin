@@ -8,6 +8,7 @@ import { initAuth } from "./auth.js";
 import { initDocs } from "./docs.js";
 import { initGuildsAPI } from "./guilds/index.js";
 import { initInviteCodesAPI } from "./inviteCodes.js";
+import { initStaff } from "./staff.js";
 import { clientError, error, notFound } from "./responses.js";
 import { startBackgroundTasks } from "./tasks.js";
 
@@ -30,6 +31,7 @@ app.use(multer().none());
 const rootRouter = express.Router();
 
 initAuth(rootRouter);
+initStaff(rootRouter);
 initInviteCodesAPI(rootRouter);
 initGuildsAPI(rootRouter);
 initArchives(rootRouter);
