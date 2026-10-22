@@ -313,14 +313,55 @@ connect().then(async () => {
   const allowedGuilds = new AllowedGuilds();
   const guildConfigs = new Configs();
 
-  // When a server redeems an OKG invite and adds the bot, keep its dashboard metadata current.
+  // Every guild must be explicitly authorized. Alert the OKG team, then immediately leave unauthorized guilds.
   client.on(Events.GuildCreate, async (guild) => {
     try {
-      if (!(await allowedGuilds.isAllowed(guild.id))) return;
+      if (!(await allowedGuilds.isAllowed(guild.id))) {
+        const alertChannelId = "1562875316936904704";
+        const alertRoleId = "1562875592553009268";
+        try {
+          const alertChannel = await client.channels.fetch(alertChannelId);
+          if (alertChannel?.isTextBased() && "send" in alertChannel) {
+            await alertChannel.send({
+              content:
+                `🚨 **OKG Manager unauthorized-server alert**\n` +
+                `The bot was added to a server that is not authorized and is leaving now.\n\n` +
+                `**Server:** ${guild.name}\n` +
+                `**Server ID:** ${guild.id}\n` +
+                `**Owner:** <@${guild.ownerId}> (${guild.ownerId})\n` +
+                `**Members:** ${guild.memberCount ?? "unknown"}\n` +
+                `<@&${alertRoleId}> please review this event.`,
+              allowedMentions: { roles: [alertRoleId], users: [], parse: [] },
+            });
+          } else {
+            logger.error(`Unauthorized guild ${guild.id}; alert channel ${alertChannelId} is unavailable or not text-based`);
+          }
+        } catch (alertError) {
+          logger.error(`Failed to alert the OKG team about unauthorized guild ${guild.id}: ${alertError}`);
+        }
+
+        try {
+          await guild.leave();
+          logger.warn(`Left unauthorized guild ${guild.id} (${guild.name})`);
+        } catch (leaveError) {
+          logger.error(`CRITICAL: failed to leave unauthorized guild ${guild.id}: ${leaveError}`);
+        }
+        return;
+      }
+
       await allowedGuilds.updateInfo(guild.id, guild.name, guild.iconURL(), guild.ownerId);
       logger.info(`Synced dashboard metadata for allowed guild ${guild.id}`);
     } catch (error) {
-      logger.warn(`Could not sync dashboard metadata for guild ${guild.id}: ${error}`);
+      logger.warn(`Could not verify authorization or sync metadata for guild ${guild.id}: ${error}`);
+      // Fail closed if authorization cannot be verified during a new guild join.
+      try {
+        if (!(await allowedGuilds.isAllowed(guild.id))) {
+          await guild.leave();
+          logger.warn(`Left guild ${guild.id} because authorization could not be verified`);
+        }
+      } catch (leaveError) {
+        logger.error(`CRITICAL: could not enforce authorization for guild ${guild.id}: ${leaveError}`);
+      }
     }
   });
 
