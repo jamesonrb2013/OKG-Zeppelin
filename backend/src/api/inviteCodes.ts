@@ -63,11 +63,20 @@ export function initInviteCodesAPI(router: express.Router) {
       return res.status(400).json({ error: "That invitation code is invalid, expired, revoked, or has no uses left." });
     }
 
-    const installUrl = process.env.OKG_MANAGER_INSTALL_URL;
-    if (!installUrl || !installUrl.startsWith("https://discord.com/oauth2/authorize?")) {
-      return res
-        .status(503)
-        .json({ error: "Invitations are not ready for installation yet. Please try again after OKG finishes setup." });
+    // Prefer a custom install URL when configured, but do not require one.
+    // Discord's OAuth2 installation URL can be built from the application client ID.
+    const configuredInstallUrl = process.env.OKG_MANAGER_INSTALL_URL;
+    const clientId = process.env.CLIENT_ID;
+    const installUrl =
+      configuredInstallUrl?.startsWith("https://discord.com/oauth2/authorize?")
+        ? configuredInstallUrl
+        : clientId
+          ? `https://discord.com/oauth2/authorize?client_id=${encodeURIComponent(clientId)}&permissions=8&scope=bot%20applications.commands&guild_id=1488682722606977175&disable_guild_select=true`
+          : null;
+    if (!installUrl) {
+      return res.status(503).json({
+        error: "Discord installation is not configured. Please contact an OKG administrator.",
+      });
     }
 
     const codeHash = crypto.createHash("sha256").update(code).digest("hex");
