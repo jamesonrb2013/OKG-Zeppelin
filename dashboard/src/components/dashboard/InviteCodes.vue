@@ -27,7 +27,22 @@
 
     <div class="rounded-lg border border-gray-700 bg-gray-800 p-5 mb-8">
       <h2 class="text-xl font-semibold mb-4">Create an invitation</h2>
-      <form class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end" @submit.prevent="createCode">
+      <form class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end" @submit.prevent="createCode">
+        <label class="block text-sm"
+          >Authorized Discord server ID
+          <input
+            v-model.trim="targetGuildId"
+            class="block w-full mt-1 rounded bg-gray-900 border border-gray-600 px-3 py-2"
+            type="text"
+            inputmode="numeric"
+            pattern="[0-9]{17,20}"
+            minlength="17"
+            maxlength="20"
+            required
+            placeholder="Discord server ID"
+          />
+          <span class="block text-xs text-gray-400 mt-1">This code will only open installation for this server.</span>
+        </label>
         <label class="block text-sm"
           >Maximum uses
           <input
@@ -69,6 +84,7 @@
           <button class="rounded bg-gray-700 hover:bg-gray-600 px-3 py-2" @click="copyCode">Copy code</button>
         </div>
         <p class="text-sm text-gray-400 mt-2">
+          Authorized server: {{ newCode.targetGuildId }}<br />
           Uses allowed: {{ newCode.maxUses }} · Expires:
           {{ newCode.expiresAt ? formatDate(newCode.expiresAt) : "Never" }}
         </p>
@@ -89,6 +105,7 @@
           <thead class="text-gray-400 border-b border-gray-700">
             <tr>
               <th class="py-3 pr-4">Code</th>
+              <th class="py-3 pr-4">Authorized server ID</th>
               <th class="py-3 pr-4">Uses</th>
               <th class="py-3 pr-4">Expires</th>
               <th class="py-3 pr-4">Status</th>
@@ -98,6 +115,7 @@
           <tbody>
             <tr v-for="code in codes" :key="code.id" class="border-b border-gray-700/70">
               <td class="py-3 pr-4 font-mono">{{ code.codeHint }}</td>
+              <td class="py-3 pr-4 font-mono">{{ code.targetGuildId }}</td>
               <td class="py-3 pr-4">{{ code.usedCount }} / {{ code.maxUses }}</td>
               <td class="py-3 pr-4">{{ code.expiresAt ? formatDate(code.expiresAt) : "Never" }}</td>
               <td class="py-3 pr-4">
@@ -131,6 +149,7 @@ import { get, post } from "../../api";
 type InviteCode = {
   id: number;
   codeHint: string;
+  targetGuildId: string;
   maxUses: number;
   usedCount: number;
   expiresAt: string | null;
@@ -138,7 +157,7 @@ type InviteCode = {
   lastUsedAt: string | null;
   createdAt: string;
 };
-type NewInviteCode = { code: string; maxUses: number; expiresAt: string | null };
+type NewInviteCode = { code: string; targetGuildId: string; maxUses: number; expiresAt: string | null };
 
 export default {
   data() {
@@ -146,6 +165,7 @@ export default {
       loading: true,
       creating: false,
       revoking: 0 as number,
+      targetGuildId: "1488682722606977175",
       maxUses: 1,
       expiresInDays: 30,
       codes: [] as InviteCode[],
@@ -177,6 +197,7 @@ export default {
       this.newCode = null;
       try {
         const result = await post("invite-codes", {
+          targetGuildId: this.targetGuildId,
           maxUses: String(this.maxUses),
           expiresInDays: String(this.expiresInDays),
         });
