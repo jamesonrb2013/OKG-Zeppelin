@@ -1,7 +1,6 @@
 import crypto from "node:crypto";
 import express, { Request, Response } from "express";
 import { dataSource } from "../data/dataSource.js";
-import { env } from "../env.js";
 import { isStaff } from "../staff.js";
 import { apiTokenAuthHandlers } from "./auth.js";
 
