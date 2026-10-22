@@ -6,6 +6,7 @@ import { Strategy as CustomStrategy } from "passport-custom";
 import OAuth2Strategy from "passport-oauth2";
 import { ApiLogins } from "../data/ApiLogins.js";
 import { ApiPermissionAssignments } from "../data/ApiPermissionAssignments.js";
+import { AllowedGuilds } from "../data/AllowedGuilds.js";
 import { ApiUserInfo } from "../data/ApiUserInfo.js";
 import { ApiUserInfoData } from "../data/entities/ApiUserInfo.js";
 import { env } from "../env.js";
@@ -61,6 +62,7 @@ export function initAuth(router: express.Router) {
   const apiLogins = new ApiLogins();
   const apiUserInfo = new ApiUserInfo();
   const apiPermissionAssignments = new ApiPermissionAssignments();
+  const allowedGuilds = new AllowedGuilds();
 
   // Initialize API tokens
   passport.use(
@@ -89,13 +91,26 @@ export function initAuth(router: express.Router) {
         clientID: env.CLIENT_ID,
         clientSecret: env.CLIENT_SECRET,
         callbackURL: `${env.API_URL}/auth/oauth-callback`,
-        scope: ["identify"],
+        scope: ["identify", "guilds"],
       },
       async (accessToken, refreshToken, profile, cb) => {
         const user = await simpleDiscordAPIRequest(accessToken, "users/@me");
 
+        // Automatically restore dashboard access for the actual owners of servers where the bot is enabled.
+        // This does not grant access to unrelated servers or expose owner-only invite-code management.
+        try {
+          const discordGuilds = await simpleDiscordAPIRequest(accessToken, "users/@me/guilds");
+          for (const guild of discordGuilds) {
+            if (guild.owner === true && (await allowedGuilds.isAllowed(guild.id))) {
+              await apiPermissionAssignments.applyOwnerChange(guild.id, user.id);
+            }
+          }
+        } catch (error) {
+          // Existing permission assignments still work if Discord's guild list is temporarily unavailable.
+          console.warn("Unable to sync Discord server-owner dashboard access:", error);
+        }
+
         // Make sure the user is able to access at least 1 guild
-        const permissions = await apiPermissionAssignments.getByUserId(user.id);
         if (permissions.length === 0 && !isStaff(user.id)) {
           cb(null, {});
           return;
