@@ -40,6 +40,19 @@ export function initInviteCodesAPI(router: express.Router) {
       INDEX idx_okg_invite_active (revoked_at, expires_at)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `)
+    .then(async () => {
+      // Existing installs may have created this table before server IDs were added.
+      try {
+        await dataSource.query(
+          "ALTER TABLE okg_manager_invite_codes ADD COLUMN target_guild_id VARCHAR(32) NOT NULL DEFAULT '1488682722606977175'",
+        );
+      } catch (error) {
+        const dbError = error as { code?: string; message?: string };
+        if (dbError.code !== "ER_DUP_FIELDNAME" && !dbError.message?.includes("Duplicate column name")) {
+          throw error;
+        }
+      }
+    })
     .catch((error) => {
       console.error("Failed to initialize OKG invite-code table:", error);
       throw error;
