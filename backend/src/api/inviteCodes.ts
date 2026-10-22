@@ -56,6 +56,11 @@ export function initInviteCodesAPI(router: express.Router) {
       return res.status(400).json({ error: "That invitation code is invalid, expired, revoked, or has no uses left." });
     }
 
+    const installUrl = process.env.OKG_MANAGER_INSTALL_URL;
+    if (!installUrl || !installUrl.startsWith("https://discord.com/oauth2/authorize?")) {
+      return res.status(503).json({ error: "Invitations are not ready for installation yet. Please try again after OKG finishes setup." });
+    }
+
     const codeHash = crypto.createHash("sha256").update(code).digest("hex");
     const result = await dataSource.query(
       "UPDATE okg_manager_invite_codes SET used_count = used_count + 1, last_used_at = NOW() WHERE code_hash = ? AND revoked_at IS NULL AND used_count < max_uses AND (expires_at IS NULL OR expires_at > NOW())",
@@ -65,8 +70,7 @@ export function initInviteCodesAPI(router: express.Router) {
       return res.status(400).json({ error: "That invitation code is invalid, expired, revoked, or has no uses left." });
     }
 
-    // The dashboard installation link is added in the Discord setup step.
-    return res.json({ ok: true, message: "Invitation verified. Discord installation will be enabled in the next setup step." });
+    return res.json({ ok: true, installUrl });
   });
 
   const adminRouter = express.Router();
