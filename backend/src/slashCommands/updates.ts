@@ -8,7 +8,9 @@ import {
 
 const MARKER = "okg-updates|role=";
 
-async function getChannel(guild: NonNullable<ChatInputCommandInteraction["guild"]>): Promise<TextChannel | null> {
+async function getChannel(
+  guild: NonNullable<ChatInputCommandInteraction["guild"]>,
+): Promise<TextChannel | null> {
   const channels = await guild.channels.fetch();
   return (
     channels.find(
@@ -28,11 +30,20 @@ export const updatesConfigCommand = new SlashCommandBuilder()
   .setName("updates-config")
   .setDescription("Set or clear the bot update ping role")
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
-  .addRoleOption((option) => option.setName("ping-role").setDescription("Role to ping; leave empty to turn pings off"));
+  .addRoleOption((option) =>
+    option.setName("ping-role").setDescription("Role to ping; leave empty to turn pings off"),
+  );
 
 export async function handleUpdatesSetup(interaction: ChatInputCommandInteraction) {
-  if (!interaction.inGuild() || !interaction.guild || !interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
-    await interaction.reply({ content: "This command requires Manage Server permission in a server.", ephemeral: true });
+  if (
+    !interaction.inGuild() ||
+    !interaction.guild ||
+    !interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)
+  ) {
+    await interaction.reply({
+      content: "This command requires Manage Server permission in a server.",
+      ephemeral: true,
+    });
     return;
   }
 
@@ -56,7 +67,10 @@ export async function handleUpdatesSetup(interaction: ChatInputCommandInteractio
       topic: MARKER + (role?.id ?? ""),
       reason: "Bot update channel setup",
     });
-    await channel.send({ content: "Automatic bot updates will be posted here.", allowedMentions: { parse: [] } });
+    await channel.send({
+      content: "Automatic bot updates will be posted here.",
+      allowedMentions: { parse: [] },
+    });
     await interaction.editReply({
       content:
         "Created " +
