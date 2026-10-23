@@ -24,7 +24,6 @@ export const loginCallbackGuard: NavigationGuard = async (to, from, next) => {
   return next();
 };
 
-
 export const staffOnlyGuard: NavigationGuard = async (to, from, next) => {
   if (!(await isAuthenticated())) {
     window.location.href = `${window.API_URL}/auth/login`;

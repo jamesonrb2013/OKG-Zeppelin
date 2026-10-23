@@ -335,7 +335,9 @@ connect().then(async () => {
               allowedMentions: { roles: [alertRoleId], users: [], parse: [] },
             });
           } else {
-            logger.error(`Unauthorized guild ${guild.id}; alert channel ${alertChannelId} is unavailable or not text-based`);
+            logger.error(
+              `Unauthorized guild ${guild.id}; alert channel ${alertChannelId} is unavailable or not text-based`,
+            );
           }
         } catch (alertError) {
           logger.error(`Failed to alert the OKG team about unauthorized guild ${guild.id}: ${alertError}`);
@@ -498,7 +500,9 @@ connect().then(async () => {
         }
       }
     } catch (error) {
-      logger.warn(`Could not load prefix config for guild ${message.guild.id}; default and legacy prefixes remain blocked: ${error}`);
+      logger.warn(
+        `Could not load prefix config for guild ${message.guild.id}; default and legacy prefixes remain blocked: ${error}`,
+      );
     }
 
     const isPrefixCommand = Array.from(prefixes).some((prefix) => {

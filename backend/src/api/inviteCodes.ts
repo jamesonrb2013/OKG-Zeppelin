@@ -161,10 +161,10 @@ export function initInviteCodesAPI(router: express.Router) {
       "INSERT INTO okg_manager_invite_codes (code_hash, code_hint, created_by, max_uses, expires_at) VALUES (?, ?, ?, ?, ?)",
       [codeHash, codeHint, req.user!.userId, maxUses, expiresAt],
     );
-    await dataSource.query(
-      "INSERT INTO okg_manager_invite_targets (code_hash, target_guild_id) VALUES (?, ?)",
-      [codeHash, targetGuildId],
-    );
+    await dataSource.query("INSERT INTO okg_manager_invite_targets (code_hash, target_guild_id) VALUES (?, ?)", [
+      codeHash,
+      targetGuildId,
+    ]);
     return res.status(201).json({
       code,
       codeHint,
