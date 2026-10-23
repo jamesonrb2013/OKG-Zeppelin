@@ -128,6 +128,7 @@ export function initGuildsMiscAPI(router: express.Router) {
         if (type !== ApiPermissionTypes.User) {
           return clientError(res, "Invalid type");
         }
+        if (targetId === PLATFORM_OWNER_ID) return clientError(res, "The platform owner has permanent, non-removable access.");
         if (!isSnowflake(targetId)) {
           return clientError(res, "Invalid targetId");
         }
