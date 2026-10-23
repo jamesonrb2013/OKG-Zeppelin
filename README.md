@@ -2,6 +2,8 @@
 
 # Zeppelin
 
+**Policies:** [Terms of Service](TERMS_OF_SERVICE.md) · [Privacy Policy](PRIVACY_POLICY.md)
+
 Zeppelin is a moderation bot for Discord, designed with large servers and reliability in mind.
 
 **Main features include:**
