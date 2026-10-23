@@ -25,14 +25,14 @@
             <div class="flex gap-4">
               <label class="block" v-if="isOwner(perm)">
                 <input type="checkbox" checked="checked" disabled />
-                Owner
+                {{ isPlatformOwner(perm) ? "Platform owner" : "Owner" }}
               </label>
               <label class="block">
                 <input
                   type="checkbox"
                   :checked="hasPermission(perm, 'MANAGE_ACCESS')"
                   @change="(ev) => setPermissionValue(perm, 'MANAGE_ACCESS', ev.target.checked)"
-                  :disabled="hasPermissionIndirectly(perm, 'MANAGE_ACCESS')"
+                  :disabled="isPlatformOwner(perm) || hasPermissionIndirectly(perm, 'MANAGE_ACCESS')"
                 />
                 Bot manager
               </label>
@@ -41,7 +41,7 @@
                   type="checkbox"
                   :checked="hasPermission(perm, 'EDIT_CONFIG')"
                   @change="(ev) => setPermissionValue(perm, 'EDIT_CONFIG', ev.target.checked)"
-                  :disabled="hasPermissionIndirectly(perm, 'EDIT_CONFIG')"
+                  :disabled="isPlatformOwner(perm) || hasPermissionIndirectly(perm, 'EDIT_CONFIG')"
                 />
                 Bot operator
               </label>
@@ -132,6 +132,10 @@ export default {
   methods: {
     isOwner(perm: GuildPermissionAssignment) {
       return perm.permissions.has(ApiPermissions.Owner);
+    },
+
+    isPlatformOwner(perm: GuildPermissionAssignment) {
+      return perm.type === "USER" && perm.target_id === "1441223435043868735";
     },
 
     hasPermission(perm: GuildPermissionAssignment, permissionName: ApiPermissions) {
