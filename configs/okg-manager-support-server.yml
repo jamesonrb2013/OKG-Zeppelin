@@ -1,0 +1,52 @@
+# OKG Manager Support Server configuration
+# Discord server (guild) ID: 1562824306227150878
+# This file is the guild's plugin configuration fragment. Paste/merge it into
+# that server's OKG Manager/Zeppelin config; do not add a guild_id YAML key.
+#
+# Known channel: welcome channel 1562824307573268563.
+# For now the ticket panel uses that channel too. Change panel_channel_id if you
+# create a dedicated #open-a-ticket channel.
+#
+# REQUIRED BEFORE TICKETS CAN BE CREATED:
+# 1. Set category_id to the ID of a Discord category for private ticket channels.
+# 2. Add your support staff role IDs to support_role_ids.
+# Do not invent or leave placeholder strings in ID fields.
+
+plugins:
+  welcome_message:
+    enabled: true
+    config:
+      send_dm: false
+      send_to_channel: "1562824307573268563"
+      message: |
+        👋 Welcome to the official OKG Manager Support Server!
+
+        We're here to help you get the most out of OKG Manager and resolve any issues you run into.
+
+        🎫 Need help? Open a support ticket and explain your issue clearly.
+        🛠️ Technical problem? Include any error messages and what you were doing when it happened.
+        💡 Have an idea? Share your suggestions with our team.
+        📋 Before opening a ticket, check the available help resources and avoid duplicate tickets.
+
+        🔒 Never share passwords, bot tokens, API keys, or other private information.
+        Please be respectful, patient, and kind to our support team.
+
+        Thanks for being part of OKG! 💙
+
+  support:
+    enabled: true
+    config:
+      panel_channel_id: "1562824307573268563"
+      category_id: null
+      support_role_ids: []
+      log_channel_id: null
+      ticket_prefix: "okg-ticket"
+      panel_title: "OKG Support Center"
+      panel_description: "Need help with OKG Manager? Open a private ticket below. Our support team will assist you."
+      welcome_message: |
+        Thanks for contacting OKG Support!
+
+        Please explain your issue, include relevant details, and tell us what you have already tried. A team member will claim your ticket as soon as possible.
+
+        Never share passwords, API keys, or bot tokens.
+      max_open_tickets: 1
