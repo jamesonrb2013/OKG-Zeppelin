@@ -71,7 +71,7 @@ import {
   updatesSetupCommand,
 } from "./slashCommands/updates.js";
 
-const BOT_VERSION = "1.3.7";
+const BOT_VERSION = "1.3.8";
 
 // Error handling
 let recentPluginErrors = 0;
@@ -541,6 +541,17 @@ connect().then(async () => {
       activities: [{ name: `Version ${BOT_VERSION} of OKG Administrative BotOS`, type: ActivityType.Playing }],
       status: "online",
     });
+
+    // Register /announce before cleanup work so a cleanup failure cannot prevent it being submitted to Discord.
+    try {
+      const globalCommands = await client.application!.commands.fetch();
+      const existingAnnounce = globalCommands.find((registered) => registered.name === "announce");
+      if (existingAnnounce) await client.application!.commands.edit(existingAnnounce.id, announceCommand.toJSON());
+      else await client.application!.commands.create(announceCommand.toJSON());
+      logger.info("Registered /announce globally");
+    } catch (error) {
+      logger.error(`Failed to register /announce globally: ${error}`);
+    }
 
     // Announce this release to per-server update channels configured with /updates-setup.
     // The channel topic stores the optional ping role, so settings survive bot restarts.
