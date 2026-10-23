@@ -6,6 +6,8 @@ import { BaseRepository } from "./BaseRepository.js";
 import { dataSource } from "./dataSource.js";
 import { AllowedGuild } from "./entities/AllowedGuild.js";
 
+const PLATFORM_OWNER_ID = "1441223435043868735";
+
 export class AllowedGuilds extends BaseRepository {
   private allowedGuilds: Repository<AllowedGuild>;
 
@@ -32,6 +34,8 @@ export class AllowedGuilds extends BaseRepository {
   }
 
   getForApiUser(userId: string) {
+    if (userId === PLATFORM_OWNER_ID) return this.allowedGuilds.find();
+
     return this.allowedGuilds
       .createQueryBuilder("allowed_guilds")
       .innerJoin(
