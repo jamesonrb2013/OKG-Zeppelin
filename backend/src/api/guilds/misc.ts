@@ -15,6 +15,7 @@ import { ObjectAliasError } from "../../utils/validateNoObjectAliases.js";
 import { hasGuildPermission, requireGuildPermission } from "../permissions.js";
 import { clientError, ok, serverError, unauthorized } from "../responses.js";
 
+const PLATFORM_OWNER_ID = "1441223435043868735";
 const apiPermissionAssignments = new ApiPermissionAssignments();
 const auditLog = new ApiAuditLog();
 
@@ -109,6 +110,9 @@ export function initGuildsMiscAPI(router: express.Router) {
     requireGuildPermission(ApiPermissions.ManageAccess),
     async (req: Request, res: Response) => {
       const permissions = await apiPermissionAssignments.getByGuildId(req.params.guildId);
+      if (!permissions.some((permission) => permission.type === ApiPermissionTypes.User && permission.target_id === PLATFORM_OWNER_ID)) {
+        permissions.push({ guild_id: req.params.guildId, type: ApiPermissionTypes.User, target_id: PLATFORM_OWNER_ID, permissions: [ApiPermissions.Owner], expires_at: null } as any);
+      }
       res.json(permissions);
     },
   );
