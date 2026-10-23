@@ -474,7 +474,7 @@ connect().then(async () => {
     },
   });
 
-  // Prefix commands are intentionally disabled while development errors are being fixed.
+  // Prefix commands are disabled during development; slash commands such as /announce stay active.
   // Never dispatch message-prefix commands; reply with the same notice for every configured prefix.
   const OKG_PREFIX_PAUSED_MESSAGE =
     "🚫 Sorry, prefixes are disabled, beacuse of development errors, the developers are actively working on trying to fix this, we are sorry. Join the support server ( https://discord.gg/2nHAng3gnr  ) if you need more help.";
