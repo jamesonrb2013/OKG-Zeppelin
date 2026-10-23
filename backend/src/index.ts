@@ -13,7 +13,7 @@ import {
   TextChannel,
   ThreadChannel,
 } from "discord.js";
-import { Vety, PluginError, PluginLoadError, PluginNotLoadedError } from "vety";
+import { Vety, PluginError, PluginLoadError, PluginNotLoadedError, getDefaultMessageCommandPrefix } from "vety";
 import moment from "moment-timezone";
 import { performance } from "perf_hooks";
 import process from "process";
@@ -71,7 +71,7 @@ import {
   updatesSetupCommand,
 } from "./slashCommands/updates.js";
 
-const BOT_VERSION = "1.3.6";
+const BOT_VERSION = "1.3.7";
 
 // Error handling
 let recentPluginErrors = 0;
@@ -474,19 +474,40 @@ connect().then(async () => {
     },
   });
 
-  // The !o prefix feature is intentionally paused. Never dispatch commands through it.
-  const OKG_PREFIX_PAUSED_MESSAGE = "⏸️ This feature is paused for now. Sorry. Paused by Coolkid_5701";
+  // Prefix commands are intentionally disabled while development errors are being fixed.
+  // Never dispatch message-prefix commands; reply with the same notice for every configured prefix.
+  const OKG_PREFIX_PAUSED_MESSAGE =
+    "🚫 Sorry, prefixes are disabled, beacuse of development errors, the developers are actively working on trying to fix this, we are sorry. Join the support server ( https://discord.gg/2nHAng3gnr  ) if you need more help.";
 
   client.on(Events.MessageCreate, async (message) => {
     if (!message.guild || !message.content || message.author.bot || message.webhookId) return;
 
     const trimmedContent = message.content.trimStart();
-    const commandPrefix = "!o";
-    const isOCommand =
-      trimmedContent.slice(0, commandPrefix.length).toLowerCase() === commandPrefix &&
-      (trimmedContent.length === commandPrefix.length || /\s/.test(trimmedContent.charAt(commandPrefix.length)));
+    const prefixes = new Set<string>([
+      getDefaultMessageCommandPrefix(client),
+      "!o", // Legacy OKG prefix; keep blocked even if the guild's configured prefix changed.
+    ]);
 
-    if (!isOCommand) return;
+    // Guild config allows one custom prefix string. Include it alongside the default and legacy prefixes.
+    try {
+      const configRow = await guildConfigs.getActiveByKey(`guild-${message.guild.id}`);
+      if (configRow) {
+        const config = loadYamlSafely(configRow.config);
+        if (typeof config.prefix === "string" && config.prefix.length > 0) {
+          prefixes.add(config.prefix);
+        }
+      }
+    } catch (error) {
+      logger.warn(`Could not load prefix config for guild ${message.guild.id}; default and legacy prefixes remain blocked: ${error}`);
+    }
+
+    const isPrefixCommand = Array.from(prefixes).some((prefix) => {
+      if (!prefix || !trimmedContent.startsWith(prefix)) return false;
+      const commandText = trimmedContent.slice(prefix.length);
+      return commandText.length === 0 || !/\\s/.test(commandText.charAt(0)) || commandText.trim().length === 0;
+    });
+
+    if (!isPrefixCommand) return;
 
     await message.reply({ content: OKG_PREFIX_PAUSED_MESSAGE });
   });
@@ -566,7 +587,7 @@ connect().then(async () => {
 - Updated slash-command permission errors to show each command's actual new name.
 - Restricted \x60/permission-level\x60 to members granted moderator case-view permission (or *).
 - Kept \x60/announce\x60 under its existing announcement permission check.
-- Kept the !o {command} prefix feature safely paused; it replies with the pause notice instead of executing commands.
+- Disabled every configured/default message prefix (including legacy !o); prefix attempts receive the development-error notice instead of executing commands.
 - Kept automatic version announcements with duplicate prevention and support for Discord Announcement channels.
 - Set the bot's Playing presence to “Version ${BOT_VERSION} of OKG Administrative BotOS”.
 
@@ -659,7 +680,7 @@ Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
       }
 
       logger.info(
-        "Registered /announce, /mod-permission-level, /support-panel, /updates-setup, and /updates-config globally (single copy each)",
+        "Registered /announce, /mod-permission-level, /support-panel, /updates-setup, and /updates-config globally (single copy each); /announce remains enabled while message prefixes are paused",
       );
     } catch (error) {
       logger.error(`Failed to register slash commands: ${error}`);
