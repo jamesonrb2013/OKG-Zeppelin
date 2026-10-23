@@ -486,12 +486,13 @@ connect().then(async () => {
     if (!message.guild || !message.content || message.author.bot || message.webhookId) return;
 
     const trimmedContent = message.content.trimStart();
+    // Vety exposes the default command prefix as a RegExp, not a string.
+    const defaultPrefixPattern = getDefaultMessageCommandPrefix(client);
     const prefixes = new Set<string>([
-      getDefaultMessageCommandPrefix(client),
       "!o", // Legacy OKG prefix; keep blocked even if the guild's configured prefix changed.
     ]);
 
-    // Guild config allows one custom prefix string. Include it alongside the default and legacy prefixes.
+    // Guild config allows one custom prefix string. Include it alongside the default prefix.
     try {
       const configRow = await guildConfigs.getActiveByKey(`guild-${message.guild.id}`);
       if (configRow) {
@@ -506,11 +507,15 @@ connect().then(async () => {
       );
     }
 
-    const isPrefixCommand = Array.from(prefixes).some((prefix) => {
+    // Reset lastIndex in case the library supplies a stateful RegExp.
+    defaultPrefixPattern.lastIndex = 0;
+    const matchesDefaultPrefix = defaultPrefixPattern.test(trimmedContent);
+    const matchesConfiguredPrefix = Array.from(prefixes).some((prefix) => {
       if (!prefix || !trimmedContent.startsWith(prefix)) return false;
       const commandText = trimmedContent.slice(prefix.length);
-      return commandText.length === 0 || !/\\s/.test(commandText.charAt(0)) || commandText.trim().length === 0;
+      return commandText.length === 0 || !/\s/.test(commandText.charAt(0)) || commandText.trim().length === 0;
     });
+    const isPrefixCommand = matchesDefaultPrefix || matchesConfiguredPrefix;
 
     if (!isPrefixCommand) return;
 
