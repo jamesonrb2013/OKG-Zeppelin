@@ -9,7 +9,7 @@ import {
 export const announceCommand = new SlashCommandBuilder()
   .setName("announce")
   .setDescription("Send a polished announcement to a channel")
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages.toString())
+  .setDefaultMemberPermissions(null) // Visible in the picker; handler still enforces Manage Messages.
 
   .addChannelOption((option) =>
     option.setName("channel").setDescription("The channel where the announcement will be sent").setRequired(true),
