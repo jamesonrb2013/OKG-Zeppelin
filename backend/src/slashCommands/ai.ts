@@ -351,7 +351,8 @@ export async function handleAIMessage(message: Message): Promise<void> {
 
   if ((global?.enabled ?? true) === false || (current?.enabled ?? true) === false) return;
 
-  const apiKey = env.OMNIROUTE_API_KEY;
+  // Deployment secrets sometimes include accidental surrounding whitespace.
+  const apiKey = env.OMNIROUTE_API_KEY?.trim();
   if (!apiKey) {
     await message.reply({
       content: "OKG AI is not connected to OmniRoute yet. Please contact the OKG Manager owner.",
@@ -374,10 +375,9 @@ export async function handleAIMessage(message: Message): Promise<void> {
       ? DEFAULT_MODEL
       : configuredModel;
   const personality = global?.personality || DEFAULT_PERSONALITY;
-  const baseUrl = (env.OMNIROUTE_BASE_URL || "https://apiroute.onekidgaming-services.blitz.cloud/v1").replace(
-    /\/+$/,
-    "",
-  );
+  const baseUrl = (env.OMNIROUTE_BASE_URL || "https://apiroute.onekidgaming-services.blitz.cloud/v1")
+    .trim()
+    .replace(/\/+$/, "");
   try {
     await textChannel.sendTyping();
     const requestBody = JSON.stringify({
@@ -418,8 +418,15 @@ export async function handleAIMessage(message: Message): Promise<void> {
     if (!response) throw lastNetworkError ?? new Error("OmniRoute request failed without a response");
 
     if (!response.ok) {
-      const detail = (await response.text()).slice(0, 300);
-      console.error(`[OKG AI] OmniRoute returned HTTP ${response.status}: ${detail}`);
+      const detail = (await response.text()).slice(0, 1200);
+      // Gateways may return an empty body for authentication errors. Record safe
+      // response metadata to distinguish API errors from proxy-level responses.
+      const requestId = response.headers.get("x-request-id") || response.headers.get("request-id") || response.headers.get("cf-ray") || "not-provided";
+      const authChallenge = response.headers.get("www-authenticate") || "not-provided";
+      const contentType = response.headers.get("content-type") || "not-provided";
+      console.error(
+        `[OKG AI] OpenAI-compatible API returned HTTP ${response.status}; requestId=${requestId}; contentType=${contentType}; wwwAuthenticate=${authChallenge}; detail=${detail || "(empty response body)"}`,
+      );
       await message.reply({
         content:
           response.status === 401 || response.status === 403
