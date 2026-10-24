@@ -1,9 +1,4 @@
-import {
-  ChatInputCommandInteraction,
-  Message,
-  PermissionFlagsBits,
-  SlashCommandBuilder,
-} from "discord.js";
+import { ChatInputCommandInteraction, Message, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import { dataSource } from "../data/dataSource.js";
 import { OkgAISetting } from "../data/entities/OkgAISetting.js";
 import { env } from "../env.js";
@@ -69,20 +64,53 @@ export const aiConfigCommand = new SlashCommandBuilder()
   .setName("ai-config")
   .setDescription("Configure OKG AI for this server")
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
-  .addStringOption((option) => option.setName("model").setDescription("OmniRoute model ID (for example gemini/gemini-3.8-flash)").setMaxLength(160))
-  .addIntegerOption((option) => option.setName("daily-limit").setDescription("Maximum AI replies per UTC day (0 disables replies)").setMinValue(0).setMaxValue(MAX_DAILY_LIMIT))
-  .addIntegerOption((option) => option.setName("monthly-limit").setDescription("Maximum AI replies per UTC month (0 disables replies)").setMinValue(0).setMaxValue(MAX_MONTHLY_LIMIT))
+  .addStringOption((option) =>
+    option
+      .setName("model")
+      .setDescription("OmniRoute model ID (for example gemini/gemini-3.8-flash)")
+      .setMaxLength(160),
+  )
+  .addIntegerOption((option) =>
+    option
+      .setName("daily-limit")
+      .setDescription("Maximum AI replies per UTC day (0 disables replies)")
+      .setMinValue(0)
+      .setMaxValue(MAX_DAILY_LIMIT),
+  )
+  .addIntegerOption((option) =>
+    option
+      .setName("monthly-limit")
+      .setDescription("Maximum AI replies per UTC month (0 disables replies)")
+      .setMinValue(0)
+      .setMaxValue(MAX_MONTHLY_LIMIT),
+  )
   .addRoleOption((option) => option.setName("trigger-role").setDescription("Role that activates OKG AI when mentioned"))
   .addBooleanOption((option) => option.setName("enabled").setDescription("Enable or disable AI replies in this server"))
-  .addBooleanOption((option) => option.setName("clear-trigger-role").setDescription("Remove the configured trigger role"));
+  .addBooleanOption((option) =>
+    option.setName("clear-trigger-role").setDescription("Remove the configured trigger role"),
+  );
 
 export const aiAdminCommand = new SlashCommandBuilder()
   .setName("ai-admin")
   .setDescription("Bot-owner-only global OKG AI settings")
   .addStringOption((option) => option.setName("model").setDescription("Default OmniRoute model ID").setMaxLength(160))
-  .addStringOption((option) => option.setName("personality").setDescription("Global personality / system instructions").setMaxLength(4000))
-  .addIntegerOption((option) => option.setName("daily-limit").setDescription("Default daily replies per server").setMinValue(0).setMaxValue(MAX_DAILY_LIMIT))
-  .addIntegerOption((option) => option.setName("monthly-limit").setDescription("Default monthly replies per server").setMinValue(0).setMaxValue(MAX_MONTHLY_LIMIT))
+  .addStringOption((option) =>
+    option.setName("personality").setDescription("Global personality / system instructions").setMaxLength(4000),
+  )
+  .addIntegerOption((option) =>
+    option
+      .setName("daily-limit")
+      .setDescription("Default daily replies per server")
+      .setMinValue(0)
+      .setMaxValue(MAX_DAILY_LIMIT),
+  )
+  .addIntegerOption((option) =>
+    option
+      .setName("monthly-limit")
+      .setDescription("Default monthly replies per server")
+      .setMinValue(0)
+      .setMaxValue(MAX_MONTHLY_LIMIT),
+  )
   .addBooleanOption((option) => option.setName("enabled").setDescription("Turn the AI feature on or off bot-wide"));
 
 export const aiStatusCommand = new SlashCommandBuilder()
@@ -92,7 +120,10 @@ export const aiStatusCommand = new SlashCommandBuilder()
 export async function handleAICommand(interaction: ChatInputCommandInteraction): Promise<void> {
   if (interaction.commandName === "ai-admin") {
     if (!isBotOwner(interaction)) {
-      await interaction.reply({ content: "Only the OKG Manager platform owner can use this command.", ephemeral: true });
+      await interaction.reply({
+        content: "Only the OKG Manager platform owner can use this command.",
+        ephemeral: true,
+      });
       return;
     }
 
@@ -134,14 +165,19 @@ export async function handleAICommand(interaction: ChatInputCommandInteraction):
 
   if (interaction.commandName === "ai-setup") {
     if (!isGuildOwner(interaction) && !interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
-      await interaction.reply({ content: "Only the server owner or an administrator can set up OKG AI.", ephemeral: true });
+      await interaction.reply({
+        content: "Only the server owner or an administrator can set up OKG AI.",
+        ephemeral: true,
+      });
       return;
     }
 
     await interaction.deferReply({ ephemeral: true });
     const current = await getSetting(interaction.guild.id);
     if (current?.trigger_role_id && interaction.guild.roles.cache.has(current.trigger_role_id)) {
-      await interaction.editReply(`OKG AI is already set up with <@&${current.trigger_role_id}>. Use /ai-config to change settings.`);
+      await interaction.editReply(
+        `OKG AI is already set up with <@&${current.trigger_role_id}>. Use /ai-config to change settings.`,
+      );
       return;
     }
 
@@ -158,14 +194,19 @@ export async function handleAICommand(interaction: ChatInputCommandInteraction):
       );
     } catch (error) {
       console.error("[OKG AI] Role setup failed:", error);
-      await interaction.editReply("I couldn't create the role. Please check that I have Manage Roles and that my role is above where the new role needs to be.");
+      await interaction.editReply(
+        "I couldn't create the role. Please check that I have Manage Roles and that my role is above where the new role needs to be.",
+      );
     }
     return;
   }
 
   if (interaction.commandName === "ai-config") {
     if (!isGuildOwner(interaction) && !interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
-      await interaction.reply({ content: "Only the server owner or an administrator can configure OKG AI.", ephemeral: true });
+      await interaction.reply({
+        content: "Only the server owner or an administrator can configure OKG AI.",
+        ephemeral: true,
+      });
       return;
     }
 
@@ -180,8 +221,14 @@ export async function handleAICommand(interaction: ChatInputCommandInteraction):
     const enabled = interaction.options.getBoolean("enabled");
 
     if (model !== null) patch.model = model.trim();
-    if (daily !== null) patch.daily_limit = parseLimit(daily, current?.daily_limit ?? global?.daily_limit ?? 10, MAX_DAILY_LIMIT);
-    if (monthly !== null) patch.monthly_limit = parseLimit(monthly, current?.monthly_limit ?? global?.monthly_limit ?? 100, MAX_MONTHLY_LIMIT);
+    if (daily !== null)
+      patch.daily_limit = parseLimit(daily, current?.daily_limit ?? global?.daily_limit ?? 10, MAX_DAILY_LIMIT);
+    if (monthly !== null)
+      patch.monthly_limit = parseLimit(
+        monthly,
+        current?.monthly_limit ?? global?.monthly_limit ?? 100,
+        MAX_MONTHLY_LIMIT,
+      );
     if (role) patch.trigger_role_id = role.id;
     if (clearRole) patch.trigger_role_id = null;
     if (enabled !== null) patch.enabled = enabled;
@@ -212,8 +259,7 @@ export async function handleAICommand(interaction: ChatInputCommandInteraction):
     const dailyCount = current?.daily_period === today ? current.daily_count : 0;
     const monthlyCount = current?.monthly_period === month ? current.monthly_count : 0;
     await interaction.reply({
-      content:
-        `**OKG AI status**\nEnabled: ${(current?.enabled ?? global?.enabled ?? true) && (global?.enabled ?? true)}\nModel: ${current?.model ?? global?.model ?? DEFAULT_MODEL}\nDaily usage: ${dailyCount}/${current?.daily_limit ?? global?.daily_limit ?? 10}\nMonthly usage: ${monthlyCount}/${current?.monthly_limit ?? global?.monthly_limit ?? 100}\nTrigger role: ${current?.trigger_role_id ? `<@&${current.trigger_role_id}>` : "not configured"}`,
+      content: `**OKG AI status**\nEnabled: ${(current?.enabled ?? global?.enabled ?? true) && (global?.enabled ?? true)}\nModel: ${current?.model ?? global?.model ?? DEFAULT_MODEL}\nDaily usage: ${dailyCount}/${current?.daily_limit ?? global?.daily_limit ?? 10}\nMonthly usage: ${monthlyCount}/${current?.monthly_limit ?? global?.monthly_limit ?? 100}\nTrigger role: ${current?.trigger_role_id ? `<@&${current.trigger_role_id}>` : "not configured"}`,
       ephemeral: true,
     });
   }
@@ -281,11 +327,17 @@ export async function handleAIMessage(message: Message): Promise<void> {
   }
 
   if (!prompt) {
-    await message.reply({ content: "Hey! I'm here. What can I help you with?", allowedMentions: { repliedUser: false } });
+    await message.reply({
+      content: "Hey! I'm here. What can I help you with?",
+      allowedMentions: { repliedUser: false },
+    });
     return;
   }
   if (prompt.length > MAX_INPUT_LENGTH) {
-    await message.reply({ content: `Please keep each OKG AI message under ${MAX_INPUT_LENGTH} characters.`, allowedMentions: { repliedUser: false } });
+    await message.reply({
+      content: `Please keep each OKG AI message under ${MAX_INPUT_LENGTH} characters.`,
+      allowedMentions: { repliedUser: false },
+    });
     return;
   }
 
@@ -308,7 +360,10 @@ export async function handleAIMessage(message: Message): Promise<void> {
 
   const model = current?.model || global?.model || DEFAULT_MODEL;
   const personality = global?.personality || DEFAULT_PERSONALITY;
-  const baseUrl = (env.OMNIROUTE_BASE_URL || "https://apiroute.onekidgaming-services.blitz.cloud/v1").replace(/\/+$/, "");
+  const baseUrl = (env.OMNIROUTE_BASE_URL || "https://apiroute.onekidgaming-services.blitz.cloud/v1").replace(
+    /\/+$/,
+    "",
+  );
   try {
     await message.channel.sendTyping();
     const response = await fetch(`${baseUrl}/chat/completions`, {
@@ -336,11 +391,12 @@ export async function handleAIMessage(message: Message): Promise<void> {
       const detail = (await response.text()).slice(0, 300);
       console.error(`[OKG AI] OmniRoute returned HTTP ${response.status}: ${detail}`);
       await message.reply({
-        content: response.status === 401 || response.status === 403
-          ? "OKG AI can't authenticate with OmniRoute right now. Please contact the bot owner."
-          : response.status === 429
-            ? "OmniRoute is busy or its upstream limit has been reached. Please try again shortly."
-            : "I couldn't get an answer from the AI service just now. Please try again in a moment.",
+        content:
+          response.status === 401 || response.status === 403
+            ? "OKG AI can't authenticate with OmniRoute right now. Please contact the bot owner."
+            : response.status === 429
+              ? "OmniRoute is busy or its upstream limit has been reached. Please try again shortly."
+              : "I couldn't get an answer from the AI service just now. Please try again in a moment.",
         allowedMentions: { repliedUser: false },
       });
       return;
@@ -350,13 +406,20 @@ export async function handleAIMessage(message: Message): Promise<void> {
       choices?: Array<{ message?: { content?: string | Array<{ type?: string; text?: string }> } }>;
     };
     const rawContent = payload.choices?.[0]?.message?.content;
-    const answer = typeof rawContent === "string"
-      ? rawContent.trim()
-      : Array.isArray(rawContent)
-        ? rawContent.map((part) => part.text ?? "").join("").trim()
-        : "";
+    const answer =
+      typeof rawContent === "string"
+        ? rawContent.trim()
+        : Array.isArray(rawContent)
+          ? rawContent
+              .map((part) => part.text ?? "")
+              .join("")
+              .trim()
+          : "";
     if (!answer) {
-      await message.reply({ content: "The AI service returned an empty answer. Please try again.", allowedMentions: { repliedUser: false } });
+      await message.reply({
+        content: "The AI service returned an empty answer. Please try again.",
+        allowedMentions: { repliedUser: false },
+      });
       return;
     }
 

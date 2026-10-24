@@ -56,7 +56,14 @@ import { DecayingCounter } from "./utils/DecayingCounter.js";
 import { enableProfiling } from "./utils/easyProfiler.js";
 import { loadYamlSafely } from "./utils/loadYamlSafely.js";
 import { announceCommand, handleAnnounceCommand } from "./slashCommands/announce.js";
-import { aiAdminCommand, aiConfigCommand, aiSetupCommand, aiStatusCommand, handleAICommand, handleAIMessage } from "./slashCommands/ai.js";
+import {
+  aiAdminCommand,
+  aiConfigCommand,
+  aiSetupCommand,
+  aiStatusCommand,
+  handleAICommand,
+  handleAIMessage,
+} from "./slashCommands/ai.js";
 import { permissionLevelCommand, handlePermissionLevelCommand } from "./slashCommands/permissionLevel.js";
 import {
   handleSupportInteraction,
