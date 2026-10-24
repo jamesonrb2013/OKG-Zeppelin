@@ -731,26 +731,8 @@ Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
         }
       }
 
-      // Global commands can take time to appear in Discord clients. Also register
-      // AI commands as guild commands so they are available immediately in every
-      // server the bot is already in. Discord uses the guild-scoped command in
-      // preference to the same-named global command, avoiding duplicate entries.
-      const aiCommands = [aiSetupCommand, aiConfigCommand, aiAdminCommand, aiStatusCommand];
-      for (const guild of client.guilds.cache.values()) {
-        const currentGuildCommands = await client.application!.commands.fetch({ guildId: guild.id });
-        for (const command of aiCommands) {
-          const existing = currentGuildCommands.find((registered) => registered.name === command.name);
-          if (existing) {
-            await client.application!.commands.edit(existing.id, command.toJSON(), guild.id);
-          } else {
-            await client.application!.commands.create(command.toJSON(), guild.id);
-          }
-        }
-        logger.info(`Registered immediate AI slash commands in guild ${guild.id}`);
-      }
-
       logger.info(
-        "Registered OKG moderation, support, and update slash commands globally and AI commands globally plus per server; message prefixes remain paused",
+        "Registered OKG moderation, support, update, and AI slash commands globally only; removed guild-scoped duplicates; message prefixes remain paused",
       );
     } catch (error) {
       logger.error(`Failed to register slash commands: ${error}`);
