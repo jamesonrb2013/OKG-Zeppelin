@@ -68,7 +68,9 @@ let toValidate = { ...process.env };
 const envPath = path.join(rootDir, ".env");
 if (fs.existsSync(envPath)) {
   const buf = fs.readFileSync(envPath);
-  toValidate = { ...toValidate, ...dotenv.parse(buf) };
+  // Local .env values are defaults only. Deployment-injected environment variables
+  // must win, especially API keys rotated in the hosting dashboard.
+  toValidate = { ...dotenv.parse(buf), ...process.env };
 }
 
 export const env = envType.parse(toValidate);
