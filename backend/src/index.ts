@@ -497,6 +497,14 @@ connect().then(async () => {
     void handleAIMessage(message).catch((error) => logger.error(`[OKG AI] Message handler failed: ${error}`));
 
     const trimmedContent = message.content.trimStart();
+
+    // Bot mentions and the human-readable "OKG AI" trigger are AI prompts, not prefix commands.
+    // Return before checking configured/default prefixes so a bot ping never gets the paused warning.
+    const botMentionPrefix = new RegExp(`^<@!?${client.user?.id ?? "0"}>\\s*`, "i");
+    if (botMentionPrefix.test(trimmedContent) || /^okg ai(?:[,!:]?)(?:\\s|$)/i.test(trimmedContent)) {
+      return;
+    }
+
     // Vety exposes the default command prefix as a RegExp, not a string.
     const defaultPrefixPattern = getDefaultMessageCommandPrefix(client);
     const prefixes = new Set<string>([
