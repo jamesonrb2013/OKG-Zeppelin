@@ -695,32 +695,44 @@ Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
         supportPanelCommand,
         updatesSetupCommand,
         updatesConfigCommand,
-        aiSetupCommand,
-        aiConfigCommand,
-        aiAdminCommand,
-        aiStatusCommand,
       ];
+      const aiCommandsToRegister = [aiSetupCommand, aiConfigCommand, aiAdminCommand, aiStatusCommand];
+      const aiCommandNames = new Set(aiCommandsToRegister.map((command) => command.name));
 
-      // Remove obsolete global moderation aliases.
+      // Keep non-AI custom commands global. AI commands are deliberately guild-scoped:
+      // Discord makes guild commands available immediately, while global propagation
+      // caused the AI commands to disappear after the duplicate cleanup.
       const globalCommands = await client.application!.commands.fetch();
       for (const registered of globalCommands.values()) {
-        if (obsoleteModerationCommandNames.has(registered.name)) {
+        if (obsoleteModerationCommandNames.has(registered.name) || aiCommandNames.has(registered.name)) {
           await client.application!.commands.delete(registered.id);
           logger.info(`Removed obsolete global slash command /${registered.name}`);
         }
       }
 
-      // This bot uses global slash commands only. Remove every old guild-scoped
-      // copy, including canonical names, so Discord does not display duplicates.
+      // Remove guild-scoped duplicates for the global commands, but retain/upsert
+      // exactly one copy of each AI command in every server.
       for (const guild of client.guilds.cache.values()) {
         const guildCommands = await client.application!.commands.fetch({ guildId: guild.id });
         for (const registered of guildCommands.values()) {
-          await client.application!.commands.delete(registered.id, guild.id);
-          logger.info(`Removed duplicate guild-scoped slash command /${registered.name} from guild ${guild.id}`);
+          if (!aiCommandNames.has(registered.name)) {
+            await client.application!.commands.delete(registered.id, guild.id);
+            logger.info(`Removed duplicate guild-scoped slash command /${registered.name} from guild ${guild.id}`);
+          }
+        }
+
+        for (const command of aiCommandsToRegister) {
+          const existing = guildCommands.find((registered) => registered.name === command.name);
+          if (existing) {
+            await client.application!.commands.edit(existing.id, command.toJSON(), guild.id);
+          } else {
+            await client.application!.commands.create(command.toJSON(), { guildId: guild.id });
+          }
+          logger.info(`Registered guild-scoped /${command.name} in guild ${guild.id}`);
         }
       }
 
-      // Register custom commands globally once; never create guild-scoped copies.
+      // Upsert the remaining custom commands globally.
       for (const command of commandsToRegister) {
         const currentGlobalCommands = await client.application!.commands.fetch();
         const existingGlobal = currentGlobalCommands.find((registered) => registered.name === command.name);
@@ -732,7 +744,7 @@ Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
       }
 
       logger.info(
-        "Registered OKG moderation, support, update, and AI slash commands globally only; removed guild-scoped duplicates; message prefixes remain paused",
+        "Registered AI commands once per guild for immediate availability; other custom commands remain global; message prefixes remain paused",
       );
     } catch (error) {
       logger.error(`Failed to register slash commands: ${error}`);
