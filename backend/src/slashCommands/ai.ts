@@ -297,7 +297,7 @@ export async function handleAIMessage(message: Message): Promise<void> {
 
   const model = current?.model || global?.model || DEFAULT_MODEL;
   const personality = global?.personality || DEFAULT_PERSONALITY;
-  const baseUrl = (env.OMNIROUTE_BASE_URL || "https://apiroute.onekidgaming-services.blitz.cloud/v1").replace(/\\/+$/, "");
+  const baseUrl = (env.OMNIROUTE_BASE_URL || "https://apiroute.onekidgaming-services.blitz.cloud/v1").replace(/\/+$/, "");
   try {
     await message.channel.sendTyping();
     const response = await fetch(`${baseUrl}/chat/completions`, {
