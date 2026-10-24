@@ -1,11 +1,8 @@
 import {
-  ChannelType,
   ChatInputCommandInteraction,
-  Guild,
   Message,
   PermissionFlagsBits,
   SlashCommandBuilder,
-  TextChannel,
 } from "discord.js";
 import { dataSource } from "../data/dataSource.js";
 import { OkgAISetting } from "../data/entities/OkgAISetting.js";
@@ -30,12 +27,14 @@ async function saveSetting(scopeId: string, patch: Partial<OkgAISetting>): Promi
   const repository = repo();
   let setting = await repository.findOne({ where: { scope_id: scopeId } });
   if (!setting) {
+    const globalDefaults =
+      scopeId === GLOBAL_SCOPE ? null : await repository.findOne({ where: { scope_id: GLOBAL_SCOPE } });
     setting = repository.create({
       scope_id: scopeId,
-      model: DEFAULT_MODEL,
-      personality: DEFAULT_PERSONALITY,
-      daily_limit: 10,
-      monthly_limit: 100,
+      model: globalDefaults?.model ?? DEFAULT_MODEL,
+      personality: globalDefaults?.personality ?? DEFAULT_PERSONALITY,
+      daily_limit: globalDefaults?.daily_limit ?? 10,
+      monthly_limit: globalDefaults?.monthly_limit ?? 100,
       trigger_role_id: null,
       enabled: true,
       daily_count: 0,
