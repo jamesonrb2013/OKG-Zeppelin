@@ -309,7 +309,8 @@ function chunkText(text: string, size = 1900): string[] {
 }
 
 export async function handleAIMessage(message: Message): Promise<void> {
-  if (!message.guild || !message.content || message.author.bot || message.webhookId) return;
+  if (!message.guild || !message.content || message.author.bot || message.webhookId || !message.channel.isTextBased()) return;
+  const textChannel = message.channel as TextChannel;
   const global = await getSetting(GLOBAL_SCOPE);
   const current = await getSetting(message.guild.id);
   const roleId = current?.trigger_role_id;
@@ -365,7 +366,7 @@ export async function handleAIMessage(message: Message): Promise<void> {
     "",
   );
   try {
-    await message.channel.sendTyping();
+    await textChannel.sendTyping();
     const response = await fetch(`${baseUrl}/chat/completions`, {
       method: "POST",
       headers: {
@@ -428,7 +429,7 @@ export async function handleAIMessage(message: Message): Promise<void> {
       if (i === 0) {
         await message.reply({ content: chunks[i], allowedMentions: { parse: [], repliedUser: false } });
       } else {
-        await message.channel.send({ content: chunks[i], allowedMentions: { parse: [] } });
+        await textChannel.send({ content: chunks[i], allowedMentions: { parse: [] } });
       }
     }
   } catch (error) {
