@@ -221,29 +221,39 @@ export async function handleAICommand(interaction: ChatInputCommandInteraction):
 
 async function reserveUsage(guildId: string): Promise<{ ok: boolean; reason?: string }> {
   const global = await getSetting(GLOBAL_SCOPE);
-  const current = await getSetting(guildId);
-  if ((global?.enabled ?? true) === false || (current?.enabled ?? true) === false) {
-    return { ok: false, reason: "OKG AI is currently disabled." };
-  }
+  if ((global?.enabled ?? true) === false) return { ok: false, reason: "OKG AI is currently disabled." };
 
+  // Ensure a row exists, then lock it while checking/incrementing so simultaneous messages
+  // cannot race past a server's daily or monthly cap.
+  await saveSetting(guildId, {});
   const now = new Date();
   const today = now.toISOString().slice(0, 10);
   const month = today.slice(0, 7);
-  const dailyLimit = current?.daily_limit ?? global?.daily_limit ?? 10;
-  const monthlyLimit = current?.monthly_limit ?? global?.monthly_limit ?? 100;
-  const dailyCount = current?.daily_period === today ? current.daily_count : 0;
-  const monthlyCount = current?.monthly_period === month ? current.monthly_count : 0;
 
-  if (dailyCount >= dailyLimit) return { ok: false, reason: "This server has reached its daily OKG AI limit." };
-  if (monthlyCount >= monthlyLimit) return { ok: false, reason: "This server has reached its monthly OKG AI limit." };
+  return dataSource.transaction(async (manager) => {
+    const repository = manager.getRepository(OkgAISetting);
+    const current = await repository.findOne({
+      where: { scope_id: guildId },
+      lock: { mode: "pessimistic_write" },
+    });
+    if (!current) return { ok: false, reason: "OKG AI settings could not be loaded. Please try again." };
+    if (!current.enabled) return { ok: false, reason: "OKG AI is currently disabled." };
 
-  await saveSetting(guildId, {
-    daily_count: dailyCount + 1,
-    daily_period: today,
-    monthly_count: monthlyCount + 1,
-    monthly_period: month,
+    const dailyLimit = current.daily_limit ?? global?.daily_limit ?? 10;
+    const monthlyLimit = current.monthly_limit ?? global?.monthly_limit ?? 100;
+    const dailyCount = current.daily_period === today ? current.daily_count : 0;
+    const monthlyCount = current.monthly_period === month ? current.monthly_count : 0;
+
+    if (dailyCount >= dailyLimit) return { ok: false, reason: "This server has reached its daily OKG AI limit." };
+    if (monthlyCount >= monthlyLimit) return { ok: false, reason: "This server has reached its monthly OKG AI limit." };
+
+    current.daily_count = dailyCount + 1;
+    current.daily_period = today;
+    current.monthly_count = monthlyCount + 1;
+    current.monthly_period = month;
+    await repository.save(current);
+    return { ok: true };
   });
-  return { ok: true };
 }
 
 function chunkText(text: string, size = 1900): string[] {
