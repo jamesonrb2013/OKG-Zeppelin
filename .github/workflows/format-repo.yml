@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - feature/okg-ai
 
 permissions:
   contents: write
