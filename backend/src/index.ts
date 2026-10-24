@@ -726,7 +726,7 @@ Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
           if (existing) {
             await client.application!.commands.edit(existing.id, command.toJSON(), guild.id);
           } else {
-            await client.application!.commands.create(command.toJSON(), { guildId: guild.id });
+            await client.application!.commands.create(command.toJSON(), guild.id);
           }
           logger.info(`Registered guild-scoped /${command.name} in guild ${guild.id}`);
         }
