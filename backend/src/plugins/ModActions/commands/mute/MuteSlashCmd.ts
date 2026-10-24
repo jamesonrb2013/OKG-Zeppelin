@@ -109,16 +109,30 @@ export const MuteSlashCmd = modActionsSlashCmd({
       return;
     }
 
-    actualMuteCmd(
-      pluginData,
-      interaction,
-      options.user,
-      attachments,
-      mod,
-      ppId,
-      convertedTime,
-      options.reason,
-      contactMethods,
-    );
+    // Keep the slash-command handler attached to the mute operation. If an
+    // unexpected error escapes actualMuteCmd, the deferred interaction must
+    // still receive a response instead of remaining in Discord's loading state.
+    try {
+      await actualMuteCmd(
+        pluginData,
+        interaction,
+        options.user,
+        attachments,
+        mod,
+        ppId,
+        convertedTime,
+        options.reason,
+        contactMethods,
+      );
+    } catch (error) {
+      console.error("[MOD-MUTE] Unhandled command failure:", error);
+      if (interaction.deferred && !interaction.replied) {
+        await interaction.editReply({
+          content: "The mute command failed unexpectedly. The error has been logged; please try again or contact an administrator.",
+        }).catch((replyError) => {
+          console.error("[MOD-MUTE] Failed to send fallback interaction response:", replyError);
+        });
+      }
+    }
   },
 });
