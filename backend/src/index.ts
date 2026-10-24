@@ -501,7 +501,7 @@ connect().then(async () => {
     // Bot mentions and the human-readable "OKG AI" trigger are AI prompts, not prefix commands.
     // Return before checking configured/default prefixes so a bot ping never gets the paused warning.
     const botMentionPrefix = new RegExp(`^<@!?${client.user?.id ?? "0"}>\\s*`, "i");
-    if (botMentionPrefix.test(trimmedContent) || /^okg ai(?:[,!:]?)(?:\\s|$)/i.test(trimmedContent)) {
+    if (botMentionPrefix.test(trimmedContent) || /^okg ai(?:[,!:]?)(?:\s|$)/i.test(trimmedContent)) {
       return;
     }
 
