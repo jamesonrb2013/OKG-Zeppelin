@@ -374,26 +374,42 @@ export async function handleAIMessage(message: Message): Promise<void> {
   );
   try {
     await textChannel.sendTyping();
-    const response = await fetch(`${baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: "system", content: personality },
-          {
-            role: "user",
-            content: `Discord server: ${message.guild.name}\nUser: ${message.member?.displayName ?? message.author.username}\nMessage: ${prompt}`,
-          },
-        ],
-        temperature: 0.8,
-        max_tokens: 700,
-      }),
-      signal: AbortSignal.timeout(45000),
+    const requestBody = JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: personality },
+        {
+          role: "user",
+          content: `Discord server: ${message.guild.name}\nUser: ${message.member?.displayName ?? message.author.username}\nMessage: ${prompt}`,
+        },
+      ],
+      temperature: 0.8,
+      max_tokens: 700,
     });
+
+    // OmniRoute may need a moment to wake up. Retry one network/timeout failure,
+    // but do not retry HTTP errors such as 401/403 or 429.
+    let response: Response | undefined;
+    let lastNetworkError: unknown;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        response = await fetch(`${baseUrl}/chat/completions`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: requestBody,
+          signal: AbortSignal.timeout(60000),
+        });
+        break;
+      } catch (error) {
+        lastNetworkError = error;
+        console.error(`[OKG AI] OmniRoute network attempt ${attempt}/2 failed (base URL: ${baseUrl}, model: ${model}):`, error);
+        if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 1200));
+      }
+    }
+    if (!response) throw lastNetworkError ?? new Error("OmniRoute request failed without a response");
 
     if (!response.ok) {
       const detail = (await response.text()).slice(0, 300);
