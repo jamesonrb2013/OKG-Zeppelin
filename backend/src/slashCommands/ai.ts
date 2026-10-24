@@ -1,4 +1,10 @@
-import { ChatInputCommandInteraction, Message, PermissionFlagsBits, SlashCommandBuilder, TextChannel } from "discord.js";
+import {
+  ChatInputCommandInteraction,
+  Message,
+  PermissionFlagsBits,
+  SlashCommandBuilder,
+  TextChannel,
+} from "discord.js";
 import { dataSource } from "../data/dataSource.js";
 import { OkgAISetting } from "../data/entities/OkgAISetting.js";
 import { env } from "../env.js";
