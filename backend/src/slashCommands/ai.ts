@@ -417,6 +417,33 @@ export async function handleAIMessage(message: Message): Promise<void> {
     }
     if (!response) throw lastNetworkError ?? new Error("OmniRoute request failed without a response");
 
+    // Keep the standard OpenAI Bearer header as the primary auth mechanism. Some
+    // OpenAI-compatible gateways also accept x-api-key; retry only an explicit
+    // 401 with that compatibility header, without changing the request payload.
+    // A rejected Bearer request has not produced a completion, so this does not
+    // duplicate a successful/paid generation.
+    if (response.status === 401) {
+      try {
+        const fallbackResponse = await fetch(`${baseUrl}/chat/completions`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "x-api-key": apiKey,
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: requestBody,
+          signal: AbortSignal.timeout(60000),
+        });
+        console.warn(
+          `[OKG AI] Bearer-auth attempt returned 401; compatibility retry returned HTTP ${fallbackResponse.status}.`,
+        );
+        response = fallbackResponse;
+      } catch (fallbackError) {
+        console.error("[OKG AI] Compatibility auth retry failed:", fallbackError);
+      }
+    }
+
     if (!response.ok) {
       const detail = (await response.text()).slice(0, 1200);
       // Gateways may return an empty body for authentication errors. Record safe
