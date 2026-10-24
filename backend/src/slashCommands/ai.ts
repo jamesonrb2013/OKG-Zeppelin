@@ -309,7 +309,8 @@ function chunkText(text: string, size = 1900): string[] {
 }
 
 export async function handleAIMessage(message: Message): Promise<void> {
-  if (!message.guild || !message.content || message.author.bot || message.webhookId || !message.channel.isTextBased()) return;
+  if (!message.guild || !message.content || message.author.bot || message.webhookId || !message.channel.isTextBased())
+    return;
   const textChannel = message.channel as TextChannel;
   const global = await getSetting(GLOBAL_SCOPE);
   const current = await getSetting(message.guild.id);
