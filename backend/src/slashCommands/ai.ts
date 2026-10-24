@@ -280,11 +280,6 @@ export async function handleAIMessage(message: Message): Promise<void> {
   }
 
   if ((global?.enabled ?? true) === false || (current?.enabled ?? true) === false) return;
-  const reservation = await reserveUsage(message.guild.id);
-  if (!reservation.ok) {
-    await message.reply({ content: reservation.reason, allowedMentions: { repliedUser: false } });
-    return;
-  }
 
   const apiKey = env.OMNIROUTE_API_KEY;
   if (!apiKey) {
@@ -292,6 +287,12 @@ export async function handleAIMessage(message: Message): Promise<void> {
       content: "OKG AI is not connected to OmniRoute yet. Please contact the OKG Manager owner.",
       allowedMentions: { repliedUser: false },
     });
+    return;
+  }
+
+  const reservation = await reserveUsage(message.guild.id);
+  if (!reservation.ok) {
+    await message.reply({ content: reservation.reason, allowedMentions: { repliedUser: false } });
     return;
   }
 
