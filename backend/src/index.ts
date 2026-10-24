@@ -56,6 +56,14 @@ import { DecayingCounter } from "./utils/DecayingCounter.js";
 import { enableProfiling } from "./utils/easyProfiler.js";
 import { loadYamlSafely } from "./utils/loadYamlSafely.js";
 import { announceCommand, handleAnnounceCommand } from "./slashCommands/announce.js";
+import {
+  aiAdminCommand,
+  aiConfigCommand,
+  aiSetupCommand,
+  aiStatusCommand,
+  handleAICommand,
+  handleAIMessage,
+} from "./slashCommands/ai.js";
 import { permissionLevelCommand, handlePermissionLevelCommand } from "./slashCommands/permissionLevel.js";
 import {
   handleSupportInteraction,
@@ -71,7 +79,7 @@ import {
   updatesSetupCommand,
 } from "./slashCommands/updates.js";
 
-const BOT_VERSION = "1.3.8";
+const BOT_VERSION = "1.3.9";
 
 // Error handling
 let recentPluginErrors = 0;
@@ -485,6 +493,9 @@ connect().then(async () => {
   client.on(Events.MessageCreate, async (message) => {
     if (!message.guild || !message.content || message.author.bot || message.webhookId) return;
 
+    // AI replies only when explicitly invoked; it is independent of the paused prefix-command system.
+    void handleAIMessage(message).catch((error) => logger.error(`[OKG AI] Message handler failed: ${error}`));
+
     const trimmedContent = message.content.trimStart();
     // Vety exposes the default command prefix as a RegExp, not a string.
     const defaultPrefixPattern = getDefaultMessageCommandPrefix(client);
@@ -668,6 +679,10 @@ Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
         supportPanelCommand,
         updatesSetupCommand,
         updatesConfigCommand,
+        aiSetupCommand,
+        aiConfigCommand,
+        aiAdminCommand,
+        aiStatusCommand,
       ];
 
       // Remove obsolete global moderation aliases.
@@ -701,7 +716,7 @@ Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
       }
 
       logger.info(
-        "Registered /announce, /mod-permission-level, /support-panel, /updates-setup, and /updates-config globally (single copy each); /announce remains enabled while message prefixes are paused",
+        "Registered OKG moderation, support, update, and AI slash commands globally (single copy each); message prefixes remain paused",
       );
     } catch (error) {
       logger.error(`Failed to register slash commands: ${error}`);
@@ -764,6 +779,11 @@ Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
 
     if (interaction.commandName === "updates-config") {
       await handleUpdatesConfig(interaction);
+      return;
+    }
+
+    if (["ai-setup", "ai-config", "ai-admin", "ai-status"].includes(interaction.commandName)) {
+      await handleAICommand(interaction);
       return;
     }
 

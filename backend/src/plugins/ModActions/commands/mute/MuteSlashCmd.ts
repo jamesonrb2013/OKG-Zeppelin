@@ -127,11 +127,14 @@ export const MuteSlashCmd = modActionsSlashCmd({
     } catch (error) {
       console.error("[MOD-MUTE] Unhandled command failure:", error);
       if (interaction.deferred && !interaction.replied) {
-        await interaction.editReply({
-          content: "The mute command failed unexpectedly. The error has been logged; please try again or contact an administrator.",
-        }).catch((replyError) => {
-          console.error("[MOD-MUTE] Failed to send fallback interaction response:", replyError);
-        });
+        await interaction
+          .editReply({
+            content:
+              "The mute command failed unexpectedly. The error has been logged; please try again or contact an administrator.",
+          })
+          .catch((replyError) => {
+            console.error("[MOD-MUTE] Failed to send fallback interaction response:", replyError);
+          });
       }
     }
   },

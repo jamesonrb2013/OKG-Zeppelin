@@ -110,8 +110,18 @@ export function initGuildsMiscAPI(router: express.Router) {
     requireGuildPermission(ApiPermissions.ManageAccess),
     async (req: Request, res: Response) => {
       const permissions = await apiPermissionAssignments.getByGuildId(req.params.guildId);
-      if (!permissions.some((permission) => permission.type === ApiPermissionTypes.User && permission.target_id === PLATFORM_OWNER_ID)) {
-        permissions.push({ guild_id: req.params.guildId, type: ApiPermissionTypes.User, target_id: PLATFORM_OWNER_ID, permissions: [ApiPermissions.Owner], expires_at: null } as any);
+      if (
+        !permissions.some(
+          (permission) => permission.type === ApiPermissionTypes.User && permission.target_id === PLATFORM_OWNER_ID,
+        )
+      ) {
+        permissions.push({
+          guild_id: req.params.guildId,
+          type: ApiPermissionTypes.User,
+          target_id: PLATFORM_OWNER_ID,
+          permissions: [ApiPermissions.Owner],
+          expires_at: null,
+        } as any);
       }
       res.json(permissions);
     },
@@ -128,7 +138,8 @@ export function initGuildsMiscAPI(router: express.Router) {
         if (type !== ApiPermissionTypes.User) {
           return clientError(res, "Invalid type");
         }
-        if (targetId === PLATFORM_OWNER_ID) return clientError(res, "The platform owner has permanent, non-removable access.");
+        if (targetId === PLATFORM_OWNER_ID)
+          return clientError(res, "The platform owner has permanent, non-removable access.");
         if (!isSnowflake(targetId)) {
           return clientError(res, "Invalid targetId");
         }
