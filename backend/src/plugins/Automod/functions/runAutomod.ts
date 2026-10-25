@@ -223,14 +223,24 @@ export async function runAutomod(
 
         const action = availableActions[actionName];
 
-        action.apply({
-          ruleName,
-          pluginData,
-          contexts,
-          actionConfig,
-          matchResult,
-          prettyName,
-        });
+        try {
+          // Automod actions can be asynchronous (mute, ban, clean, notifications).
+          // Await them so failures are handled here instead of becoming unhandled rejections.
+          await action.apply({
+            ruleName,
+            pluginData,
+            contexts,
+            actionConfig,
+            matchResult,
+            prettyName,
+          });
+        } catch (error) {
+          // One action failing must not prevent the remaining actions or rules from running.
+          console.error(
+            `[AUTOMOD] Action "${actionName}" failed for rule "${ruleName}" in guild ${pluginData.guild.id}:`,
+            error,
+          );
+        }
 
         if (profilingEnabled()) {
           pluginData
@@ -244,14 +254,21 @@ export async function runAutomod(
 
       // Log all automod rules by default
       if (rule.actions.log == null) {
-        availableActions.log.apply({
-          ruleName,
-          pluginData,
-          contexts,
-          actionConfig: true,
-          matchResult,
-          prettyName,
-        });
+        try {
+          await availableActions.log.apply({
+            ruleName,
+            pluginData,
+            contexts,
+            actionConfig: true,
+            matchResult,
+            prettyName,
+          });
+        } catch (error) {
+          console.error(
+            `[AUTOMOD] Default log action failed for rule "${ruleName}" in guild ${pluginData.guild.id}:`,
+            error,
+          );
+        }
       }
     }
 
