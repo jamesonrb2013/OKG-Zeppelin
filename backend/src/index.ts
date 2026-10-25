@@ -713,8 +713,8 @@ Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
 
       }
 
-      // Register guild-scoped copies first so commands appear immediately in every server.
-      // Global commands can take a while to propagate after a deployment.
+      // Register server-scoped copies first because global command propagation can be delayed.
+      // This makes the commands available immediately in every cached guild.
       for (const guild of client.guilds.cache.values()) {
         try {
           const guildCommands = await client.application!.commands.fetch({ guildId: guild.id });
