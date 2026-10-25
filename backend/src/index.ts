@@ -703,8 +703,12 @@ Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
       for (const guild of client.guilds.cache.values()) {
         const guildCommands = await client.application!.commands.fetch({ guildId: guild.id });
         for (const registered of guildCommands.values()) {
-          await client.application!.commands.delete(registered.id, guild.id);
-          logger.info(`Removed duplicate guild-scoped slash command /${registered.name} from guild ${guild.id}`);
+          const isObsoleteAI = obsoleteAICommandNames.has(registered.name);
+          const duplicatesGlobalCommand = commandsToRegister.some((command) => command.name === registered.name);
+          if (isObsoleteAI || duplicatesGlobalCommand) {
+            await client.application!.commands.delete(registered.id, guild.id);
+            logger.info(`Removed ${isObsoleteAI ? "obsolete AI" : "duplicate global"} guild-scoped slash command /${registered.name} from guild ${guild.id}`);
+          }
         }
 
       }
