@@ -8,7 +8,22 @@ function ownerOnly(interaction: ChatInputCommandInteraction): boolean { return i
 async function bridgeRequest(path: string, interaction: ChatInputCommandInteraction, method = "GET", body?: unknown) {
   const token = process.env.OKG_API_ROUTER_BRIDGE_TOKEN?.trim();
   if (!token) throw new Error("The private router bridge is not configured on OKG Manager yet. Set OKG_API_ROUTER_BRIDGE_TOKEN in the bot environment.");
-  const response = await fetch(ROUTER_URL + "/bridge" + path, { method, headers: { "x-okg-bridge-token": token, "x-okg-discord-user-id": interaction.user.id, "content-type": "application/json", accept: "application/json" }, body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(25000) });
+  const url = ROUTER_URL + "/bridge" + path;
+  const headers = {
+    "x-okg-bridge-token": token,
+    "x-okg-discord-user-id": interaction.user.id,
+    "content-type": "application/json",
+    accept: "application/json",
+  };
+  const response =
+    method === "GET"
+      ? await fetch(url, { method: "GET", headers, signal: AbortSignal.timeout(25000) })
+      : await fetch(url, {
+          method,
+          headers,
+          body: JSON.stringify(body ?? {}),
+          signal: AbortSignal.timeout(25000),
+        });
   const payload = await response.json().catch(() => ({})) as any;
   if (!response.ok) throw new Error(payload.error?.message || "Router returned HTTP " + response.status);
   return payload;
