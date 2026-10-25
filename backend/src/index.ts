@@ -735,7 +735,7 @@ Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
         }
       }
 
-      // Keep global copies as a fallback for newly joined servers while guild copies propagate.
+      // Keep global copies as a fallback for servers joined after startup.
       for (const command of commandsToRegister) {
         try {
           const currentGlobalCommands = await client.application!.commands.fetch();
