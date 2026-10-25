@@ -5,7 +5,7 @@ const ROUTER_URL = (process.env.OKG_API_ROUTER_URL || "https://okg-api-router.on
 
 function ownerOnly(interaction: ChatInputCommandInteraction): boolean { return interaction.user.id === OWNER_ID; }
 
-async function bridgeRequest(path: string, interaction: ChatInputCommandInteraction, method = "GET", body?: unknown) {
+async function bridgeRequest(path: string, interaction: ChatInputCommandInteraction, method: "GET" | "POST" = "GET", body?: unknown) {
   const token = process.env.OKG_API_ROUTER_BRIDGE_TOKEN?.trim();
   if (!token) throw new Error("The private router bridge is not configured on OKG Manager yet. Set OKG_API_ROUTER_BRIDGE_TOKEN in the bot environment.");
   const url = ROUTER_URL + "/bridge" + path;
@@ -19,7 +19,7 @@ async function bridgeRequest(path: string, interaction: ChatInputCommandInteract
     method === "GET"
       ? await fetch(url, { method: "GET", headers, signal: AbortSignal.timeout(25000) })
       : await fetch(url, {
-          method,
+          method: "POST",
           headers,
           body: JSON.stringify(body ?? {}),
           signal: AbortSignal.timeout(25000),
