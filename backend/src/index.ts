@@ -56,14 +56,6 @@ import { DecayingCounter } from "./utils/DecayingCounter.js";
 import { enableProfiling } from "./utils/easyProfiler.js";
 import { loadYamlSafely } from "./utils/loadYamlSafely.js";
 import { announceCommand, handleAnnounceCommand } from "./slashCommands/announce.js";
-import {
-  aiAdminCommand,
-  aiConfigCommand,
-  aiSetupCommand,
-  aiStatusCommand,
-  handleAICommand,
-  handleAIMessage,
-} from "./slashCommands/ai.js";
 import { permissionLevelCommand, handlePermissionLevelCommand } from "./slashCommands/permissionLevel.js";
 import { apiRouterCommand, handleApiRouterCommand } from "./slashCommands/apiRouter.js";
 import {
@@ -494,17 +486,7 @@ connect().then(async () => {
   client.on(Events.MessageCreate, async (message) => {
     if (!message.guild || !message.content || message.author.bot || message.webhookId) return;
 
-    // AI replies only when explicitly invoked; it is independent of the paused prefix-command system.
-    void handleAIMessage(message).catch((error) => logger.error(`[OKG AI] Message handler failed: ${error}`));
-
     const trimmedContent = message.content.trimStart();
-
-    // Bot mentions and the human-readable "OKG AI" trigger are AI prompts, not prefix commands.
-    // Return before checking configured/default prefixes so a bot ping never gets the paused warning.
-    const botMentionPrefix = new RegExp(`^<@!?${client.user?.id ?? "0"}>\\s*`, "i");
-    if (botMentionPrefix.test(trimmedContent) || /^okg ai(?:[,!:]?)(?:\s|$)/i.test(trimmedContent)) {
-      return;
-    }
 
     // Vety exposes the default command prefix as a RegExp, not a string.
     const defaultPrefixPattern = getDefaultMessageCommandPrefix(client);
@@ -704,41 +686,27 @@ Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
         supportPanelCommand,
         updatesSetupCommand,
         updatesConfigCommand,
+        apiRouterCommand,
       ];
-      const aiCommandsToRegister = [aiSetupCommand, aiConfigCommand, aiAdminCommand, aiStatusCommand, apiRouterCommand];
-      const aiCommandNames = new Set(aiCommandsToRegister.map((command) => command.name));
+      const obsoleteAICommandNames = new Set(["ai-setup", "ai-config", "ai-admin", "ai-status"]);
 
-      // Keep non-AI custom commands global. AI commands are deliberately guild-scoped:
-      // Discord makes guild commands available immediately, while global propagation
-      // caused the AI commands to disappear after the duplicate cleanup.
+      // Keep custom commands global. Remove the old guild-scoped AI commands and duplicates.
       const globalCommands = await client.application!.commands.fetch();
       for (const registered of globalCommands.values()) {
-        if (obsoleteModerationCommandNames.has(registered.name) || aiCommandNames.has(registered.name)) {
+        if (obsoleteModerationCommandNames.has(registered.name) || obsoleteAICommandNames.has(registered.name)) {
           await client.application!.commands.delete(registered.id);
           logger.info(`Removed obsolete global slash command /${registered.name}`);
         }
       }
 
-      // Remove guild-scoped duplicates for the global commands, but retain/upsert
-      // exactly one copy of each AI command in every server.
+      // Remove obsolete AI commands and guild-scoped duplicates; the remaining custom commands are global.
       for (const guild of client.guilds.cache.values()) {
         const guildCommands = await client.application!.commands.fetch({ guildId: guild.id });
         for (const registered of guildCommands.values()) {
-          if (!aiCommandNames.has(registered.name)) {
-            await client.application!.commands.delete(registered.id, guild.id);
-            logger.info(`Removed duplicate guild-scoped slash command /${registered.name} from guild ${guild.id}`);
-          }
+          await client.application!.commands.delete(registered.id, guild.id);
+          logger.info(`Removed duplicate guild-scoped slash command /${registered.name} from guild ${guild.id}`);
         }
 
-        for (const command of aiCommandsToRegister) {
-          const existing = guildCommands.find((registered) => registered.name === command.name);
-          if (existing) {
-            await client.application!.commands.edit(existing.id, command.toJSON(), guild.id);
-          } else {
-            await client.application!.commands.create(command.toJSON(), guild.id);
-          }
-          logger.info(`Registered guild-scoped /${command.name} in guild ${guild.id}`);
-        }
       }
 
       // Upsert the remaining custom commands globally.
@@ -752,9 +720,7 @@ Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
         }
       }
 
-      logger.info(
-        "Registered AI commands once per guild for immediate availability; other custom commands remain global; message prefixes remain paused",
-      );
+      logger.info("Registered custom commands globally; removed legacy AI commands; message prefixes remain paused");
     } catch (error) {
       logger.error(`Failed to register slash commands: ${error}`);
     }
@@ -821,11 +787,6 @@ Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
 
     if (interaction.commandName === "api-router") {
       await handleApiRouterCommand(interaction);
-      return;
-    }
-
-    if (["ai-setup", "ai-config", "ai-admin", "ai-status"].includes(interaction.commandName)) {
-      await handleAICommand(interaction);
       return;
     }
 
