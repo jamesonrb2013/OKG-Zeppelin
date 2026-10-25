@@ -65,6 +65,7 @@ import {
   handleAIMessage,
 } from "./slashCommands/ai.js";
 import { permissionLevelCommand, handlePermissionLevelCommand } from "./slashCommands/permissionLevel.js";
+import { apiRouterCommand, handleApiRouterCommand } from "./slashCommands/apiRouter.js";
 import {
   handleSupportInteraction,
   handleSupportModal,
@@ -704,7 +705,7 @@ Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
         updatesSetupCommand,
         updatesConfigCommand,
       ];
-      const aiCommandsToRegister = [aiSetupCommand, aiConfigCommand, aiAdminCommand, aiStatusCommand];
+      const aiCommandsToRegister = [aiSetupCommand, aiConfigCommand, aiAdminCommand, aiStatusCommand, apiRouterCommand];
       const aiCommandNames = new Set(aiCommandsToRegister.map((command) => command.name));
 
       // Keep non-AI custom commands global. AI commands are deliberately guild-scoped:
@@ -815,6 +816,11 @@ Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
 
     if (interaction.commandName === "updates-config") {
       await handleUpdatesConfig(interaction);
+      return;
+    }
+
+    if (interaction.commandName === "api-router") {
+      await handleApiRouterCommand(interaction);
       return;
     }
 
