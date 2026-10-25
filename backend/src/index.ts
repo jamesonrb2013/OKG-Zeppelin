@@ -578,7 +578,9 @@ connect().then(async () => {
           (canSend(systemChannel) && systemChannel) ||
           channels.find((channel): channel is TextChannel => channel instanceof TextChannel && canSend(channel));
         if (!updateChannel) {
-          logger.warn(`Could not post bot update for guild ${guild.id}: no accessible text channel with send permission`);
+          logger.warn(
+            `Could not post bot update for guild ${guild.id}: no accessible text channel with send permission`,
+          );
           continue;
         }
         const recent = await updateChannel.messages.fetch({ limit: 100 });
@@ -707,10 +709,11 @@ Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
           const duplicatesGlobalCommand = commandsToRegister.some((command) => command.name === registered.name);
           if (isObsoleteAI || duplicatesGlobalCommand) {
             await client.application!.commands.delete(registered.id, guild.id);
-            logger.info(`Removed ${isObsoleteAI ? "obsolete AI" : "duplicate global"} guild-scoped slash command /${registered.name} from guild ${guild.id}`);
+            logger.info(
+              `Removed ${isObsoleteAI ? "obsolete AI" : "duplicate global"} guild-scoped slash command /${registered.name} from guild ${guild.id}`,
+            );
           }
         }
-
       }
 
       // Register server-scoped copies first because global command propagation can be delayed.
@@ -747,7 +750,9 @@ Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
         }
       }
 
-      logger.info("Registered custom slash commands globally and per guild; removed legacy AI commands; message prefixes remain paused");
+      logger.info(
+        "Registered custom slash commands globally and per guild; removed legacy AI commands; message prefixes remain paused",
+      );
     } catch (error) {
       logger.error(`Failed to register slash commands: ${error}`);
     }
