@@ -723,7 +723,7 @@ Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
             if (existingGuild) {
               await client.application!.commands.edit(existingGuild.id, command.toJSON(), guild.id);
             } else {
-              await client.application!.commands.create(command.toJSON(), guild.id);
+              await client.application!.commands.create(command.toJSON(), { guildId: guild.id });
             }
           }
           logger.info(`Registered custom slash commands for guild ${guild.id}`);
