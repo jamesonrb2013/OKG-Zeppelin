@@ -713,18 +713,41 @@ Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
 
       }
 
-      // Upsert the remaining custom commands globally.
-      for (const command of commandsToRegister) {
-        const currentGlobalCommands = await client.application!.commands.fetch();
-        const existingGlobal = currentGlobalCommands.find((registered) => registered.name === command.name);
-        if (existingGlobal) {
-          await client.application!.commands.edit(existingGlobal.id, command.toJSON());
-        } else {
-          await client.application!.commands.create(command.toJSON());
+      // Register guild-scoped copies first so commands appear immediately in every server.
+      // Global commands can take a while to propagate after a deployment.
+      for (const guild of client.guilds.cache.values()) {
+        try {
+          const guildCommands = await client.application!.commands.fetch({ guildId: guild.id });
+          for (const command of commandsToRegister) {
+            const existingGuild = guildCommands.find((registered) => registered.name === command.name);
+            if (existingGuild) {
+              await client.application!.commands.edit(existingGuild.id, command.toJSON(), guild.id);
+            } else {
+              await client.application!.commands.create(command.toJSON(), guild.id);
+            }
+          }
+          logger.info(`Registered custom slash commands for guild ${guild.id}`);
+        } catch (error) {
+          logger.error(`Failed to register custom slash commands for guild ${guild.id}: ${error}`);
         }
       }
 
-      logger.info("Registered custom commands globally; removed legacy AI commands; message prefixes remain paused");
+      // Keep global copies as a fallback for newly joined servers while guild copies propagate.
+      for (const command of commandsToRegister) {
+        try {
+          const currentGlobalCommands = await client.application!.commands.fetch();
+          const existingGlobal = currentGlobalCommands.find((registered) => registered.name === command.name);
+          if (existingGlobal) {
+            await client.application!.commands.edit(existingGlobal.id, command.toJSON());
+          } else {
+            await client.application!.commands.create(command.toJSON());
+          }
+        } catch (error) {
+          logger.error(`Failed to register global slash command /${command.name}: ${error}`);
+        }
+      }
+
+      logger.info("Registered custom slash commands globally and per guild; removed legacy AI commands; message prefixes remain paused");
     } catch (error) {
       logger.error(`Failed to register slash commands: ${error}`);
     }
