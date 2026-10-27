@@ -56,9 +56,11 @@ test("co-owner can act on administrator and staff roles", (t) => {
   t.true(canActOnByRolePermissions([CO_OWNER], [STAFF], rolePermissions));
 });
 
-test("owner wildcard outranks configured moderation roles", (t) => {
+test("owner wildcard outranks moderation roles but equal owners remain protected peers", (t) => {
   t.true(canActOnByRolePermissions([OWNER], [CO_OWNER], rolePermissions));
   t.false(canActOnByRolePermissions([CO_OWNER], [OWNER], rolePermissions));
+  t.false(canActOnByRolePermissions([OWNER], [OWNER], rolePermissions));
+  t.true(canActOnByRolePermissions([OWNER], [OWNER], rolePermissions, true));
 });
 
 test("equal permission roles remain protected unless same-level actions are explicitly allowed", (t) => {
