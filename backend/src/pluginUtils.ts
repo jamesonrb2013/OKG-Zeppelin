@@ -85,10 +85,9 @@ export function canActOn(
   }
 
   // Use explicit numeric ranks when the guild has configured ranks for
-  // either participant. Otherwise, infer only a safe relative hierarchy from
-  // the configured role_permissions grants. Without this fallback every
-  // member defaults to numeric level 0, which incorrectly blocks staff from
-  // acting on ordinary members even after their command permission passed.
+  // either participant. Otherwise, use role_permissions entry order as the
+  // hierarchy. Without this fallback every member defaults to numeric level 0,
+  // which incorrectly blocks staff from acting on ordinary members.
   const fullConfig = (pluginData as any).fullConfig as {
     role_permissions?: Record<string, string[]>;
     role_levels?: Record<string, number>;
@@ -121,7 +120,9 @@ export async function hasExplicitRolePermission(
   memberId: string,
   permission: string,
 ): Promise<boolean> {
-  const rolePermissions = (pluginData as any).fullConfig?.role_permissions as Record<string, string[]> | undefined;
+  const rolePermissions = (pluginData as any).fullConfig?.role_permissions as
+    | Record<string, string[]>
+    | undefined;
   const guild = (pluginData as any).guild;
   if (!rolePermissions || Object.keys(rolePermissions).length === 0 || !guild) return false;
 
@@ -139,14 +140,17 @@ export async function hasPermission(
   permission: string,
   matchParams: ExtendedMatchParams,
 ) {
-  const fullConfig = (pluginData as any).fullConfig as { role_permissions?: Record<string, string[]> } | undefined;
+  const fullConfig = (pluginData as any).fullConfig as
+    | { role_permissions?: Record<string, string[]> }
+    | undefined;
   const rolePermissions = fullConfig?.role_permissions;
 
   // Explicit physical config is the sole source of permission grants.
   // An absent or empty role_permissions section grants nothing; numeric levels
   // and legacy/plugin defaults must never implicitly grant an action.
   const message = (matchParams as any).message;
-  const member = (matchParams.member as GuildMember | null | undefined) ?? message?.member ?? undefined;
+  const member =
+    (matchParams.member as GuildMember | null | undefined) ?? message?.member ?? undefined;
   if (!member || !rolePermissions || Object.keys(rolePermissions).length === 0) {
     return false;
   }
