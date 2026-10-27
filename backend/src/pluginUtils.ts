@@ -35,6 +35,40 @@ import { Tail } from "./utils/typeUtils.js";
 
 const { getMemberLevel } = helpers;
 
+/**
+ * Fallback target hierarchy for servers that configure role_permissions but do
+ * not configure numeric role_levels. A role with a strict superset of another
+ * role's permissions outranks it; incomparable/equal permission sets are peers.
+ * This lets permission-configured staff act on ordinary members without
+ * accidentally treating every member as numeric level 0.
+ */
+export function canActOnByRolePermissions(
+  actorRoleIds: Iterable<string>,
+  targetRoleIds: Iterable<string>,
+  rolePermissions: Record<string, string[]> | undefined,
+  allowSameLevel = false,
+): boolean {
+  const grantsFor = (roleIds: Iterable<string>): Set<string> => {
+    const grants = new Set<string>();
+    for (const roleId of roleIds) {
+      const roleGrants = rolePermissions?.[roleId];
+      if (Array.isArray(roleGrants)) {
+        for (const grant of roleGrants) grants.add(grant);
+      }
+    }
+    return grants;
+  };
+
+  const actor = grantsFor(actorRoleIds);
+  const target = grantsFor(targetRoleIds);
+  if (actor.has("*")) return true;
+  if (target.has("*")) return false;
+
+  const targetIsSubset = [...target].every((permission) => actor.has(permission));
+  if (!targetIsSubset) return false;
+  return allowSameLevel || actor.size > target.size;
+}
+
 export function canActOn(
   pluginData: GuildPluginData<any>,
   member1: GuildMember,
@@ -51,10 +85,31 @@ export function canActOn(
     return false;
   }
 
-  // Custom numeric staff ranks are display-only and must not affect command authorization or targeting.
-  const ourLevel = getMemberLevel(pluginData, member1);
-  const memberLevel = getMemberLevel(pluginData, member2);
-  return allowSameLevel ? ourLevel >= memberLevel : ourLevel > memberLevel;
+  // Use explicit numeric ranks when the guild has configured ranks for
+  // either participant. Otherwise, infer only a safe relative hierarchy from
+  // the configured role_permissions grants. Without this fallback every
+  // member defaults to numeric level 0, which incorrectly blocks staff from
+  // acting on ordinary members even after their command permission passed.
+  const fullConfig = (pluginData as any).fullConfig as {
+    role_permissions?: Record<string, string[]>;
+    role_levels?: Record<string, number>;
+  } | undefined;
+  const roleLevels = fullConfig?.role_levels;
+  const actorHasConfiguredLevel = member1.roles.cache.some((role) => roleLevels && role.id in roleLevels);
+  const targetHasConfiguredLevel = member2.roles.cache.some((role) => roleLevels && role.id in roleLevels);
+
+  if (actorHasConfiguredLevel || targetHasConfiguredLevel) {
+    const ourLevel = getMemberLevel(pluginData, member1);
+    const memberLevel = getMemberLevel(pluginData, member2);
+    return allowSameLevel ? ourLevel >= memberLevel : ourLevel > memberLevel;
+  }
+
+  return canActOnByRolePermissions(
+    member1.roles.cache.keys(),
+    member2.roles.cache.keys(),
+    fullConfig?.role_permissions,
+    allowSameLevel,
+  );
 }
 
 /** Check explicit role_permissions grants using a freshly fetched guild member. */
