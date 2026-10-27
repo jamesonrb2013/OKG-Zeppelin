@@ -61,6 +61,7 @@ export function canActOnByRolePermissions(
 
   const actor = grantsFor(actorRoleIds);
   const target = grantsFor(targetRoleIds);
+  if (actor.has("*") && target.has("*")) return allowSameLevel;
   if (actor.has("*")) return true;
   if (target.has("*")) return false;
 
@@ -95,8 +96,12 @@ export function canActOn(
     role_levels?: Record<string, number>;
   } | undefined;
   const roleLevels = fullConfig?.role_levels;
-  const actorHasConfiguredLevel = member1.roles.cache.some((role) => roleLevels && role.id in roleLevels);
-  const targetHasConfiguredLevel = member2.roles.cache.some((role) => roleLevels && role.id in roleLevels);
+  const actorHasConfiguredLevel = member1.roles.cache.some(
+    (role) => roleLevels && role.id in roleLevels,
+  );
+  const targetHasConfiguredLevel = member2.roles.cache.some(
+    (role) => roleLevels && role.id in roleLevels,
+  );
 
   if (actorHasConfiguredLevel || targetHasConfiguredLevel) {
     const ourLevel = getMemberLevel(pluginData, member1);
