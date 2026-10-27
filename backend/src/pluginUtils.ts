@@ -37,10 +37,10 @@ const { getMemberLevel } = helpers;
 
 /**
  * Fallback target hierarchy for servers that configure role_permissions but do
- * not configure numeric role_levels. A role with a strict superset of another
- * role's permissions outranks it; incomparable/equal permission sets are peers.
- * This lets permission-configured staff act on ordinary members without
- * accidentally treating every member as numeric level 0.
+ * not configure numeric role_levels. The order of role_permissions entries is
+ * the hierarchy: later configured roles outrank earlier roles. This supports
+ * equal permission sets (such as Executive and Owner, both using "*") without
+ * confusing permission grants with rank.
  */
 export function canActOnByRolePermissions(
   actorRoleIds: Iterable<string>,
@@ -48,26 +48,24 @@ export function canActOnByRolePermissions(
   rolePermissions: Record<string, string[]> | undefined,
   allowSameLevel = false,
 ): boolean {
-  const grantsFor = (roleIds: Iterable<string>): Set<string> => {
-    const grants = new Set<string>();
+  if (!rolePermissions) return false;
+
+  const roleOrder = new Map(
+    Object.keys(rolePermissions).map((roleId, index) => [roleId, index]),
+  );
+  const highestRank = (roleIds: Iterable<string>) => {
+    let rank = -1;
     for (const roleId of roleIds) {
-      const roleGrants = rolePermissions?.[roleId];
-      if (Array.isArray(roleGrants)) {
-        for (const grant of roleGrants) grants.add(grant);
-      }
+      rank = Math.max(rank, roleOrder.get(roleId) ?? -1);
     }
-    return grants;
+    return rank;
   };
 
-  const actor = grantsFor(actorRoleIds);
-  const target = grantsFor(targetRoleIds);
-  if (actor.has("*") && target.has("*")) return allowSameLevel;
-  if (actor.has("*")) return true;
-  if (target.has("*")) return false;
-
-  const targetIsSubset = [...target].every((permission) => actor.has(permission));
-  if (!targetIsSubset) return false;
-  return allowSameLevel || actor.size > target.size;
+  const actorRank = highestRank(actorRoleIds);
+  const targetRank = highestRank(targetRoleIds);
+  if (actorRank < 0) return false;
+  if (targetRank < 0) return true;
+  return allowSameLevel ? actorRank >= targetRank : actorRank > targetRank;
 }
 
 export function canActOn(
