@@ -39,6 +39,22 @@ export const automodPluginDocs: ZeppelinPluginDocs = {
                 enabled: false
       ~~~
       
+      ### Server-wide Automod exceptions
+
+      Trusted roles, selected users, and channels/categories can be excluded before any rule is evaluated. These settings do not grant moderation command permissions.
+
+      ~~~yml
+      automod:
+        config:
+          immune_roles: ["123456789012345678"]
+          immune_users: []
+          ignored_channels: ["123456789012345678"]
+          ignored_categories: []
+          rules: {}
+      ~~~
+
+      A member is exempt if they have **any** listed immune role. Threads inherit the ignored-channel behavior of their parent channel. Leave lists empty to keep the normal behavior.
+
       ### Spam detection
       This example includes 2 filters:
       
