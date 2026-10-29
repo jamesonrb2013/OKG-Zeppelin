@@ -58,6 +58,11 @@ const zRule = z.strictObject({
 export type TRule = z.infer<typeof zRule>;
 
 export const zAutomodConfig = z.strictObject({
+  // Explicit server-level exceptions. These do not grant command permissions.
+  immune_roles: z.array(zSnowflake).max(100).default([]),
+  immune_users: z.array(zSnowflake).max(100).default([]),
+  ignored_channels: z.array(zSnowflake).max(100).default([]),
+  ignored_categories: z.array(zSnowflake).max(100).default([]),
   rules: zBoundedRecord(z.record(z.string().max(100), zRule), 0, 255).default({}),
   antiraid_levels: z.array(z.string().max(100)).max(10).default(["low", "medium", "high"]),
   can_set_antiraid: z.boolean().default(false),
