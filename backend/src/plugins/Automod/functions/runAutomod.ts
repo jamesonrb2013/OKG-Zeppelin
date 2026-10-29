@@ -81,6 +81,19 @@ export async function runAutomod(
     rulesChecked: [],
   };
 
+  // Global Automod exceptions are intentionally evaluated before rules/cooldowns.
+  // Thread messages inherit the parent channel's exception behavior.
+  const automodConfig = config as typeof config & {
+    immune_roles?: string[];
+    immune_users?: string[];
+    ignored_channels?: string[];
+    ignored_categories?: string[];
+  };
+  if (userId && automodConfig.immune_users?.includes(userId)) return result;
+  if (member && automodConfig.immune_roles?.some((roleId) => member.roles.cache.has(roleId))) return result;
+  if (channelId && automodConfig.ignored_channels?.includes(channelId)) return result;
+  if (categoryId && automodConfig.ignored_categories?.includes(categoryId)) return result;
+
   for (const [ruleName, rule] of Object.entries(config.rules)) {
     const prettyName = rule.pretty_name;
 
