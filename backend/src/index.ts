@@ -13,7 +13,7 @@ import {
   TextChannel,
   ThreadChannel,
 } from "discord.js";
-import { Vety, PluginError, PluginLoadError, PluginNotLoadedError, getDefaultMessageCommandPrefix } from "vety";
+import { Vety, PluginError, PluginLoadError, PluginNotLoadedError } from "vety";
 import moment from "moment-timezone";
 import { performance } from "perf_hooks";
 import process from "process";
@@ -37,7 +37,8 @@ import { runSavedMessageCleanupLoop } from "./data/loops/savedMessageCleanupLoop
 import { runUpcomingRemindersLoop } from "./data/loops/upcomingRemindersLoop.js";
 import { runUpcomingScheduledPostsLoop } from "./data/loops/upcomingScheduledPostsLoop.js";
 import { consumeQueryStats } from "./data/queryLogger.js";
-import { env } from "./env.js";
+import { CORE_GUILD_ID, env } from "./env.js";
+import { BOT_VERSION, getReleaseNotes } from "./version.js";
 import { logger } from "./logger.js";
 import { availableGlobalPlugins, availableGuildPlugins } from "./plugins/availablePlugins.js";
 import { setProfiler } from "./profiler.js";
@@ -71,8 +72,6 @@ import {
   updatesConfigCommand,
   updatesSetupCommand,
 } from "./slashCommands/updates.js";
-
-const BOT_VERSION = "1.3.9";
 
 // Error handling
 let recentPluginErrors = 0;
@@ -477,53 +476,6 @@ connect().then(async () => {
     },
   });
 
-  // Prefix commands are disabled during development; slash commands such as /announce stay active.
-  // This listener only blocks message-prefix commands and does not intercept Discord interactions.
-  // Never dispatch message-prefix commands; reply with the same notice for every configured prefix.
-  const OKG_PREFIX_PAUSED_MESSAGE =
-    "🚫 Sorry, prefixes are disabled, beacuse of development errors, the developers are actively working on trying to fix this, we are sorry. Join the support server ( https://discord.gg/2nHAng3gnr  ) if you need more help.";
-
-  client.on(Events.MessageCreate, async (message) => {
-    if (!message.guild || !message.content || message.author.bot || message.webhookId) return;
-
-    const trimmedContent = message.content.trimStart();
-
-    // Vety exposes the default command prefix as a RegExp, not a string.
-    const defaultPrefixPattern = getDefaultMessageCommandPrefix(client);
-    const prefixes = new Set<string>([
-      "!o", // Legacy OKG prefix; keep blocked even if the guild's configured prefix changed.
-    ]);
-
-    // Guild config allows one custom prefix string. Include it alongside the default prefix.
-    try {
-      const configRow = await guildConfigs.getActiveByKey(`guild-${message.guild.id}`);
-      if (configRow) {
-        const config = loadYamlSafely(configRow.config);
-        if (typeof config.prefix === "string" && config.prefix.length > 0) {
-          prefixes.add(config.prefix);
-        }
-      }
-    } catch (error) {
-      logger.warn(
-        `Could not load prefix config for guild ${message.guild.id}; default and legacy prefixes remain blocked: ${error}`,
-      );
-    }
-
-    // Reset lastIndex in case the library supplies a stateful RegExp.
-    defaultPrefixPattern.lastIndex = 0;
-    const matchesDefaultPrefix = defaultPrefixPattern.test(trimmedContent);
-    const matchesConfiguredPrefix = Array.from(prefixes).some((prefix) => {
-      if (!prefix || !trimmedContent.startsWith(prefix)) return false;
-      const commandText = trimmedContent.slice(prefix.length);
-      return commandText.length === 0 || !/\s/.test(commandText.charAt(0)) || commandText.trim().length === 0;
-    });
-    const isPrefixCommand = matchesDefaultPrefix || matchesConfiguredPrefix;
-
-    if (!isPrefixCommand) return;
-
-    await message.reply({ content: OKG_PREFIX_PAUSED_MESSAGE });
-  });
-
   client.once("clientReady", async () => {
     // Refresh the names, icons, and owner IDs of already-allowed servers on every startup.
     for (const guild of client.guilds.cache.values()) {
@@ -555,95 +507,58 @@ connect().then(async () => {
       logger.error(`Failed to register /announce globally: ${error}`);
     }
 
-    // Announce this release in every server the bot is in. Prefer the channel
-    // explicitly configured with /updates-setup; otherwise use the server's
-    // system channel, then the first text channel the bot can view and send to.
-    // This fallback means servers receive updates even if nobody ran setup.
-    for (const guild of client.guilds.cache.values()) {
-      try {
-        const channels = await guild.channels.fetch();
-        const configuredChannel = channels.find(
-          (channel): channel is TextChannel =>
-            channel instanceof TextChannel && channel.topic?.startsWith("okg-updates|role=") === true,
-        );
-        const botMember = guild.members.me ?? (await guild.members.fetchMe());
-        const canSend = (channel: TextChannel | null | undefined): channel is TextChannel =>
-          Boolean(channel && channel.permissionsFor(botMember)?.has(["ViewChannel", "SendMessages"]));
-        const systemChannel =
-          guild.systemChannel && channels.get(guild.systemChannel.id) instanceof TextChannel
-            ? (channels.get(guild.systemChannel.id) as TextChannel)
-            : null;
-        const updateChannel =
-          (canSend(configuredChannel) && configuredChannel) ||
-          (canSend(systemChannel) && systemChannel) ||
-          channels.find((channel): channel is TextChannel => channel instanceof TextChannel && canSend(channel));
-        if (!updateChannel) {
-          logger.warn(
-            `Could not post bot update for guild ${guild.id}: no accessible text channel with send permission`,
+    // Publish the changelog section for this exact version once per authorized guild.
+    // The version is read from the root package.json and notes from CHANGELOG.md.
+    const releaseNotes = getReleaseNotes(BOT_VERSION);
+    if (!releaseNotes) {
+      logger.error(`No CHANGELOG.md entry found for deployed version ${BOT_VERSION}; skipping release announcements.`);
+    } else {
+      for (const guild of client.guilds.cache.values()) {
+        try {
+          if (!(await allowedGuilds.isAllowed(guild.id))) continue;
+          const releaseKey = `release-announcement:${guild.id}`;
+          const previousRelease = await guildConfigs.getActiveByKey(releaseKey);
+          if (previousRelease?.config === BOT_VERSION) continue;
+          const channels = await guild.channels.fetch();
+          const botMember = guild.members.me ?? (await guild.members.fetchMe());
+          const canSend = (channel: TextChannel | null | undefined) =>
+            Boolean(channel && channel.permissionsFor(botMember)?.has(["ViewChannel", "SendMessages"]));
+          let updateChannel: TextChannel | null = null;
+          // Keep OKG's established Announcement channel as the primary destination.
+          if (guild.id === CORE_GUILD_ID) {
+            const okgReleaseChannel = channels.get("1562496808838631556");
+            if (okgReleaseChannel?.isTextBased() && "messages" in okgReleaseChannel && "send" in okgReleaseChannel) {
+              const candidate = okgReleaseChannel as TextChannel;
+              if (canSend(candidate)) updateChannel = candidate;
+            }
+          }
+          const configuredChannel = channels.find(
+            (channel): channel is TextChannel =>
+              channel instanceof TextChannel && channel.topic?.startsWith("okg-updates|role=") === true,
           );
-          continue;
-        }
-        const recent = await updateChannel.messages.fetch({ limit: 100 });
-        const releaseTitle = `## OKG Administrative BotOS — Version ${BOT_VERSION}`;
-        if (recent.some((message) => message.author.id === client.user!.id && message.content.includes(releaseTitle))) {
-          continue;
-        }
-        await postGuildUpdate(updateChannel, BOT_VERSION);
-        logger.info(`Posted version ${BOT_VERSION} update in guild ${guild.id} to #${updateChannel.name}`);
-      } catch (error) {
-        logger.warn(`Could not post bot update for guild ${guild.id}: ${error}`);
-      }
-    }
-
-    // Announce each deployed version once to the maintainer release channel. Checking recent bot messages prevents
-    // duplicate announcements on ordinary restarts.
-    try {
-      const releaseChannel = await client.channels.fetch("1562496808838631556");
-      if (!releaseChannel || !releaseChannel.isTextBased() || !("messages" in releaseChannel)) {
-        logger.warn("Release announcement channel 1562496808838631556 is unavailable or not text-based");
-      } else {
-        // Discord's channel fetch union includes partial/DM channel types. This ID
-        // is our configured server announcement channel, so use its text-channel API.
-        const announcementChannel = releaseChannel as TextChannel;
-        const recentMessages = await announcementChannel.messages.fetch({ limit: 100 });
-        const alreadyAnnounced = recentMessages.some(
-          (message) => message.author.id === client.user!.id && message.content.includes(`## Version ${BOT_VERSION}`),
-        );
-
-        if (!alreadyAnnounced) {
-          const updatedTimestamp = Math.floor(Date.now() / 1000);
-          await announcementChannel.send({
-            content: `<@&1562533677664305183>
-
-## Version ${BOT_VERSION}
-
-- Finalized the existing moderation commands under exactly one name per tier: /mod-* for moderator+, /manage-* for management, and /admin-* for admin-only actions.
-- Removed obsolete moderation aliases and deleted guild-scoped slash-command copies so commands are no longer duplicated.
-- Upgraded native OKG Support with private tickets, staff claim/unclaim, close/reopen/delete controls, per-user open-ticket limits, and configurable panel/welcome text.
-- Added a required ticket intake form for a subject and detailed issue description before creating a ticket.
-- Expanded ticket transcripts to paginate through up to 5,000 messages and include author IDs, attachment URLs, and embed summaries.
-- Added OKG Manager Features → Support settings and the /support-panel command to publish the configured ticket panel.
-- Added /updates-setup to create a per-server bot update channel and /updates-config to set or disable its release ping role.
-- Applied the requested tiers: management for addcase, ban, kick, note, unban, unhidecase, and update; admin for deletecase, forceban, forcemute, forceunmute, massban, massmute, and massunban; moderator+ for case, cases, hidecase, mute, unmute, warn, and permission-level.
-- Updated slash-command permission errors to show each command's actual new name.
-- Restricted \x60/permission-level\x60 to members granted moderator case-view permission (or *).
-- Kept \x60/announce\x60 under its existing announcement permission check.
-- Disabled every configured/default message prefix (including legacy !o); prefix attempts receive the development-error notice instead of executing commands.
-- Kept automatic version announcements with duplicate prevention and support for Discord Announcement channels.
-- Set the bot's Playing presence to “Version ${BOT_VERSION} of OKG Administrative BotOS”.
-
-Updated <t:${updatedTimestamp}:F>, by Coolkid5701`,
-            allowedMentions: { parse: [], users: [], roles: ["1562533677664305183"], repliedUser: false },
-          });
-          logger.info(`Posted release announcement for version ${BOT_VERSION}`);
+          if (!updateChannel && canSend(configuredChannel)) updateChannel = configuredChannel;
+          const systemChannel = guild.systemChannel instanceof TextChannel ? guild.systemChannel : null;
+          if (!updateChannel && canSend(systemChannel)) updateChannel = systemChannel;
+          if (!updateChannel) {
+            updateChannel =
+              channels.find((channel): channel is TextChannel => channel instanceof TextChannel && canSend(channel)) ??
+              null;
+          }
+          if (!updateChannel) {
+            logger.warn(`Could not post version ${BOT_VERSION} in guild ${guild.id}: no writable text channel.`);
+            continue;
+          }
+          const defaultPingRole = guild.id === CORE_GUILD_ID ? "1562533677664305183" : undefined;
+          await postGuildUpdate(updateChannel, BOT_VERSION, releaseNotes, defaultPingRole);
+          // Record only after Discord confirms the message was sent. Failed sends retry on next startup.
+          await guildConfigs.saveNewRevision(releaseKey, BOT_VERSION, "0");
+          logger.info(`Posted version ${BOT_VERSION} update in guild ${guild.id} to #${updateChannel.name}`);
+        } catch (error) {
+          logger.warn(`Could not post version ${BOT_VERSION} update for guild ${guild.id}: ${error}`);
         }
       }
-    } catch (error) {
-      logger.error(`Failed to post release announcement for version ${BOT_VERSION}: ${error}`);
     }
-
-    try {
-      // Remove obsolete moderation command names left behind by Discord's additive
+    // Remove obsolete moderation command names left behind by Discord's additive
       const obsoleteModerationCommandNames = new Set([
         "addcase",
         "ban",

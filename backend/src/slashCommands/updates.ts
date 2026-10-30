@@ -110,18 +110,29 @@ export async function handleUpdatesConfig(interaction: ChatInputCommandInteracti
   });
 }
 
-export async function postGuildUpdate(channel: TextChannel, version: string) {
-  const roleId = channel.topic?.startsWith(MARKER) ? channel.topic.slice(MARKER.length).trim() : "";
-  const validRoleId = /^\d{17,20}$/.test(roleId) ? roleId : "";
+export async function postGuildUpdate(
+  channel: TextChannel,
+  version: string,
+  releaseNotes: string,
+  fallbackRoleId?: string,
+) {
+  const topicRoleId = channel.topic?.startsWith(MARKER) ? channel.topic.slice(MARKER.length).trim() : "";
+  const candidateRoleId = topicRoleId || fallbackRoleId || "";
+  const validRoleId = /^\d{17,20}$/.test(candidateRoleId) ? candidateRoleId : "";
   const timestamp = Math.floor(Date.now() / 1000);
+  const notes = releaseNotes.trim().slice(0, 1400);
+  const content =
+    (validRoleId ? "<@&" + validRoleId + ">\n\n" : "") +
+    "## OKG Administrative BotOS — Version " +
+    version +
+    "\n\n" +
+    notes +
+    "\n\nUpdated <t:" +
+    timestamp +
+    ":F>.";
+
   await channel.send({
-    content:
-      (validRoleId ? "<@&" + validRoleId + ">\n\n" : "") +
-      "## OKG Administrative BotOS — Version " +
-      version +
-      "\n\nA new bot update has been deployed.\n\nUpdated <t:" +
-      timestamp +
-      ":F>.",
+    content,
     allowedMentions: { parse: [], users: [], roles: validRoleId ? [validRoleId] : [], repliedUser: false },
   });
 }

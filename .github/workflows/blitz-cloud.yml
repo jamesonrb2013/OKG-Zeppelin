@@ -72,6 +72,33 @@ jobs:
           fetch-depth: ${{ steps.claim.outputs.depth }}
           persist-credentials: false
 
+      - name: Set up pnpm
+        if: steps.claim.outputs.skip != 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
+
+      - name: Set up Node.js
+        if: steps.claim.outputs.skip != 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        if: steps.claim.outputs.skip != 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate source before deployment
+        if: steps.claim.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          pnpm format
+          pnpm run lint
+          pnpm run format:check
+          pnpm --filter @zeppelinbot/shared run build
+          pnpm --filter @zeppelinbot/backend run typecheck
+          pnpm --filter @zeppelinbot/dashboard run build
+
       - name: Build and store the image
         id: build
         if: steps.claim.outputs.skip != 'true'

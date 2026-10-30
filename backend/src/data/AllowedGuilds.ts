@@ -1,6 +1,7 @@
 import moment from "moment-timezone";
 import { Repository } from "typeorm";
 import { DBDateFormat } from "../utils.js";
+import { CORE_GUILD_ID } from "../env.js";
 import { ApiPermissionTypes } from "./ApiPermissionAssignments.js";
 import { BaseRepository } from "./BaseRepository.js";
 import { dataSource } from "./dataSource.js";
@@ -17,6 +18,9 @@ export class AllowedGuilds extends BaseRepository {
   }
 
   async isAllowed(guildId: string) {
+    // The primary OKG server is compiled into the bot and cannot be removed by an external allowlist update.
+    if (guildId === CORE_GUILD_ID) return true;
+
     const count = await this.allowedGuilds.count({
       where: {
         id: guildId,

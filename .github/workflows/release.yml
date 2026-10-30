@@ -1,0 +1,98 @@
+name: Publish OKG-Zeppelin release
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - package.json
+      - backend/package.json
+      - dashboard/package.json
+      - CHANGELOG.md
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out release commit
+        uses: actions/checkout@v4
+        with:
+          ref: \${{ github.sha }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Format workspace
+        run: pnpm format
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Verify formatting
+        run: pnpm run format:check
+
+      - name: Build shared types
+        run: pnpm --filter @zeppelinbot/shared run build
+
+      - name: Type-check backend
+        run: pnpm --filter @zeppelinbot/backend run typecheck
+
+      - name: Build dashboard
+        run: pnpm --filter @zeppelinbot/dashboard run build
+
+      - name: Validate version and prepare release notes
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT_VERSION=$(node -p "require('./package.json').version")
+          BACKEND_VERSION=$(node -p "require('./backend/package.json').version")
+          DASHBOARD_VERSION=$(node -p "require('./dashboard/package.json').version")
+          if [ "$ROOT_VERSION" != "$BACKEND_VERSION" ] || [ "$ROOT_VERSION" != "$DASHBOARD_VERSION" ]; then
+            echo "::error::Version mismatch: root=$ROOT_VERSION backend=$BACKEND_VERSION dashboard=$DASHBOARD_VERSION"
+            exit 1
+          fi
+          VERSION="$ROOT_VERSION" node <<'NODE'
+          const fs = require("node:fs");
+          const version = process.env.VERSION;
+          const lines = fs.readFileSync("CHANGELOG.md", "utf8").split(/\r?\n/);
+          const escaped = version.replaceAll(".", "\\.");
+          const heading = new RegExp("^##\\s+\\[?" + escaped + "\\]?\\s*$");
+          const start = lines.findIndex((line) => heading.test(line));
+          if (start < 0) throw new Error("CHANGELOG.md is missing the section for " + version);
+          const end = lines.findIndex((line, index) => index > start && /^##\s+/.test(line));
+          const notes = lines.slice(start + 1, end < 0 ? undefined : end).join("\n").trim();
+          if (!notes) throw new Error("The changelog section for " + version + " is empty");
+          fs.writeFileSync(process.env.RUNNER_TEMP + "/release-notes.md", notes + "\n");
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, "version=" + version + "\n");
+          NODE
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: \${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="v\${{ steps.release.outputs.version }}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists; nothing to publish."
+          else
+            gh release create "$TAG" \
+              --target "\${{ github.sha }}" \
+              --title "OKG-Zeppelin \${{ steps.release.outputs.version }}" \
+              --notes-file "$RUNNER_TEMP/release-notes.md"
+          fi

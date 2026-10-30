@@ -4,6 +4,10 @@ import path from "path";
 import { z } from "zod";
 import { rootDir } from "./paths.js";
 
+export const CORE_GUILD_ID = "1488682722606977175";
+
+const BUILT_IN_ALLOWED_SERVERS = [CORE_GUILD_ID];
+
 const envType = z.object({
   KEY: z.string().length(32),
 
@@ -27,14 +31,14 @@ const envType = z.object({
 
   DEFAULT_ALLOWED_SERVERS: z
     .preprocess(
-      (v) =>
-        String(v)
-          .split(",")
-          .map((s) => s.trim())
-          .filter((s) => s !== ""),
+      (value) => {
+        const configured =
+          typeof value === "string" ? value.split(",").map((item) => item.trim()).filter(Boolean) : [];
+        return Array.from(new Set([...BUILT_IN_ALLOWED_SERVERS, ...configured]));
+      },
       z.array(z.string()),
     )
-    .optional(),
+    .default(BUILT_IN_ALLOWED_SERVERS),
 
   PHISHERMAN_API_KEY: z.string().optional(),
   FISHFISH_API_KEY: z.string().optional(),

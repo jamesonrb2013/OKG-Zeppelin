@@ -11,6 +11,8 @@ jobs:
       - uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2
         with:
           cache: true
+      - name: Format workspace
+        run: pnpm format
       - name: Lint
         run: pnpm run lint
       - name: Check formatting

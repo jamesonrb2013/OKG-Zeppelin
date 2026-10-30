@@ -1,3 +1,17 @@
+## 1.3.12
+
+### Fixed
+- Restored native Vety prefix-command dispatch by removing the temporary listener that intercepted and rejected every prefix command.
+- Made the primary One Kid Gaming server a built-in, always-authorized server and ensured it is seeded into the allowed-server database on startup.
+- Made runtime version reporting read the root package version instead of a separately hard-coded value.
+- Rebuilt release announcements to read only the matching version section from this changelog and track successful delivery independently for each authorized server.
+- Made failed release posts retry on a later startup without reposting versions already delivered successfully.
+- Hardened guild configuration reload processing so non-guild system records are skipped safely and one guild reload failure cannot block later updates.
+
+### Changed
+- Added a release workflow that validates matching package versions, runs formatting/lint/build checks, and publishes a GitHub Release with only that version's changelog notes.
+- Added a deployment preflight so Blitz builds validate formatting, lint, shared types, backend types, and the dashboard before publishing an image.
+
 # Changelog
 
 ## 1.3.10
