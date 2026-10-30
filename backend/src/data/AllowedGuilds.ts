@@ -69,6 +69,10 @@ export class AllowedGuilds extends BaseRepository {
   }
 
   remove(id) {
+    if (id === CORE_GUILD_ID) {
+      return Promise.resolve({ raw: [], affected: 0 });
+    }
+
     return this.allowedGuilds.delete({ id });
   }
 }

@@ -11,6 +11,8 @@ on:
       - backend/src/index.ts
       - backend/src/version.ts
       - backend/src/plugins/GuildAccessMonitor/GuildAccessMonitorPlugin.ts
+      - backend/src/data/AllowedGuilds.ts
+      - backend/src/plugins/BotControl/commands/DisallowServerCmd.ts
       - CHANGELOG.md
       - .github/workflows/release.yml
   workflow_dispatch:

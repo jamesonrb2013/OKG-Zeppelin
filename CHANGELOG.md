@@ -2,7 +2,7 @@
 
 ### Fixed
 - Restored native Vety prefix-command dispatch by removing the temporary listener that intercepted and rejected every prefix command.
-- Made the primary One Kid Gaming server a built-in, always-authorized server and ensured its database row and initial config are seeded before per-guild plugins load.
+- Made the primary One Kid Gaming server a built-in, always-authorized server, seeded its database row and initial config before per-guild plugins load, and blocked disallow/removal operations against it.
 - Made runtime version reporting read the root package version instead of a separately hard-coded value.
 - Rebuilt release announcements to read only the matching version section from this changelog and track successful delivery independently for each authorized server.
 - Made failed release posts retry on a later startup without reposting versions already delivered successfully.
