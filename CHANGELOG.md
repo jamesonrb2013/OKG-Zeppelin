@@ -7,6 +7,7 @@
 - Rebuilt release announcements to read only the matching version section from this changelog and track successful delivery independently for each authorized server.
 - Made failed release posts retry on a later startup without reposting versions already delivered successfully.
 - Hardened guild configuration reload processing so non-guild system records are skipped safely and one guild reload failure cannot block later updates.
+- Fixed command-startup type narrowing so the per-server update channel is safely selected before posting.
 
 ### Changed
 - Added a release workflow that validates matching package versions, runs formatting/lint/build checks, and publishes a GitHub Release with only that version's changelog notes.

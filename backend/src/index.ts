@@ -521,7 +521,7 @@ connect().then(async () => {
           if (previousRelease?.config === BOT_VERSION) continue;
           const channels = await guild.channels.fetch();
           const botMember = guild.members.me ?? (await guild.members.fetchMe());
-          const canSend = (channel: TextChannel | null | undefined) =>
+          const canSend = (channel: TextChannel | null | undefined): channel is TextChannel =>
             Boolean(channel && channel.permissionsFor(botMember)?.has(["ViewChannel", "SendMessages"]));
           let updateChannel: TextChannel | null = null;
           // Keep OKG's established Announcement channel as the primary destination.
