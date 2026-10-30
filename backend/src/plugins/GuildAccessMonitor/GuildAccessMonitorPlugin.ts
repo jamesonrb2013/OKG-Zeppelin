@@ -37,7 +37,9 @@ export const GuildAccessMonitorPlugin = globalPlugin<GuildAccessMonitorPluginTyp
     const defaultAllowedServers = env.DEFAULT_ALLOWED_SERVERS || [];
     const configs = new Configs();
     for (const serverId of defaultAllowedServers) {
-      if (!(await state.allowedGuilds.isAllowed(serverId))) {
+      // Check the database record directly: built-in guilds are always authorized by isAllowed(),
+      // but still need a persisted row and initial config so Vety can load their plugins.
+      if (!(await state.allowedGuilds.find(serverId))) {
         // tslint:disable-next-line:no-console
         console.log(`Adding allowed-by-default server ${serverId} to the allowed servers`);
         await state.allowedGuilds.add(serverId);

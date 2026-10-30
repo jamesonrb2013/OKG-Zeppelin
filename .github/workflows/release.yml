@@ -10,6 +10,7 @@ on:
       - dashboard/package.json
       - backend/src/index.ts
       - backend/src/version.ts
+      - backend/src/plugins/GuildAccessMonitor/GuildAccessMonitorPlugin.ts
       - CHANGELOG.md
       - .github/workflows/release.yml
   workflow_dispatch:
