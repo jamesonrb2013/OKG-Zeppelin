@@ -11,7 +11,7 @@
 - Fixed release-note extraction so it stops cleanly before the next top-level changelog heading.
 
 ### Changed
-- Added a release workflow that validates matching package versions, runs formatting/lint/build checks, and publishes a GitHub Release with only that version's changelog notes.
+- Added a release workflow that validates matching package versions, runs formatting/lint/build checks, publishes only that version's changelog notes, and points the release tag at the tested commit.
 - Added a deployment preflight so Blitz builds validate formatting, lint, shared types, backend types, and the dashboard before publishing an image.
 
 # Changelog
