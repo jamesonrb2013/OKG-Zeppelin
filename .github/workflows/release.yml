@@ -8,6 +8,8 @@ on:
       - package.json
       - backend/package.json
       - dashboard/package.json
+      - backend/src/index.ts
+      - backend/src/version.ts
       - CHANGELOG.md
   workflow_dispatch:
 

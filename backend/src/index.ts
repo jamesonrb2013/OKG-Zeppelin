@@ -558,7 +558,8 @@ connect().then(async () => {
         }
       }
     }
-    // Remove obsolete moderation command names left behind by Discord's additive
+    try {
+      // Remove obsolete moderation command names left behind by Discord's additive
       const obsoleteModerationCommandNames = new Set([
         "addcase",
         "ban",
@@ -618,6 +619,7 @@ connect().then(async () => {
 
       // Remove obsolete AI commands and guild-scoped duplicates; the remaining custom commands are global.
       for (const guild of client.guilds.cache.values()) {
+        if (!(await allowedGuilds.isAllowed(guild.id))) continue;
         const guildCommands = await client.application!.commands.fetch({ guildId: guild.id });
         for (const registered of guildCommands.values()) {
           const isObsoleteAI = obsoleteAICommandNames.has(registered.name);
@@ -634,6 +636,7 @@ connect().then(async () => {
       // Register server-scoped copies first because global command propagation can be delayed.
       // This makes the commands available immediately in every cached guild.
       for (const guild of client.guilds.cache.values()) {
+        if (!(await allowedGuilds.isAllowed(guild.id))) continue;
         try {
           const guildCommands = await client.application!.commands.fetch({ guildId: guild.id });
           for (const command of commandsToRegister) {
@@ -666,7 +669,7 @@ connect().then(async () => {
       }
 
       logger.info(
-        "Registered custom slash commands globally and per guild; removed legacy AI commands; message prefixes remain paused",
+        "Registered custom slash commands globally and for authorized guilds; Vety handles message-prefix commands",
       );
     } catch (error) {
       logger.error(`Failed to register slash commands: ${error}`);
