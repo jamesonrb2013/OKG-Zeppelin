@@ -48,7 +48,7 @@ export class Configs extends BaseRepository {
   }
 
   getActiveLargerThanId(id) {
-    return this.configs.createQueryBuilder().where("id > :id", { id }).andWhere("is_active = 1").getMany();
+    return this.configs.createQueryBuilder().where("id > :id", { id }).andWhere("is_active = 1").orderBy("id", "ASC").getMany();
   }
 
   async hasConfig(key) {

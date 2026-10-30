@@ -77,7 +77,7 @@ jobs:
           const heading = new RegExp("^##\\s+\\[?" + escaped + "\\]?\\s*$");
           const start = lines.findIndex((line) => heading.test(line));
           if (start < 0) throw new Error("CHANGELOG.md is missing the section for " + version);
-          const end = lines.findIndex((line, index) => index > start && /^##\s+/.test(line));
+          const end = lines.findIndex((line, index) => index > start && /^#{1,2}\s+/.test(line));
           const notes = lines.slice(start + 1, end < 0 ? undefined : end).join("\n").trim();
           if (!notes) throw new Error("The changelog section for " + version + " is empty");
           fs.writeFileSync(process.env.RUNNER_TEMP + "/release-notes.md", notes + "\n");
@@ -91,7 +91,9 @@ jobs:
           set -euo pipefail
           TAG="v${{ steps.release.outputs.version }}"
           if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Release $TAG already exists; nothing to publish."
+            gh release edit "$TAG" \
+              --title "OKG-Zeppelin ${{ steps.release.outputs.version }}" \
+              --notes-file "$RUNNER_TEMP/release-notes.md"
           else
             gh release create "$TAG" \
               --target "${{ github.sha }}" \

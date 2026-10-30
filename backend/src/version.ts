@@ -22,6 +22,6 @@ export function getReleaseNotes(version: string): string {
 
   if (start === -1) return "";
 
-  const nextSection = lines.findIndex((line, index) => index > start && /^##\s+/.test(line));
+  const nextSection = lines.findIndex((line, index) => index > start && /^#{1,2}\s+/.test(line));
   return lines.slice(start + 1, nextSection === -1 ? undefined : nextSection).join("\n").trim();
 }
