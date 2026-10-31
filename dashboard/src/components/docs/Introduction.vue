@@ -1,45 +1,24 @@
 <template>
   <div>
-    <h1>Introduction</h1>
-    <p>Zeppelin is a private moderation bot for Discord, designed with large servers and reliability in mind.</p>
-
-    <!-- WIP bar -->
+    <h1>Welcome to OKG Administrative &amp; Management</h1>
+    <p>OKG Administrative &amp; Management is the official OneKidGaming platform for Discord administration, moderation, and community operations. It brings essential server-management tools together with a connected web dashboard.</p>
     <div class="px-3 py-2 rounded bg-gray-800 shadow-md inline-block">
-      <alert class="inline-icon mr-1 text-yellow-300" title="Note!" />
-      This documentation is a work in progress.
+      <alert class="inline-icon mr-1 text-blue-300" title="Platform note!" />
+      Some guides are being expanded as OKG features continue to evolve. Always use the settings currently shown in your dashboard.
     </div>
-
-    <h2>Getting the bot</h2>
-    <p>
-      Since the bot is currently private, access to the bot is granted on a case by case basis.<br />
-      There are plans to streamline this process in the future.
-    </p>
-
-    <h2>Configuration</h2>
-    <p>
-      All Zeppelin configuration is done through the dashboard by editing a YAML config file. By default, only the
-      server owner has access to this, but they can give other users access as they see fit. See
-      <router-link to="/docs/configuration/configuration-format">Configuration format</router-link> for more details.
-    </p>
-
-    <h2>Plugins</h2>
-    <p>
-      Zeppelin is divided into plugins: grouped functionality that can be enabled/disabled as needed, and that have
-      their own configurations.
-    </p>
-
+    <h2>Access to the platform</h2>
+    <p>Access is provided by the OKG team. If you need access or believe your account is missing permissions, contact your server owner or <a href="mailto:support@onekidgaming.blitz.cloud">OKG Support</a>.</p>
+    <h2>Dashboard configuration</h2>
+    <p>Authorized administrators can manage server features, configuration, and staff access through the dashboard. Server owners should grant dashboard access only to trusted staff members. See <router-link to="/docs/configuration/configuration-format">Configuration format</router-link> for details.</p>
+    <h2>Platform modules</h2>
+    <p>OKG Administrative &amp; Management is organized into modules. Each module groups related functionality and provides its own configuration options, allowing server teams to enable and tailor the tools they need.</p>
     <h2>Commands</h2>
-    <p>
-      The commands for each plugin are listed on the plugin's page (see "Plugins" on the menu). On these pages, the
-      command prefix is assumed to be <code>!</code> but this can be changed on a per-server basis.
-    </p>
+    <p>Command references are listed on the relevant module documentation pages. The default command prefix may be changed for an individual server where supported.</p>
+    <h2>Need help?</h2>
+    <p>Join the <a href="https://discord.gg/nePR9dnuYm">official OKG Discord server</a> or email <a href="mailto:support@onekidgaming.blitz.cloud">support@onekidgaming.blitz.cloud</a>.</p>
   </div>
 </template>
-
 <script lang="ts">
 import Alert from "vue-material-design-icons/Alert.vue";
-
-export default {
-  components: { Alert },
-};
+export default { components: { Alert } };
 </script>
