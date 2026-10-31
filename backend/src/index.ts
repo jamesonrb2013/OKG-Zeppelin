@@ -521,10 +521,15 @@ connect().then(async () => {
           if (previousRelease?.config === BOT_VERSION) continue;
 
           const channels = await guild.channels.fetch();
-          const updateChannel = channels.find(
-            (channel): channel is TextChannel =>
-              channel instanceof TextChannel && channel.topic?.startsWith("okg-updates|role=") === true,
-          );
+          // The primary OKG server uses its pre-existing, explicitly designated updates channel.
+          // Other authorized servers use the channel created and marked by /updates-setup.
+          const updateChannel =
+            guild.id === CORE_GUILD_ID
+              ? ((await guild.channels.fetch("1562496808838631556")) as TextChannel | null)
+              : (channels.find(
+                  (channel): channel is TextChannel =>
+                    channel instanceof TextChannel && channel.topic?.startsWith("okg-updates|role=") === true,
+                ) ?? null);
 
           if (!updateChannel) {
             logger.info(`Skipped version ${BOT_VERSION} in guild ${guild.id}: dedicated updates channel has not been created.`);
