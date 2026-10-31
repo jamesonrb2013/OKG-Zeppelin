@@ -1,3 +1,12 @@
+## 1.3.14
+
+### Fixed
+- Routed primary OKG server release announcements directly to its designated existing channel `1562496808838631556`, while keeping other servers restricted to their dedicated setup channels.
+- Kept release delivery retryable when the designated channel is missing or cannot receive messages.
+
+### Changed
+- Aligned root, backend, and dashboard package versions at 1.3.14.
+
 ## 1.3.13
 
 ### Fixed
