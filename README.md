@@ -1,41 +1,34 @@
-![Zeppelin Banner](assets/zepbanner.png)
+# OKG Administrative & Management
 
-# Zeppelin
+![OKG Administrative & Management](dashboard/public/img/okg-shield.svg)
 
-**Policies:** [Terms of Service](TERMS_OF_SERVICE.md) · [Privacy Policy](PRIVACY_POLICY.md)
+**The official OneKidGaming administration and community-management platform.**
 
-Zeppelin is a moderation bot for Discord, designed with large servers and reliability in mind.
+OKG Administrative & Management provides Discord server owners and authorized staff with tools to configure, moderate, protect, and manage their communities from one connected dashboard.
 
-**Main features include:**
+## Platform features
 
-- Extensive automoderator features (automod)
-  - Word filters, spam detection, etc.
-- Detailed moderator action tracking and notes (cases)
-- Customizable server logs
-- Tags/custom commands
-- Reaction roles
-- Tons of utility commands, including a granular member search
-- Full configuration via a web dashboard
-  - Override specific settings and permissions on e.g. a per-user, per-channel, or per-permission-level basis
-- Bot-managed slowmodes
-  - Automatically switches between native slowmodes (for 6h or less) and bot-enforced (for longer slowmodes)
-- Starboard
-- And more!
+- **Moderation & Automod** — configurable message filters, spam protection, and moderation actions.
+- **Staff tools & cases** — moderation records, notes, and action tracking.
+- **Server logs** — configurable event logging and audit visibility.
+- **Community utilities** — tags, custom commands, reaction roles, slowmodes, and other server tools.
+- **Support workflows** — native support tickets and transcript logging.
+- **Web dashboard** — Discord sign-in, server configuration, access controls, and feature settings.
+- **Documentation** — setup guides, configuration references, and module documentation.
 
-See https://zeppelin.gg/ for more details.
+## Official links
+
+- [OKG Website](https://onekidgaming.blitz.cloud)
+- [OKG Discord Server](https://discord.gg/nePR9dnuYm)
+- [Open the dashboard](https://okg-zeppelin-dashboard.onekidgaming.blitz.cloud)
+- [Contact OKG Support](mailto:support@onekidgaming.blitz.cloud)
 
 ## Usage documentation
 
-For information on how to use the bot, see https://zeppelin.gg/docs
+Open the platform's **Documentation** section for configuration, permissions, moderation, logging, and module guides.
 
 ## Development
 
-See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for instructions on running the development environment.
+This repository contains the OKG Administrative & Management application, including its Discord bot backend, API, and web dashboard. Internal package names and implementation identifiers are retained where required for compatibility with existing imports and deployments.
 
-Once you have the environment up and running, see [docs/MANAGEMENT.md](docs/MANAGEMENT.md) for how to manage your bot.
-
-## Production
-
-See [docs/PRODUCTION.md](docs/PRODUCTION.md) for instructions on how to run the bot in production.
-
-Once you have the environment up and running, see [docs/MANAGEMENT.md](docs/MANAGEMENT.md) for how to manage your bot.
+See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for development setup and [docs/PRODUCTION.md](docs/PRODUCTION.md) for production operations.
