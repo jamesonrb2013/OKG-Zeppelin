@@ -1,3 +1,12 @@
+## 1.3.13
+
+### Fixed
+- Restricted automatic release announcements to the dedicated channel created by `/updates-setup`; the bot no longer falls back to general, system, or arbitrary chat channels.
+- Standardized the dedicated update channel name to `okg-admin-manage-updates`, including renaming an existing setup channel when `/updates-setup` is run again.
+
+### Changed
+- Aligned root, backend, and dashboard package versions at 1.3.13.
+
 ## 1.3.12
 
 ### Fixed
