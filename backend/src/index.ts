@@ -507,8 +507,8 @@ connect().then(async () => {
       logger.error(`Failed to register /announce globally: ${error}`);
     }
 
-    // Publish the changelog section for this exact version once per authorized guild.
-    // The version is read from the root package.json and notes from CHANGELOG.md.
+    // Publish release notes only to the dedicated channel created by /updates-setup.
+    // Never fall back to system, general, or arbitrary writable channels.
     const releaseNotes = getReleaseNotes(BOT_VERSION);
     if (!releaseNotes) {
       logger.error(`No CHANGELOG.md entry found for deployed version ${BOT_VERSION}; skipping release announcements.`);
@@ -519,37 +519,25 @@ connect().then(async () => {
           const releaseKey = `release-announcement:${guild.id}`;
           const previousRelease = await guildConfigs.getActiveByKey(releaseKey);
           if (previousRelease?.config === BOT_VERSION) continue;
+
           const channels = await guild.channels.fetch();
-          const botMember = guild.members.me ?? (await guild.members.fetchMe());
-          const canSend = (channel: TextChannel | null | undefined): channel is TextChannel =>
-            Boolean(channel && channel.permissionsFor(botMember)?.has(["ViewChannel", "SendMessages"]));
-          let updateChannel: TextChannel | null = null;
-          // Keep OKG's established Announcement channel as the primary destination.
-          if (guild.id === CORE_GUILD_ID) {
-            const okgReleaseChannel = channels.get("1562496808838631556");
-            if (okgReleaseChannel?.isTextBased() && "messages" in okgReleaseChannel && "send" in okgReleaseChannel) {
-              const candidate = okgReleaseChannel as TextChannel;
-              if (canSend(candidate)) updateChannel = candidate;
-            }
-          }
-          const configuredChannel = channels.find(
+          const updateChannel = channels.find(
             (channel): channel is TextChannel =>
               channel instanceof TextChannel && channel.topic?.startsWith("okg-updates|role=") === true,
           );
-          if (!updateChannel && canSend(configuredChannel)) updateChannel = configuredChannel;
-          const systemChannel = guild.systemChannel instanceof TextChannel ? guild.systemChannel : null;
-          if (!updateChannel && canSend(systemChannel)) updateChannel = systemChannel;
+
           if (!updateChannel) {
-            updateChannel =
-              channels.find((channel): channel is TextChannel => channel instanceof TextChannel && canSend(channel)) ??
-              null;
-          }
-          if (!updateChannel) {
-            logger.warn(`Could not post version ${BOT_VERSION} in guild ${guild.id}: no writable text channel.`);
+            logger.info(`Skipped version ${BOT_VERSION} in guild ${guild.id}: dedicated updates channel has not been created.`);
             continue;
           }
-          const defaultPingRole = guild.id === CORE_GUILD_ID ? "1562533677664305183" : undefined;
-          await postGuildUpdate(updateChannel, BOT_VERSION, releaseNotes, defaultPingRole);
+
+          const botMember = guild.members.me ?? (await guild.members.fetchMe());
+          if (!updateChannel.permissionsFor(botMember)?.has(["ViewChannel", "SendMessages"])) {
+            logger.warn(`Could not post version ${BOT_VERSION} in guild ${guild.id}: missing permission in dedicated channel #${updateChannel.name}.`);
+            continue;
+          }
+
+          await postGuildUpdate(updateChannel, BOT_VERSION, releaseNotes);
           // Record only after Discord confirms the message was sent. Failed sends retry on next startup.
           await guildConfigs.saveNewRevision(releaseKey, BOT_VERSION, "0");
           logger.info(`Posted version ${BOT_VERSION} update in guild ${guild.id} to #${updateChannel.name}`);
