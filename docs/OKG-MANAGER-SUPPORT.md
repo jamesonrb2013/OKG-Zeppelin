@@ -1,12 +1,10 @@
-# OKG Manager Support
+# OKG Administrative & Management — Support Module
 
-Bot version: **1.3.2**
-
-OKG Manager includes native Discord support tickets in the Zeppelin bot.
+This guide covers the native Discord support-ticket workflow included in OKG Administrative & Management.
 
 ## Configure
 
-1. Open OKG Manager Dashboard → Features → Support.
+1. Open **OKG Dashboard → Features → Support**.
 2. Enable Support.
 3. Set the public panel channel ID and ticket category ID.
 4. Add support staff role IDs. The bot needs Manage Channels, View Channel, Send Messages, Read Message History, and permission to create channels.
@@ -28,7 +26,7 @@ OKG Manager includes native Discord support tickets in the Zeppelin bot.
 - A ticket owner or authorized support staff can close a ticket.
 - Ticket controls are bot interactions; users cannot change ticket state merely by editing a channel name.
 - Transcript history is capped at 5,000 messages to protect memory use. Discord does not expose deleted messages to a later transcript.
-- This is the current native foundation. Advanced Ticket Tool parity—multiple panels/categories with per-panel forms, staff-only notes, service-level metrics, and a searchable dashboard ticket queue—still requires additional implementation.
+- Advanced Ticket Tool parity—multiple panels/categories with per-panel forms, staff-only notes, service-level metrics, and a searchable dashboard ticket queue—may require additional implementation.
 
 ## Support workflow smoke-test checklist
 
@@ -40,3 +38,5 @@ OKG Manager includes native Discord support tickets in the Zeppelin bot.
 - [ ] Close the ticket and verify the transcript appears in the configured log channel.
 - [ ] Reopen the ticket and verify the owner can send messages again.
 - [ ] Delete a test ticket with a support staff account.
+
+For assistance, contact [OKG Support](mailto:support@onekidgaming.blitz.cloud) or join the [official OKG Discord](https://discord.gg/nePR9dnuYm).
