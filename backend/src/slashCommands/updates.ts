@@ -48,6 +48,9 @@ export async function handleUpdatesSetup(interaction: ChatInputCommandInteractio
   const existing = await getChannel(guild);
 
   if (existing) {
+    if (existing.name !== "okg-admin-manage-updates") {
+      await existing.setName("okg-admin-manage-updates", "Standardized dedicated bot updates channel name");
+    }
     if (role) await existing.setTopic(MARKER + role.id, "Updated bot update ping role");
     await interaction.editReply({
       content: "Your bot update channel is " + existing.toString() + (role ? " and the ping role is configured." : "."),
@@ -57,7 +60,7 @@ export async function handleUpdatesSetup(interaction: ChatInputCommandInteractio
 
   try {
     const channel = await guild.channels.create({
-      name: "bot-updates",
+      name: "okg-admin-manage-updates",
       type: ChannelType.GuildText,
       topic: MARKER + (role?.id ?? ""),
       reason: "Bot update channel setup",
