@@ -537,7 +537,8 @@ connect().then(async () => {
             continue;
           }
 
-          await postGuildUpdate(updateChannel, BOT_VERSION, releaseNotes);
+          const defaultPingRole = guild.id === CORE_GUILD_ID ? "1562533677664305183" : undefined;
+          await postGuildUpdate(updateChannel, BOT_VERSION, releaseNotes, defaultPingRole);
           // Record only after Discord confirms the message was sent. Failed sends retry on next startup.
           await guildConfigs.saveNewRevision(releaseKey, BOT_VERSION, "0");
           logger.info(`Posted version ${BOT_VERSION} update in guild ${guild.id} to #${updateChannel.name}`);
