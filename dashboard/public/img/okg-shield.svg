@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+<title id="title">OKG Administrative and Management shield</title>
+<defs>
+ <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#07152f"/><stop offset=".55" stop-color="#102f69"/><stop offset="1" stop-color="#061127"/></linearGradient>
+ <linearGradient id="edge" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff"/><stop offset=".42" stop-color="#60c7ff"/><stop offset="1" stop-color="#eaf7ff"/></linearGradient>
+ <filter id="glow"><feGaussianBlur stdDeviation="9" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<path d="M256 24 458 90v154c0 118-79 195-202 244C133 439 54 362 54 244V90z" fill="#147bff" opacity=".32" filter="url(#glow)"/>
+<path d="M256 34 448 96v148c0 109-72 181-192 228C136 425 64 353 64 244V96z" fill="url(#bg)" stroke="url(#edge)" stroke-width="13"/>
+<path d="M256 66 416 118v126c0 88-56 148-160 190-104-42-160-102-160-190V118z" fill="none" stroke="#4baeff" stroke-width="3" opacity=".8"/>
+<text x="256" y="282" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="118" font-weight="800" letter-spacing="-7" fill="#fff" stroke="#b9dfff" stroke-width="2" paint-order="stroke">OKG</text>
+</svg>
