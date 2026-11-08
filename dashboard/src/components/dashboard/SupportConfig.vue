@@ -247,6 +247,7 @@ export default {
         { command: "/ticket lock", description: "Prevent the ticket owner from sending messages." },
         { command: "/ticket unlock", description: "Restore ticket-owner messaging." },
         { command: "/ticket transfer", description: "Transfer ticket ownership to another member." },
+        { command: "/ticket list", description: "View the support queue from any server channel." },
         { command: "/ticket note", description: "Write a private staff note to the Support log." },
       ],
     };
