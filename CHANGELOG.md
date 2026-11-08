@@ -1,3 +1,21 @@
+## 1.3.18
+
+### Added
+- Added /economy balance and /economy leaderboard for member balance lookups and server rankings.
+- Added moderator commands to add, remove, and set member cash or bank balances with required audit reasons.
+- Added an administrator-only per-member economy reset.
+- Added server-specific currency symbol display and concise handling for UnbelievaBoat API errors.
+- Documented economy command permissions and safe usage in docs/ECONOMY.md.
+
+### Permissions and safeguards
+- Balance and leaderboard are available to server members.
+- Add, remove, and set require Manage Messages, Manage Server, or Administrator.
+- Full member reset requires Manage Server or Administrator.
+- All operations use the connected server's own encrypted UnbelievaBoat token. No mass-economy reset command is provided.
+
+### Credits
+- Updated by Jeffery Spinnel.
+
 ## 1.3.17
 
 ### Improved
