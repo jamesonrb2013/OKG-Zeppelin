@@ -27,6 +27,7 @@ type SupportConfig = {
   panel_description?: string;
   welcome_message?: string;
   max_open_tickets?: number;
+  ticket_panels?: Array<{ id: string; title: string; description: string; category_id: string; button_label?: string }>;
 };
 
 function escapeHtml(value: string): string {
@@ -120,20 +121,28 @@ export async function handleSupportPanelCommand(interaction: ChatInputCommandInt
     .setDescription(config.panel_description || "Open a private support ticket below.")
     .setFooter({ text: "OKG Manager • Support" });
 
-  await channel.send({
-    embeds: [embed],
-    components: [
-      new ActionRowBuilder<ButtonBuilder>().addComponents(
-        new ButtonBuilder()
-          .setCustomId("okg_support:create")
-          .setLabel("Open a ticket")
-          .setStyle(ButtonStyle.Primary)
-          .setEmoji("🎫"),
-      ),
-    ],
-    allowedMentions: { parse: [] },
-  });
-  await interaction.reply({ content: `Support panel posted in <#${channel.id}>.`, ephemeral: true });
+  const panels = config.ticket_panels?.length ? config.ticket_panels : [{
+    id: "default",
+    title: config.panel_title || "OKG Support Center",
+    description: config.panel_description || "Open a private support ticket below.",
+    category_id: config.category_id || "",
+    button_label: "Open a ticket",
+  }];
+  if (panels.some((panel) => !panel.category_id)) {
+    await interaction.reply({ content: "Every ticket panel needs its own ticket category ID. Configure it in OKG Manager first.", ephemeral: true });
+    return;
+  }
+  for (const panel of panels) {
+    const panelEmbed = new EmbedBuilder().setColor(0x5865f2).setTitle(panel.title).setDescription(panel.description).setFooter({ text: "OKG Manager • Support" });
+    await channel.send({
+      embeds: [panelEmbed],
+      components: [new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder().setCustomId(`okg_support:create:${panel.id}`).setLabel((panel.button_label || "Open a ticket").slice(0, 80)).setStyle(ButtonStyle.Primary).setEmoji("🎫"),
+      )],
+      allowedMentions: { parse: [] },
+    });
+  }
+  await interaction.reply({ content: `${panels.length} Support panel(s) posted in <#${channel.id}>.`, ephemeral: true });
 }
 
 export async function handleSupportModal(interaction: ModalSubmitInteraction, rootConfig: unknown) {
