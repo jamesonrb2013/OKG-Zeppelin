@@ -14,7 +14,7 @@ export interface TMessageSpamMatchResultType {
 }
 
 const configSchema = z.strictObject({
-  amount: z.number().int(),
+  amount: z.number().int().min(1).max(10000),
   within: zDelayString,
   per_channel: z.boolean().nullable().default(false),
 });
