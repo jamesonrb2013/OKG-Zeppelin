@@ -301,10 +301,13 @@ export default {
               if (!Array.isArray(panels) || panels.length > 10) {
                 throw new Error("Multiple ticket panels must be a JSON array with no more than 10 entries.");
               }
+              const panelIds = new Set<string>();
               for (const panel of panels) {
                 if (!panel || !/^[a-z0-9_-]{1,24}$/.test(panel.id || "") || !panel.title || !panel.category_id || typeof panel.description !== "string") {
                   throw new Error("Each ticket panel needs a unique lowercase id, title, description, and category_id.");
                 }
+                if (panelIds.has(panel.id)) throw new Error("Ticket panel IDs must be unique.");
+                panelIds.add(panel.id);
               }
               return panels;
             })(),
