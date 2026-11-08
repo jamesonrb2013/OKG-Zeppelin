@@ -3,6 +3,7 @@ import { randomInt, randomUUID } from "node:crypto";
 import { dataSource } from "../data/dataSource.js";
 import { Giveaway } from "../data/entities/Giveaway.js";
 import { GiveawayEntry } from "../data/entities/GiveawayEntry.js";
+import { getUnbelievaBoatToken } from "./unbelievaboat.js";
 
 const giveawayRepo = () => dataSource.getRepository(Giveaway);
 const entryRepo = () => dataSource.getRepository(GiveawayEntry);
@@ -50,7 +51,7 @@ async function refresh(client: Client, g: Giveaway): Promise<void> {
   } catch (error) { console.warn("[GIVEAWAYS] Post refresh failed:", error); }
 }
 async function pay(g: Giveaway, userId: string): Promise<void> {
-  const token = process.env.UNBELIEVABOAT_API_TOKEN?.trim();
+  const token = await getUnbelievaBoatToken(g.guild_id);
   if (!token || !g.cash_reward) throw new Error("UnbelievaBoat payout is not configured.");
   const response = await fetch("https://unbelievaboat.com/api/v1/guilds/" + encodeURIComponent(g.guild_id) + "/users/" + encodeURIComponent(userId), {
     method: "PATCH",
