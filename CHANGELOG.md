@@ -1,3 +1,14 @@
+## 1.3.15
+
+### Added
+- Added database-backed giveaways and raffles with button entry, one-entry-per-member enforcement, optional role eligibility, scheduled endings, multiple winners, manual endings, and rerolls.
+- Added optional UnbelievaBoat cash prizes using its economy balance API. Configure `UNBELIEVABOAT_API_TOKEN` in the bot environment to enable cash rewards.
+- Added /giveaway create, list, end, and reroll commands.
+- Updated by Jeffery Spinnel.
+
+### Changed
+- Aligned root, backend, and dashboard package versions at 1.3.15.
+
 ## 1.3.14
 
 ### Fixed

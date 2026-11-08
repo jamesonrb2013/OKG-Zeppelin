@@ -57,6 +57,7 @@ import { DecayingCounter } from "./utils/DecayingCounter.js";
 import { enableProfiling } from "./utils/easyProfiler.js";
 import { loadYamlSafely } from "./utils/loadYamlSafely.js";
 import { announceCommand, handleAnnounceCommand } from "./slashCommands/announce.js";
+import { giveawayCommand, handleGiveawayCommand, handleGiveawayButton, startGiveawayEndingLoop } from "./slashCommands/giveaways.js";
 import { permissionLevelCommand, handlePermissionLevelCommand } from "./slashCommands/permissionLevel.js";
 import { apiRouterCommand, handleApiRouterCommand } from "./slashCommands/apiRouter.js";
 import {
@@ -489,6 +490,7 @@ connect().then(async () => {
     }
 
     startUptimeCounter();
+    startGiveawayEndingLoop(client);
 
     // Keep the deployed bot version visible in Discord's activity status.
     client.user?.setPresence({
@@ -594,6 +596,7 @@ connect().then(async () => {
 
       const commandsToRegister = [
         announceCommand,
+        giveawayCommand,
         permissionLevelCommand,
         supportPanelCommand,
         updatesSetupCommand,
@@ -701,7 +704,17 @@ connect().then(async () => {
       return;
     }
 
+    if (interaction.isButton() && interaction.customId.startsWith("okg_giveaway:enter:")) {
+      await handleGiveawayButton(interaction, client);
+      return;
+    }
+
     if (!interaction.isChatInputCommand()) {
+      return;
+    }
+
+    if (interaction.commandName === "giveaway") {
+      await handleGiveawayCommand(interaction, client);
       return;
     }
 
