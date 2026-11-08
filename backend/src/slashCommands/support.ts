@@ -98,7 +98,7 @@ export async function handleSupportPanelCommand(interaction: ChatInputCommandInt
     });
     return;
   }
-  if (!config.panel_channel_id || !config.category_id) {
+  if (!config.panel_channel_id || (!config.ticket_panels?.length && !config.category_id)) {
     await interaction.reply({
       content: "Set both the panel channel and ticket category in OKG Manager → Features → Support first.",
       ephemeral: true,
