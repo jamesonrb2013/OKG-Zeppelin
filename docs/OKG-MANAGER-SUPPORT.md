@@ -19,6 +19,7 @@ This guide covers the native Discord support-ticket workflow included in OKG Adm
 - Support staff can claim and unclaim an open ticket.
 - Staff can use `/ticket add`, `/ticket remove`, `/ticket rename`, `/ticket lock`, `/ticket unlock`, and `/ticket transfer` from inside a ticket.
 - `/ticket note` sends an internal note to the configured Support log channel; it is not posted in the member-visible ticket.
+- When a ticket is closed, the owner can submit a 1–5 star satisfaction rating. Ratings are recorded in the configured Support log channel.
 - The ticket owner or support staff can close it; staff can reopen or delete closed tickets.
 - Closing sends both a plain-text transcript and a styled HTML transcript to the configured log channel, when one is configured. Transcript collection paginates up to 5,000 messages and records message timestamps, authors, attachment URLs, and embed summaries.
 - The configured open-ticket limit prevents users from opening too many concurrent tickets.
