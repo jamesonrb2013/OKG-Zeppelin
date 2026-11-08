@@ -15,7 +15,7 @@ type Balance = {
 };
 
 type EconomyGuild = {
-  currencySymbol?: string;
+  symbol?: string;
 };
 
 const API = "https://unbelievaboat.com/api/v1";
