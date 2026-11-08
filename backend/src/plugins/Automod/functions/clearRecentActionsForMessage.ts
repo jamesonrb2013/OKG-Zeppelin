@@ -8,11 +8,10 @@ export function clearRecentActionsForMessage(pluginData: GuildPluginData<Automod
     "automod:fns:clearRecentActionsForMessage",
   );
   const message = context.message!;
-  const globalIdentifier = message.user_id;
-  const perChannelIdentifier = `${message.channel_id}-${message.user_id}`;
-
-  pluginData.state.recentActions = pluginData.state.recentActions.filter((act) => {
-    return act.identifier !== globalIdentifier && act.identifier !== perChannelIdentifier;
+  // An edit replaces only this message's contribution. Do not erase the
+  // member's other recent messages, which are needed for accurate spam windows.
+  pluginData.state.recentActions = pluginData.state.recentActions.filter((action) => {
+    return action.context.message?.id !== message.id;
   });
   stopProfiling();
 }
