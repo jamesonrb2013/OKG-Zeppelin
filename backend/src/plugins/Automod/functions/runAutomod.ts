@@ -212,6 +212,7 @@ export async function runAutomod(
         }
 
         if (matchResult) {
+          result.triggered = true;
           ruleResult.outcome = {
             success: true,
             matchedTrigger: {
