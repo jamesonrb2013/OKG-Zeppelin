@@ -174,7 +174,7 @@
           <p class="text-xs text-gray-400 mt-1">{{ item.description }}</p>
         </div>
       </div>
-      <p class="text-xs text-gray-500 mt-4">Private staff notes are delivered to the configured transcript/log channel and are not posted where ticket owners can read them.</p>
+      <p class="text-xs text-gray-500 mt-4">Private staff notes and member satisfaction ratings (1–5 stars) are delivered to the configured Support log channel.</p>
     </section>
     <section class="rounded-xl border border-indigo-500/30 bg-indigo-950/20 p-5 mt-6">
       <h2 class="font-semibold">Next step: publish your panel</h2>
