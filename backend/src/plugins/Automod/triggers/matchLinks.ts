@@ -80,6 +80,19 @@ export const MatchLinksTrigger = automodTrigger<MatchResultType>()({
         // Exclude > Include
         // In order of specificity, regex > word > domain
 
+        if (trigger.exclude_domains) {
+          const isExcluded = trigger.exclude_domains.some((domain) => {
+            const normalizedDomain = domain.toLowerCase();
+            return (
+              normalizedDomain === normalizedHostname ||
+              (trigger.include_subdomains && normalizedHostname.endsWith(`.${normalizedDomain}`))
+            );
+          });
+          if (isExcluded) {
+            continue linkLoop;
+          }
+        }
+
         if (trigger.exclude_regex) {
           if (!regexCache.has(trigger.exclude_regex)) {
             const toCache = mergeRegexes(
@@ -144,26 +157,13 @@ export const MatchLinksTrigger = automodTrigger<MatchResultType>()({
           }
         }
 
-        if (trigger.exclude_domains) {
-          const isExcluded = trigger.exclude_domains.some((domain) => {
-            const normalizedDomain = domain.toLowerCase();
-            return (
-              normalizedDomain === normalizedHostname ||
-              (trigger.include_subdomains && normalizedHostname.endsWith(`.${normalizedDomain}`))
-            );
-          });
-          if (isExcluded) {
-            continue linkLoop;
-          }
-        }
-
         if (trigger.include_domains) {
           for (const domain of trigger.include_domains) {
             const normalizedDomain = domain.toLowerCase();
             if (normalizedDomain === normalizedHostname) {
               return { extra: { type, link: domain } };
             }
-            if (trigger.include_subdomains && normalizedHostname.endsWith(`.${domain}`)) {
+            if (trigger.include_subdomains && normalizedHostname.endsWith(`.${normalizedDomain}`)) {
               return { extra: { type, link: domain } };
             }
           }
