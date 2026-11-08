@@ -19,6 +19,13 @@ export const zSupportConfig = z.strictObject({
       "Thanks for opening a ticket. Please describe what you need help with. A member of our team will be with you soon.",
     ),
   max_open_tickets: z.number().int().min(1).max(10).default(1),
+  ticket_panels: z.array(z.object({
+    id: z.string().regex(/^[a-z0-9_-]{1,24}$/),
+    title: z.string().min(1).max(256),
+    description: z.string().max(4000),
+    category_id: z.string().min(1),
+    button_label: z.string().min(1).max(80).default("Open a ticket"),
+  })).max(10).default([]),
 });
 
 export interface SupportPluginType extends BasePluginType {
