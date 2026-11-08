@@ -59,17 +59,8 @@ import { loadYamlSafely } from "./utils/loadYamlSafely.js";
 import { announceCommand, handleAnnounceCommand } from "./slashCommands/announce.js";
 import { giveawayCommand, handleGiveawayCommand, handleGiveawayButton, startGiveawayEndingLoop } from "./slashCommands/giveaways.js";
 import { unbelievaboatCommand, handleUnbelievaBoatCommand, handleUnbelievaBoatModal } from "./slashCommands/unbelievaboat.js";
-import { economyCommand, handleEconomyCommand } from "./slashCommands/economy.js";
 import { permissionLevelCommand, handlePermissionLevelCommand } from "./slashCommands/permissionLevel.js";
 import { apiRouterCommand, handleApiRouterCommand } from "./slashCommands/apiRouter.js";
-import {
-  handleSupportInteraction,
-  handleSupportModal,
-  handleSupportPanelCommand,
-  supportPanelCommand,
-  ticketCommand,
-  handleTicketCommand,
-} from "./slashCommands/support.js";
 import {
   handleUpdatesConfig,
   handleUpdatesSetup,
@@ -389,16 +380,15 @@ connect().then(async () => {
        * Dependencies are also automatically loaded by Vety.
        */
       async getEnabledGuildPlugins(ctx, plugins): Promise<string[]> {
-        if (!ctx.config || !ctx.config.plugins) {
-          return [];
-        }
-
-        const configuredPlugins = ctx.config.plugins;
+        // Treat an omitted plugin map as the default enabled state. Only an
+        // explicit enabled: false disables a plugin; otherwise command modules
+        // silently disappear from Discord when a guild config is incomplete.
+        const configuredPlugins = ctx.config?.plugins ?? {};
         const autoloadPluginNames = availableGuildPlugins.filter((obj) => obj.autoload).map((obj) => obj.plugin.name);
 
         return Array.from(plugins.keys()).filter((pluginName) => {
           if (autoloadPluginNames.includes(pluginName)) return true;
-          return configuredPlugins[pluginName] && (configuredPlugins[pluginName] as any).enabled !== false;
+          return (configuredPlugins[pluginName] as any)?.enabled !== false;
         });
       },
 
@@ -602,10 +592,7 @@ connect().then(async () => {
         announceCommand,
         giveawayCommand,
         unbelievaboatCommand,
-        economyCommand,
         permissionLevelCommand,
-        supportPanelCommand,
-        ticketCommand,
         updatesSetupCommand,
         updatesConfigCommand,
         apiRouterCommand,
@@ -686,36 +673,6 @@ connect().then(async () => {
       return;
     }
 
-    if (interaction.isModalSubmit() && (interaction.customId.startsWith("okg_support:create_modal:") || interaction.customId === "okg_support:create_modal")) {
-      if (!interaction.guildId) return;
-      const configRow = await guildConfigs.getActiveByKey(`guild-${interaction.guildId}`);
-      let config: unknown = {};
-      if (configRow) {
-        try {
-          config = loadYamlSafely(configRow.config);
-        } catch (error) {
-          logger.error(`Failed to load guild config for support ticket form: ${error}`);
-        }
-      }
-      await handleSupportModal(interaction, config);
-      return;
-    }
-
-    if (interaction.isButton() && interaction.customId.startsWith("okg_support:")) {
-      if (!interaction.guildId) return;
-      const configRow = await guildConfigs.getActiveByKey(`guild-${interaction.guildId}`);
-      let config: unknown = {};
-      if (configRow) {
-        try {
-          config = loadYamlSafely(configRow.config);
-        } catch (error) {
-          logger.error(`Failed to load guild config for support ticket interaction: ${error}`);
-        }
-      }
-      await handleSupportInteraction(interaction, config);
-      return;
-    }
-
     if (interaction.isButton() && interaction.customId.startsWith("okg_giveaway:enter:")) {
       await handleGiveawayButton(interaction, client);
       return;
@@ -732,35 +689,6 @@ connect().then(async () => {
 
     if (interaction.commandName === "unbelievaboat") {
       await handleUnbelievaBoatCommand(interaction, client);
-      return;
-    }
-
-    if (interaction.commandName === "economy") {
-      await handleEconomyCommand(interaction);
-      return;
-    }
-
-    if (interaction.commandName === "ticket") {
-      const configRow = await guildConfigs.getActiveByKey(`guild-${interaction.guildId}`);
-      let config: unknown = {};
-      if (configRow) {
-        try { config = loadYamlSafely(configRow.config); }
-        catch (error) { logger.error(`Failed to load guild config for /ticket: ${error}`); }
-      }
-      await handleTicketCommand(interaction, config);
-      return;
-    }
-    if (interaction.commandName === "support-panel") {
-      const configRow = await guildConfigs.getActiveByKey(`guild-${interaction.guildId}`);
-      let config: unknown = {};
-      if (configRow) {
-        try {
-          config = loadYamlSafely(configRow.config);
-        } catch (error) {
-          logger.error(`Failed to load guild config for /support-panel: ${error}`);
-        }
-      }
-      await handleSupportPanelCommand(interaction, config);
       return;
     }
 
