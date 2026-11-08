@@ -56,8 +56,8 @@
         </div>
         <h2 class="mt-4 text-xl font-semibold text-white">Support tickets</h2>
         <p class="mt-2 text-sm leading-6 text-gray-400">
-          Configure private ticket channels, staff claiming, close and reopen controls, transcripts, ticket limits,
-          and custom panel messages.
+          Run native private tickets with claim/unclaim, add/remove members, transfer ownership, lock/unlock, staff notes,
+          plain-text and HTML transcripts, and configurable panel messaging.
         </p>
         <p class="mt-5 text-sm font-semibold text-indigo-300">Configure support <span aria-hidden="true">→</span></p>
       </router-link>
