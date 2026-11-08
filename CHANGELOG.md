@@ -1,13 +1,23 @@
-## 1.3.15
+## 1.3.16
 
 ### Added
-- Added database-backed giveaways and raffles with button entry, one-entry-per-member enforcement, optional role eligibility, scheduled endings, multiple winners, manual endings, and rerolls.
-- Added optional UnbelievaBoat cash prizes using its economy balance API. Configure `UNBELIEVABOAT_API_TOKEN` in the bot environment to enable cash rewards.
-- Added /giveaway create, list, end, and reroll commands.
-- Updated by Jeffery Spinnel.
+- Added per-Discord-server UnbelievaBoat integration settings in the OKG Manager dashboard, with private token entry, connection testing, status, and disconnect controls.
+- Added /unbelievaboat connect, status, and disconnect commands as a Discord-native alternative.
+- Encrypted each server's UnbelievaBoat token at rest with AES-256-GCM and isolated credentials by Discord server ID.
+- Added server-permission-checked API endpoints for managing UnbelievaBoat connections.
+- Updated giveaway and raffle cash payouts to use only the credential configured for the event's own server.
 
 ### Changed
-- Aligned root, backend, and dashboard package versions at 1.3.15.
+- Removed the shared `UNBELIEVABOAT_API_TOKEN` environment-variable requirement.
+- Updated giveaway documentation with the per-server setup instructions.
+- Aligned root, backend, and dashboard package versions at 1.3.16.
+
+### Security
+- Tokens are never returned to the dashboard, displayed after saving, or written to application logs.
+- Connection is only saved after UnbelievaBoat confirms access to the exact Discord server.
+
+### Credits
+- Updated by Jeffery Spinnel.
 
 ## 1.3.14
 
