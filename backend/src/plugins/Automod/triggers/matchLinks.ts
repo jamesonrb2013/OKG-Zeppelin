@@ -57,10 +57,19 @@ export const MatchLinksTrigger = automodTrigger<MatchResultType>()({
       return;
     }
 
+    const hasInclusionMatchers = Boolean(
+      trigger.include_regex?.length ||
+      trigger.include_words?.length ||
+      trigger.include_domains?.length ||
+      trigger.include_malicious ||
+      trigger.phisherman?.include_suspected ||
+      trigger.phisherman?.include_verified,
+    );
+
     typeLoop: for await (const [type, str] of matchMultipleTextTypesOnMessage(pluginData, trigger, context.message)) {
       const links = getUrlsInString(str, true);
 
-      for (const link of links) {
+      linkLoop: for (const link of links) {
         // "real link" = a link that Discord highlights
         if (trigger.only_real_links && !quickLinkCheck.test(link.input)) {
           continue;
@@ -84,7 +93,7 @@ export const MatchLinksTrigger = automodTrigger<MatchResultType>()({
           for (const sourceRegex of regexes) {
             const matches = await pluginData.state.regexRunner.exec(sourceRegex, link.input).catch(allowTimeout);
             if (matches) {
-              continue typeLoop;
+              continue linkLoop;
             }
           }
         }
@@ -116,7 +125,7 @@ export const MatchLinksTrigger = automodTrigger<MatchResultType>()({
 
           for (const regex of regexes) {
             if (regex.test(link.input)) {
-              continue typeLoop;
+              continue linkLoop;
             }
           }
         }
@@ -136,17 +145,16 @@ export const MatchLinksTrigger = automodTrigger<MatchResultType>()({
         }
 
         if (trigger.exclude_domains) {
-          for (const domain of trigger.exclude_domains) {
+          const isExcluded = trigger.exclude_domains.some((domain) => {
             const normalizedDomain = domain.toLowerCase();
-            if (normalizedDomain === normalizedHostname) {
-              continue typeLoop;
-            }
-            if (trigger.include_subdomains && normalizedHostname.endsWith(`.${domain}`)) {
-              continue typeLoop;
-            }
+            return (
+              normalizedDomain === normalizedHostname ||
+              (trigger.include_subdomains && normalizedHostname.endsWith(`.${normalizedDomain}`))
+            );
+          });
+          if (isExcluded) {
+            continue linkLoop;
           }
-
-          return { extra: { type, link: link.toString() } };
         }
 
         if (trigger.include_domains) {
@@ -174,6 +182,12 @@ export const MatchLinksTrigger = automodTrigger<MatchResultType>()({
               },
             };
           }
+        }
+
+        // With exclusions alone, treat the rule as a blocklist. If inclusion
+        // matchers are configured too, they remain authoritative.
+        if (trigger.exclude_domains?.length && !hasInclusionMatchers) {
+          return { extra: { type, link: link.input } };
         }
       }
     }
