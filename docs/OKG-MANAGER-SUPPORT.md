@@ -16,8 +16,10 @@ This guide covers the native Discord support-ticket workflow included in OKG Adm
 - A user selects **Open a ticket** and completes the subject/details form.
 - The bot creates a private channel visible to the ticket owner and configured support roles.
 - Support staff can claim and unclaim an open ticket.
+- Staff can use `/ticket add`, `/ticket remove`, `/ticket rename`, `/ticket lock`, `/ticket unlock`, and `/ticket transfer` from inside a ticket.
+- `/ticket note` sends an internal note to the configured Support log channel; it is not posted in the member-visible ticket.
 - The ticket owner or support staff can close it; staff can reopen or delete closed tickets.
-- Closing sends a text transcript to the configured log channel, when one is configured. Transcript collection paginates up to 5,000 messages and records message timestamps, authors, attachment URLs, and embed summaries.
+- Closing sends both a plain-text transcript and a styled HTML transcript to the configured log channel, when one is configured. Transcript collection paginates up to 5,000 messages and records message timestamps, authors, attachment URLs, and embed summaries.
 - The configured open-ticket limit prevents users from opening too many concurrent tickets.
 
 ## Permissions and limitations
@@ -26,7 +28,7 @@ This guide covers the native Discord support-ticket workflow included in OKG Adm
 - A ticket owner or authorized support staff can close a ticket.
 - Ticket controls are bot interactions; users cannot change ticket state merely by editing a channel name.
 - Transcript history is capped at 5,000 messages to protect memory use. Discord does not expose deleted messages to a later transcript.
-- Advanced Ticket Tool parity—multiple panels/categories with per-panel forms, staff-only notes, service-level metrics, and a searchable dashboard ticket queue—may require additional implementation.
+- Not yet implemented: multiple independently configured panels and categories, per-category forms, automated inactivity close/reminders, post-close customer rating collection, and a live searchable dashboard ticket queue. These remain future parity work and should not be considered available yet.
 
 ## Support workflow smoke-test checklist
 
