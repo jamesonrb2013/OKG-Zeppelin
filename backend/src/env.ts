@@ -14,7 +14,6 @@ const envType = z.object({
   CLIENT_ID: z.string().min(16),
   CLIENT_SECRET: z.string().length(32),
   BOT_TOKEN: z.string().min(50),
-  UNBELIEVABOAT_API_TOKEN: z.string().optional(),
 
   DASHBOARD_URL: z.string().url(),
   API_URL: z.string().url(),
