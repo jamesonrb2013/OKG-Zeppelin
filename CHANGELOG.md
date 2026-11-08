@@ -6,6 +6,7 @@
 - Fixed message-edit accounting so editing one message replaces only that message's recent-action contribution instead of erasing the member's entire spam history.
 - Made recent-action recording idempotent when a saved-message event is delivered more than once.
 - Fixed AutoMod debug results so successful matches, including silent-clean matches, are correctly reported as triggered.
+- Fixed link matcher precedence so excluded domains/words are checked before inclusion rules, one excluded link does not hide other links in the same message, and combined include/exclude settings no longer flag unrelated domains.
 
 ### Reliability
 - Preserved existing configuration compatibility while safely ignoring invalid spam thresholds.
