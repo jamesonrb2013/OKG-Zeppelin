@@ -14,7 +14,7 @@ export interface TMessageSpamMatchResultType {
 }
 
 const configSchema = z.strictObject({
-  amount: z.number().int().min(1).max(10000),
+  amount: z.number().int(),
   within: zDelayString,
   per_channel: z.boolean().nullable().default(false),
 });
@@ -25,6 +25,11 @@ export function createMessageSpamTrigger(spamType: RecentActionType, prettyName:
 
     async match({ pluginData, context, triggerConfig }) {
       if (!context.message) {
+        return;
+      }
+
+      // A zero or negative threshold would otherwise match an empty action window.
+      if (!Number.isInteger(triggerConfig.amount) || triggerConfig.amount < 1) {
         return;
       }
 
