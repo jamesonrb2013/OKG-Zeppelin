@@ -67,6 +67,8 @@ import {
   handleSupportModal,
   handleSupportPanelCommand,
   supportPanelCommand,
+  ticketCommand,
+  handleTicketCommand,
 } from "./slashCommands/support.js";
 import {
   handleUpdatesConfig,
@@ -603,6 +605,7 @@ connect().then(async () => {
         economyCommand,
         permissionLevelCommand,
         supportPanelCommand,
+        ticketCommand,
         updatesSetupCommand,
         updatesConfigCommand,
         apiRouterCommand,
@@ -737,6 +740,16 @@ connect().then(async () => {
       return;
     }
 
+    if (interaction.commandName === "ticket") {
+      const configRow = await guildConfigs.getActiveByKey(`guild-${interaction.guildId}`);
+      let config: unknown = {};
+      if (configRow) {
+        try { config = loadYamlSafely(configRow.config); }
+        catch (error) { logger.error(`Failed to load guild config for /ticket: ${error}`); }
+      }
+      await handleTicketCommand(interaction, config);
+      return;
+    }
     if (interaction.commandName === "support-panel") {
       const configRow = await guildConfigs.getActiveByKey(`guild-${interaction.guildId}`);
       let config: unknown = {};
