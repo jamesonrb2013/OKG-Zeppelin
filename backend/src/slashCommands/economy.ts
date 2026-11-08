@@ -55,7 +55,7 @@ async function request<T>(token: string, path: string, method = "GET", body?: un
 async function currencySymbol(token: string, guildId: string): Promise<string> {
   try {
     const guild = await request<EconomyGuild>(token, "/guilds/" + encodeURIComponent(guildId));
-    return guild.currencySymbol || "$";
+    return guild.symbol || "";
   } catch {
     return "$";
   }
