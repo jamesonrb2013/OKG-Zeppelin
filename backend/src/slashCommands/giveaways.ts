@@ -36,7 +36,7 @@ function row(id: string, disabled = false) {
 async function embed(g: Giveaway): Promise<EmbedBuilder> {
   const count = await entryRepo().count({ where: { giveaway_id: g.id } });
   const end = new Date(g.ends_at);
-  const winners = winnerIds(g);
+  const winners = winnerIds(g).slice(-g.winner_count);
   const active = g.status === "active";
   const result = new EmbedBuilder()
     .setColor(active ? COLOR : 0x238b68)
@@ -109,7 +109,7 @@ async function complete(client: Client, g: Giveaway, reroll = false): Promise<st
 
     // Persist the draw before making external payment requests. If the process stops
     // during a payout, the scheduler cannot accidentally draw and pay a second time.
-    g.winner_ids = JSON.stringify(selected);
+    g.winner_ids = JSON.stringify(reroll ? winnerIds(g).concat(selected) : selected);
     g.status = "completed";
     if (g.cash_reward && selected.length) g.payout_status = "pending";
     await giveawayRepo().save(g);
