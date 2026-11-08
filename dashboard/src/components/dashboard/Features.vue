@@ -11,6 +11,19 @@
       <div class="text-sm text-gray-400">{{ guild?.name }}</div>
     </div>
     <router-link
+      class="mb-4 block max-w-2xl rounded-xl border border-gray-700 bg-gray-800 p-6 hover:border-emerald-400 hover:bg-gray-800/80 transition"
+      :to="'/dashboard/features/' + $route.params.guildId + '/unbelievaboat'"
+    >
+      <div class="flex items-start gap-4">
+        <div class="flex h-14 w-14 items-center justify-center rounded-xl bg-emerald-500/15 text-3xl">💰</div>
+        <div class="flex-1">
+          <h2 class="text-xl font-semibold">UnbelievaBoat integration</h2>
+          <p class="mt-2 text-gray-300">Connect this server's private API token to enable automatic cash prizes for giveaways and raffles.</p>
+          <p class="mt-4 font-semibold text-emerald-300">Configure integration →</p>
+        </div>
+      </div>
+    </router-link>
+    <router-link
       class="block max-w-2xl rounded-xl border border-gray-700 bg-gray-800 p-6 hover:border-indigo-400 hover:bg-gray-800/80 transition"
       :to="'/dashboard/features/' + $route.params.guildId + '/support/config'"
     >
