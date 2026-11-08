@@ -27,7 +27,7 @@ type SupportConfig = {
   panel_description?: string;
   welcome_message?: string;
   max_open_tickets?: number;
-  ticket_panels?: Array<{ id: string; title: string; description: string; category_id: string; button_label?: string }>;
+  ticket_panels?: Array<{ id: string; title: string; description: string; category_id: string; button_label?: string; questions?: Array<{ id: string; label: string; required?: boolean; style?: "short" | "paragraph"; placeholder?: string }> }>;
 };
 
 function escapeHtml(value: string): string {
@@ -194,6 +194,10 @@ export async function handleSupportModal(interaction: ModalSubmitInteraction, ro
 
   const subject = interaction.fields.getTextInputValue("subject").trim();
   const details = interaction.fields.getTextInputValue("details").trim();
+  const answers = (panel?.questions ?? []).map((question) => ({
+    name: question.label,
+    value: interaction.fields.getTextInputValue(question.id).trim(),
+  })).filter((answer) => answer.value.length > 0);
   if (subject.length < 3 || details.length < 10) {
     await interaction.reply({
       content: "Please provide a subject and at least 10 characters of details.",
@@ -250,6 +254,7 @@ export async function handleSupportModal(interaction: ModalSubmitInteraction, ro
         { name: "Welcome", value: (config.welcome_message || "Thanks for contacting support. Our team will be with you soon.").slice(0, 1024) },
         { name: "Ticket owner", value: `<@${interaction.user.id}>`, inline: true },
         { name: "Claimed by", value: "Not claimed yet", inline: true },
+        ...answers.map((answer) => ({ name: answer.name.slice(0, 256), value: answer.value.slice(0, 1024) })),
       )
       .setFooter({ text: "OKG Manager Support • Please keep replies in this ticket" })
       .setTimestamp();
@@ -282,30 +287,30 @@ export async function handleSupportInteraction(interaction: ButtonInteraction, r
 
   const guild = interaction.guild;
   if (interaction.customId === "okg_support:create" || interaction.customId.startsWith("okg_support:create:")) {
+    const panelId = interaction.customId.split(":")[2] || "default";
+    const panel = config.ticket_panels?.find((item) => item.id === panelId);
+    const modalRows = [
+      new ActionRowBuilder<TextInputBuilder>().addComponents(
+        new TextInputBuilder().setCustomId("subject").setLabel("What do you need help with?").setStyle(TextInputStyle.Short).setMinLength(3).setMaxLength(100).setRequired(true),
+      ),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(
+        new TextInputBuilder().setCustomId("details").setLabel("Describe the issue").setStyle(TextInputStyle.Paragraph).setMinLength(10).setMaxLength(1800).setPlaceholder("Include what happened and what you have already tried.").setRequired(true),
+      ),
+    ];
+    for (const question of panel?.questions ?? []) {
+      const field = new TextInputBuilder()
+        .setCustomId(question.id)
+        .setLabel(question.label)
+        .setStyle(question.style === "paragraph" ? TextInputStyle.Paragraph : TextInputStyle.Short)
+        .setMaxLength(question.style === "paragraph" ? 1800 : 100)
+        .setRequired(question.required ?? false);
+      if (question.placeholder) field.setPlaceholder(question.placeholder);
+      modalRows.push(new ActionRowBuilder<TextInputBuilder>().addComponents(field));
+    }
     const modal = new ModalBuilder()
-      .setCustomId(`okg_support:create_modal:${interaction.customId.split(":")[2] || "default"}`)
+      .setCustomId(`okg_support:create_modal:${panelId}`)
       .setTitle("Open a support ticket")
-      .addComponents(
-        new ActionRowBuilder<TextInputBuilder>().addComponents(
-          new TextInputBuilder()
-            .setCustomId("subject")
-            .setLabel("What do you need help with?")
-            .setStyle(TextInputStyle.Short)
-            .setMinLength(3)
-            .setMaxLength(100)
-            .setRequired(true),
-        ),
-        new ActionRowBuilder<TextInputBuilder>().addComponents(
-          new TextInputBuilder()
-            .setCustomId("details")
-            .setLabel("Describe the issue")
-            .setStyle(TextInputStyle.Paragraph)
-            .setMinLength(10)
-            .setMaxLength(1800)
-            .setPlaceholder("Include what happened and what you have already tried.")
-            .setRequired(true),
-        ),
-      );
+      .addComponents(...modalRows);
     await interaction.showModal(modal);
     return;
   }
