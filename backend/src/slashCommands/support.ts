@@ -474,3 +474,91 @@ export async function handleSupportInteraction(interaction: ButtonInteraction, r
     setTimeout(() => void channel.delete(`Support ticket deleted by ${interaction.user.tag}`).catch(() => null), 3000);
   }
 }
+
+export const ticketCommand = new SlashCommandBuilder()
+  .setName("ticket")
+  .setDescription("Manage an OKG Support ticket")
+  .addSubcommand((sub) => sub.setName("add").setDescription("Give a member access to this ticket").addUserOption((option) => option.setName("member").setDescription("Member to add").setRequired(true)))
+  .addSubcommand((sub) => sub.setName("remove").setDescription("Remove a member from this ticket").addUserOption((option) => option.setName("member").setDescription("Member to remove").setRequired(true)))
+  .addSubcommand((sub) => sub.setName("rename").setDescription("Rename this ticket").addStringOption((option) => option.setName("name").setDescription("New channel name").setRequired(true).setMaxLength(90)))
+  .addSubcommand((sub) => sub.setName("lock").setDescription("Prevent the ticket owner from sending messages"))
+  .addSubcommand((sub) => sub.setName("unlock").setDescription("Allow the ticket owner to send messages again"))
+  .addSubcommand((sub) => sub.setName("transfer").setDescription("Transfer ticket ownership to another member").addUserOption((option) => option.setName("member").setDescription("New ticket owner").setRequired(true)))
+  .addSubcommand((sub) => sub.setName("note").setDescription("Send a private staff note to the support log").addStringOption((option) => option.setName("message").setDescription("Internal note").setRequired(true).setMaxLength(1000)));
+
+export async function handleTicketCommand(interaction: ChatInputCommandInteraction, rootConfig: unknown) {
+  if (!interaction.inGuild() || !interaction.guild) {
+    await interaction.reply({ content: "Ticket commands can only be used inside a server.", ephemeral: true });
+    return;
+  }
+  const config = getSupportConfig(rootConfig);
+  if (!config) {
+    await interaction.reply({ content: "Support is disabled for this server.", ephemeral: true });
+    return;
+  }
+  if (!(interaction.channel instanceof TextChannel) || !interaction.channel.topic?.startsWith("okg-support|")) {
+    await interaction.reply({ content: "Use this command inside an OKG Support ticket.", ephemeral: true });
+    return;
+  }
+  const channel = interaction.channel;
+  const meta = ticketMetadata(channel);
+  const member = await interaction.guild.members.fetch(interaction.user.id).catch(() => null);
+  if (!member || !hasStaffAccess(member, config)) {
+    await interaction.reply({ content: "Only the configured support team can use ticket management commands.", ephemeral: true });
+    return;
+  }
+  const action = interaction.options.getSubcommand();
+  if (meta.status !== "open" && !["unlock", "note"].includes(action)) {
+    await interaction.reply({ content: "Reopen this ticket before changing it.", ephemeral: true });
+    return;
+  }
+  if (action === "add" || action === "remove") {
+    const target = interaction.options.getUser("member", true);
+    if (target.bot) { await interaction.reply({ content: "Bots cannot be ticket participants.", ephemeral: true }); return; }
+    if (action === "add") {
+      await channel.permissionOverwrites.edit(target.id, { ViewChannel: true, SendMessages: true, ReadMessageHistory: true, AttachFiles: true, EmbedLinks: true });
+      await channel.send({ content: `➕ <@${target.id}> was added to this ticket by <@${interaction.user.id}>.`, allowedMentions: { users: [target.id, interaction.user.id] } });
+    } else {
+      if (target.id === meta.owner) { await interaction.reply({ content: "The ticket owner cannot be removed. Transfer ownership first.", ephemeral: true }); return; }
+      await channel.permissionOverwrites.delete(target.id).catch(() => null);
+      await channel.send({ content: `➖ <@${target.id}> was removed from this ticket by <@${interaction.user.id}>.`, allowedMentions: { users: [target.id, interaction.user.id] } });
+    }
+    await interaction.reply({ content: `Member ${action === "add" ? "added to" : "removed from"} the ticket.`, ephemeral: true });
+    return;
+  }
+  if (action === "rename") {
+    const raw = interaction.options.getString("name", true);
+    const name = raw.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").slice(0, 90);
+    if (name.length < 2) { await interaction.reply({ content: "Choose a name with at least two letters or numbers.", ephemeral: true }); return; }
+    await channel.setName(name, `Ticket renamed by ${interaction.user.tag}`);
+    await interaction.reply({ content: `Ticket renamed to **${name}**.`, ephemeral: true });
+    return;
+  }
+  if (action === "lock" || action === "unlock") {
+    if (!meta.owner) { await interaction.reply({ content: "Ticket owner metadata is missing.", ephemeral: true }); return; }
+    await channel.permissionOverwrites.edit(meta.owner, { ViewChannel: true, ReadMessageHistory: true, SendMessages: action === "unlock" });
+    await channel.send({ content: action === "lock" ? `🔒 Ticket locked by <@${interaction.user.id}>.` : `🔓 Ticket unlocked by <@${interaction.user.id}>.`, allowedMentions: { users: [interaction.user.id] } });
+    await interaction.reply({ content: `Ticket ${action}ed.`, ephemeral: true });
+    return;
+  }
+  if (action === "transfer") {
+    const target = interaction.options.getUser("member", true);
+    if (target.bot) { await interaction.reply({ content: "Ticket ownership cannot be transferred to a bot.", ephemeral: true }); return; }
+    const targetMember = await interaction.guild.members.fetch(target.id).catch(() => null);
+    if (!targetMember) { await interaction.reply({ content: "That member is not in this server.", ephemeral: true }); return; }
+    if (meta.owner) await channel.permissionOverwrites.delete(meta.owner).catch(() => null);
+    await channel.permissionOverwrites.edit(target.id, { ViewChannel: true, SendMessages: true, ReadMessageHistory: true, AttachFiles: true, EmbedLinks: true });
+    await channel.setTopic((channel.topic ?? "").replace(/owner=\d+/, `owner=${target.id}`));
+    await channel.send({ content: `🔁 Ticket ownership was transferred to <@${target.id}> by <@${interaction.user.id}>.`, allowedMentions: { users: [target.id, interaction.user.id] } });
+    await interaction.reply({ content: `Ticket transferred to ${target.tag}.`, ephemeral: true });
+    return;
+  }
+  if (action === "note") {
+    if (!config.log_channel_id) { await interaction.reply({ content: "Set a Support log channel before using private staff notes.", ephemeral: true }); return; }
+    const logChannel = await interaction.guild.channels.fetch(config.log_channel_id).catch(() => null);
+    if (!(logChannel instanceof TextChannel)) { await interaction.reply({ content: "The configured Support log channel is unavailable.", ephemeral: true }); return; }
+    const note = interaction.options.getString("message", true).trim();
+    await logChannel.send({ content: `📝 **Private staff note** · <#${channel.id}> · by <@${interaction.user.id}>\n${note}`, allowedMentions: { users: [interaction.user.id] } });
+    await interaction.reply({ content: "Private staff note saved to the Support log. It was not posted in the ticket.", ephemeral: true });
+  }
+}
