@@ -111,6 +111,20 @@ export const MatchLinksTrigger = automodTrigger<MatchResultType>()({
           }
         }
 
+        if (trigger.exclude_words) {
+          if (!regexCache.has(trigger.exclude_words)) {
+            const toCache = mergeWordsIntoRegex(trigger.exclude_words, "i");
+            regexCache.set(trigger.exclude_words, [toCache]);
+          }
+          const regexes = regexCache.get(trigger.exclude_words)!;
+
+          for (const regex of regexes) {
+            if (regex.test(link.input)) {
+              continue linkLoop;
+            }
+          }
+        }
+
         if (trigger.include_regex) {
           if (!regexCache.has(trigger.include_regex)) {
             const toCache = mergeRegexes(
@@ -125,20 +139,6 @@ export const MatchLinksTrigger = automodTrigger<MatchResultType>()({
             const matches = await pluginData.state.regexRunner.exec(sourceRegex, link.input).catch(allowTimeout);
             if (matches) {
               return { extra: { type, link: link.input } };
-            }
-          }
-        }
-
-        if (trigger.exclude_words) {
-          if (!regexCache.has(trigger.exclude_words)) {
-            const toCache = mergeWordsIntoRegex(trigger.exclude_words, "i");
-            regexCache.set(trigger.exclude_words, [toCache]);
-          }
-          const regexes = regexCache.get(trigger.exclude_words)!;
-
-          for (const regex of regexes) {
-            if (regex.test(link.input)) {
-              continue linkLoop;
             }
           }
         }
