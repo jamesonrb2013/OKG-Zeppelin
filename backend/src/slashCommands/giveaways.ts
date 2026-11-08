@@ -202,15 +202,23 @@ export async function handleGiveawayCommand(i: ChatInputCommandInteraction, clie
   if (action === "end") {
     if (g.status !== "active") { await i.reply({ content: "That event has already ended.", ephemeral: true }); return; }
     await i.deferReply({ ephemeral: true });
-    const winners = await complete(client, g);
-    await i.editReply(winners.length ? "Winner(s): " + winners.map((id) => "<@!" + id + ">").join(", ") : "Event ended with no eligible entries.");
+    try {
+      const winners = await complete(client, g);
+      await i.editReply(winners.length ? "Winner(s): " + winners.map((id) => "<@!" + id + ">").join(", ") : "Event ended with no eligible entries.");
+    } catch {
+      await i.editReply("The event could not be completed right now. No automatic retry or duplicate draw was started; please try again shortly.");
+    }
     return;
   }
   if (action === "reroll") {
     if (g.status !== "completed") { await i.reply({ content: "The event must be completed before rerolling.", ephemeral: true }); return; }
     await i.deferReply({ ephemeral: true });
-    const winners = await complete(client, g, true);
-    await i.editReply(winners.length ? "Replacement winner(s): " + winners.map((id) => "<@!" + id + ">").join(", ") : "No remaining entrants to reroll.");
+    try {
+      const winners = await complete(client, g, true);
+      await i.editReply(winners.length ? "Replacement winner(s): " + winners.map((id) => "<@!" + id + ">").join(", ") : "No remaining entrants to reroll.");
+    } catch {
+      await i.editReply("The reroll could not be completed right now. Please try again shortly.");
+    }
   }
 }
 
