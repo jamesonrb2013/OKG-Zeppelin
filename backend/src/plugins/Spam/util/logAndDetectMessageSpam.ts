@@ -26,7 +26,15 @@ export async function logAndDetectMessageSpam(
   actionCount: number,
   description: string,
 ) {
-  if (actionCount === 0) return;
+  // Ignore invalid thresholds safely; do not let zero/negative limits
+  // turn ordinary activity into automatic moderation.
+  if (
+    actionCount <= 0 ||
+    !Number.isFinite(spamConfig.count) ||
+    spamConfig.count < 1 ||
+    !Number.isFinite(spamConfig.interval) ||
+    spamConfig.interval <= 0
+  ) return;
 
   // Make sure we're not handling some messages twice
   if (pluginData.state.lastHandledMsgIds.has(savedMessage.user_id)) {
