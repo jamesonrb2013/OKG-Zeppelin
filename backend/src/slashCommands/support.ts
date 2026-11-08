@@ -500,6 +500,7 @@ export const ticketCommand = new SlashCommandBuilder()
   .addSubcommand((sub) => sub.setName("lock").setDescription("Prevent the ticket owner from sending messages"))
   .addSubcommand((sub) => sub.setName("unlock").setDescription("Allow the ticket owner to send messages again"))
   .addSubcommand((sub) => sub.setName("transfer").setDescription("Transfer ticket ownership to another member").addUserOption((option) => option.setName("member").setDescription("New ticket owner").setRequired(true)))
+  .addSubcommand((sub) => sub.setName("list").setDescription("List open and closed support tickets"))
   .addSubcommand((sub) => sub.setName("note").setDescription("Send a private staff note to the support log").addStringOption((option) => option.setName("message").setDescription("Internal note").setRequired(true).setMaxLength(1000)));
 
 export async function handleTicketCommand(interaction: ChatInputCommandInteraction, rootConfig: unknown) {
@@ -512,18 +513,27 @@ export async function handleTicketCommand(interaction: ChatInputCommandInteracti
     await interaction.reply({ content: "Support is disabled for this server.", ephemeral: true });
     return;
   }
-  if (!(interaction.channel instanceof TextChannel) || !interaction.channel.topic?.startsWith("okg-support|")) {
-    await interaction.reply({ content: "Use this command inside an OKG Support ticket.", ephemeral: true });
-    return;
-  }
-  const channel = interaction.channel;
-  const meta = ticketMetadata(channel);
+  const action = interaction.options.getSubcommand();
   const member = await interaction.guild.members.fetch(interaction.user.id).catch(() => null);
   if (!member || !hasStaffAccess(member, config)) {
     await interaction.reply({ content: "Only the configured support team can use ticket management commands.", ephemeral: true });
     return;
   }
-  const action = interaction.options.getSubcommand();
+  if (action === "list") {
+    const tickets = interaction.guild.channels.cache.filter((item) => item instanceof TextChannel && item.topic?.startsWith("okg-support|"));
+    const rows = Array.from(tickets.values()).slice(0, 40).map((item) => {
+      const details = ticketMetadata(item as TextChannel);
+      return `${details.status === "closed" ? "🔒" : "🎫"} <#${item.id}> · owner ${details.owner ? `<@${details.owner}>` : "unknown"} · ${details.claimed === "none" ? "unclaimed" : `claimed by <@${details.claimed}>`}`;
+    });
+    await interaction.reply({ content: rows.length ? `**Support tickets (${tickets.size})**\\n${rows.join("\\n")}` : "There are no support tickets in this server.", ephemeral: true, allowedMentions: { parse: [] } });
+    return;
+  }
+  if (!(interaction.channel instanceof TextChannel) || !interaction.channel.topic?.startsWith("okg-support|")) {
+    await interaction.reply({ content: "Use this command inside an OKG Support ticket, or use `/ticket list`.", ephemeral: true });
+    return;
+  }
+  const channel = interaction.channel;
+  const meta = ticketMetadata(channel);
   if (meta.status !== "open" && !["unlock", "note"].includes(action)) {
     await interaction.reply({ content: "Reopen this ticket before changing it.", ephemeral: true });
     return;
