@@ -104,9 +104,7 @@ export async function handleUnbelievaBoatModal(i: any, client: Client): Promise<
   }
   await i.deferReply({ ephemeral: true });
   try {
-    const botUserId = client.user?.id;
-    if (!botUserId) throw new Error("The bot is not ready yet.");
-    const response = await fetch("https://unbelievaboat.com/api/v1/guilds/" + encodeURIComponent(i.guildId) + "/users/" + encodeURIComponent(botUserId), {
+    const response = await fetch("https://unbelievaboat.com/api/v1/guilds/" + encodeURIComponent(i.guildId), {
       method: "GET",
       headers: { Authorization: token, Accept: "application/json" },
       signal: AbortSignal.timeout(15000),
@@ -115,7 +113,7 @@ export async function handleUnbelievaBoatModal(i: any, client: Client): Promise<
       const message = response.status === 401 || response.status === 403
         ? "UnbelievaBoat rejected this token or it does not have access to this server."
         : response.status === 404
-          ? "UnbelievaBoat could not find this server or bot user. Make sure UnbelievaBoat is in this Discord server."
+          ? "UnbelievaBoat could not find this Discord server for the supplied token."
           : "UnbelievaBoat connection test failed (HTTP " + response.status + ").";
       await i.editReply(message + " Your previous connection was not changed.");
       return;
