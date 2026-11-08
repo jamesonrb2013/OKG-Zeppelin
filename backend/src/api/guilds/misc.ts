@@ -14,6 +14,7 @@ import { loadYamlSafely } from "../../utils/loadYamlSafely.js";
 import { ObjectAliasError } from "../../utils/validateNoObjectAliases.js";
 import { hasGuildPermission, requireGuildPermission } from "../permissions.js";
 import { clientError, ok, serverError, unauthorized } from "../responses.js";
+import { connectUnbelievaBoatGuild, disconnectUnbelievaBoatGuild, hasUnbelievaBoatConnection } from "../../slashCommands/unbelievaboat.js";
 
 const PLATFORM_OWNER_ID = "1441223435043868735";
 const apiPermissionAssignments = new ApiPermissionAssignments();
@@ -126,6 +127,27 @@ export function initGuildsMiscAPI(router: express.Router) {
       res.json(permissions);
     },
   );
+
+  miscRouter.get("/:guildId/unbelievaboat", requireGuildPermission(ApiPermissions.ViewGuild), async (req, res) => {
+    res.json({ connected: await hasUnbelievaBoatConnection(req.params.guildId) });
+  });
+
+  miscRouter.post("/:guildId/unbelievaboat/connect", requireGuildPermission(ApiPermissions.EditConfig), async (req, res) => {
+    const token = typeof req.body.token === "string" ? req.body.token.trim() : "";
+    if (token.length < 20 || token.length > 2048 || /\\s/.test(token)) return clientError(res, "Enter a valid UnbelievaBoat API token.");
+    try {
+      await connectUnbelievaBoatGuild(req.params.guildId, token, req.user!.userId);
+      return ok(res);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Could not verify this token.";
+      return clientError(res, message);
+    }
+  });
+
+  miscRouter.post("/:guildId/unbelievaboat/disconnect", requireGuildPermission(ApiPermissions.EditConfig), async (req, res) => {
+    await disconnectUnbelievaBoatGuild(req.params.guildId, req.user!.userId);
+    return ok(res);
+  });
 
   const permissionManagementQueue = new Queue();
   miscRouter.post(
