@@ -46,6 +46,11 @@
             ID.
           </p>
         </div>
+        <label class="block">
+          <span class="block text-sm font-medium mb-2">Multiple ticket panels (JSON)</span>
+          <textarea v-model="ticketPanelsJson" rows="9" spellcheck="false" class="w-full rounded-lg border border-gray-600 bg-gray-900 px-3 py-2.5 font-mono text-xs" placeholder="[]"></textarea>
+          <span class="text-xs text-gray-500 block mt-1">Optional. Configure up to 10 panels. Each needs id, title, description, and category_id. Optional button_label. Example: [{"id":"billing","title":"Billing support","description":"Questions about billing","category_id":"123456789012345678","button_label":"Open billing ticket"}]. Each panel gets its own category. All use the Support staff roles above.</span>
+        </label>
         <div class="grid md:grid-cols-2 gap-4">
           <label class="block">
             <span class="block text-sm font-medium mb-2">Public panel channel ID</span>
@@ -199,6 +204,7 @@ const defaults = {
   welcome_message:
     "Thanks for opening a ticket. Please describe what you need help with. A member of our team will be with you soon.",
   max_open_tickets: 1,
+  ticket_panels: [] as Array<{ id: string; title: string; description: string; category_id: string; button_label?: string }>,
 };
 
 export default {
@@ -233,6 +239,7 @@ export default {
       panelDescription: defaults.panel_description,
       welcomeMessage: defaults.welcome_message,
       maxOpenTickets: defaults.max_open_tickets,
+      ticketPanelsJson: "[]",
       staffTools: [
         { command: "/ticket add", description: "Give another member access to the ticket." },
         { command: "/ticket remove", description: "Remove a participant (not the ticket owner)." },
@@ -267,6 +274,7 @@ export default {
       this.panelDescription = config.panel_description || defaults.panel_description;
       this.welcomeMessage = config.welcome_message || defaults.welcome_message;
       this.maxOpenTickets = Number(config.max_open_tickets || defaults.max_open_tickets);
+      this.ticketPanelsJson = JSON.stringify(config.ticket_panels || defaults.ticket_panels, null, 2);
       this.error = "";
       this.success = "";
     },
@@ -283,6 +291,23 @@ export default {
         root.plugins.support = {
           enabled: this.enabled,
           config: {
+            ticket_panels: (() => {
+              let panels: any;
+              try {
+                panels = JSON.parse(this.ticketPanelsJson || "[]");
+              } catch {
+                throw new Error("Multiple ticket panels must be valid JSON.");
+              }
+              if (!Array.isArray(panels) || panels.length > 10) {
+                throw new Error("Multiple ticket panels must be a JSON array with no more than 10 entries.");
+              }
+              for (const panel of panels) {
+                if (!panel || !/^[a-z0-9_-]{1,24}$/.test(panel.id || "") || !panel.title || !panel.category_id || typeof panel.description !== "string") {
+                  throw new Error("Each ticket panel needs a unique lowercase id, title, description, and category_id.");
+                }
+              }
+              return panels;
+            })(),
             panel_channel_id: this.panelChannelId || null,
             category_id: this.categoryId || null,
             support_role_ids: this.supportRoleIds
