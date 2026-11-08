@@ -56,6 +56,11 @@ function ticketMetadata(channel: TextChannel) {
   return { owner, claimed, status };
 }
 
+function ticketRatingButtons() {
+  return new ActionRowBuilder<ButtonBuilder>().addComponents(
+    ...[1, 2, 3, 4, 5].map((rating) => new ButtonBuilder().setCustomId(`okg_support:rate:${rating}`).setLabel(`${rating} ★`).setStyle(rating >= 4 ? ButtonStyle.Success : rating === 3 ? ButtonStyle.Secondary : ButtonStyle.Danger)),
+  );
+}
 function ticketButtons(status: "open" | "closed") {
   const buttons = new ActionRowBuilder<ButtonBuilder>();
   if (status === "open") {
@@ -318,6 +323,26 @@ export async function handleSupportInteraction(interaction: ButtonInteraction, r
     return;
   }
 
+  if (interaction.customId.startsWith("okg_support:rate:")) {
+    if (meta.owner !== interaction.user.id || meta.status !== "closed") {
+      await interaction.reply({ content: "Only the ticket owner can rate a closed ticket.", ephemeral: true });
+      return;
+    }
+    const rating = Number(interaction.customId.split(":")[2]);
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      await interaction.reply({ content: "That rating is invalid.", ephemeral: true });
+      return;
+    }
+    if (config.log_channel_id) {
+      const logChannel = await guild.channels.fetch(config.log_channel_id).catch(() => null);
+      if (logChannel instanceof TextChannel) {
+        await logChannel.send({ content: `⭐ **Ticket feedback** · <#${channel.id}> · <@${interaction.user.id}> rated **${rating}/5**.`, allowedMentions: { users: [interaction.user.id] } }).catch((error) => console.error("[SUPPORT] Rating log delivery failed:", error));
+      }
+    }
+    await interaction.message.edit({ components: [ticketButtons("closed")] }).catch(() => null);
+    await interaction.reply({ content: `Thanks for rating your support experience ${rating}/5!`, ephemeral: true });
+    return;
+  }
   if (interaction.customId === "okg_support:unclaim") {
     if (!hasStaffAccess(member, config)) {
       await interaction.reply({ content: "Only the configured support team can unclaim tickets.", ephemeral: true });
@@ -446,7 +471,7 @@ export async function handleSupportInteraction(interaction: ButtonInteraction, r
     await channel.setName(`closed-${channel.name}`.slice(0, 100)).catch(() => null);
     await channel.send({
       content: `🔒 Ticket closed by <@${interaction.user.id}>. Support staff can reopen or delete it below.`,
-      components: [ticketButtons("closed")],
+      components: [ticketButtons("closed"), ticketRatingButtons()],
       allowedMentions: { users: [interaction.user.id] },
     });
     await interaction.editReply({
