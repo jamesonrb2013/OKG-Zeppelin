@@ -58,6 +58,7 @@ import { enableProfiling } from "./utils/easyProfiler.js";
 import { loadYamlSafely } from "./utils/loadYamlSafely.js";
 import { announceCommand, handleAnnounceCommand } from "./slashCommands/announce.js";
 import { giveawayCommand, handleGiveawayCommand, handleGiveawayButton, startGiveawayEndingLoop } from "./slashCommands/giveaways.js";
+import { unbelievaboatCommand, handleUnbelievaBoatCommand, handleUnbelievaBoatModal } from "./slashCommands/unbelievaboat.js";
 import { permissionLevelCommand, handlePermissionLevelCommand } from "./slashCommands/permissionLevel.js";
 import { apiRouterCommand, handleApiRouterCommand } from "./slashCommands/apiRouter.js";
 import {
@@ -597,6 +598,7 @@ connect().then(async () => {
       const commandsToRegister = [
         announceCommand,
         giveawayCommand,
+        unbelievaboatCommand,
         permissionLevelCommand,
         supportPanelCommand,
         updatesSetupCommand,
@@ -674,6 +676,11 @@ connect().then(async () => {
   });
 
   client.on(Events.InteractionCreate, async (interaction) => {
+    if (interaction.isModalSubmit() && interaction.customId === "okg_unbelievaboat:connect") {
+      await handleUnbelievaBoatModal(interaction, client);
+      return;
+    }
+
     if (interaction.isModalSubmit() && interaction.customId === "okg_support:create_modal") {
       if (!interaction.guildId) return;
       const configRow = await guildConfigs.getActiveByKey(`guild-${interaction.guildId}`);
@@ -715,6 +722,11 @@ connect().then(async () => {
 
     if (interaction.commandName === "giveaway") {
       await handleGiveawayCommand(interaction, client);
+      return;
+    }
+
+    if (interaction.commandName === "unbelievaboat") {
+      await handleUnbelievaBoatCommand(interaction, client);
       return;
     }
 
