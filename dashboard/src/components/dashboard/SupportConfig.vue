@@ -62,7 +62,7 @@
             <span class="text-xs text-gray-500 block mt-1">Where /support-panel posts the button for members.</span>
           </label>
           <label class="block">
-            <span class="block text-sm font-medium mb-2">Ticket category ID <span class="text-red-300">*</span></span>
+            <span class="block text-sm font-medium mb-2">Fallback ticket category ID</span>
             <input
               v-model.trim="categoryId"
               class="w-full rounded-lg border border-gray-600 bg-gray-900 px-3 py-2.5"
