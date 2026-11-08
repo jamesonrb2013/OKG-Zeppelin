@@ -25,6 +25,13 @@ export const zSupportConfig = z.strictObject({
     description: z.string().max(4000),
     category_id: z.string().min(1),
     button_label: z.string().min(1).max(80).default("Open a ticket"),
+    questions: z.array(z.object({
+      id: z.string().regex(/^[a-z0-9_-]{1,20}$/),
+      label: z.string().min(1).max(45),
+      required: z.boolean().default(false),
+      style: z.enum(["short", "paragraph"]).default("short"),
+      placeholder: z.string().max(100).optional(),
+    })).max(3).default([]),
   })).max(10).default([]),
 });
 
