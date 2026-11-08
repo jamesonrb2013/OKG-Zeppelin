@@ -686,7 +686,7 @@ connect().then(async () => {
       return;
     }
 
-    if (interaction.isModalSubmit() && interaction.customId.startsWith("okg_support:create_modal:") || interaction.customId === "okg_support:create_modal") {
+    if (interaction.isModalSubmit() && (interaction.customId.startsWith("okg_support:create_modal:") || interaction.customId === "okg_support:create_modal")) {
       if (!interaction.guildId) return;
       const configRow = await guildConfigs.getActiveByKey(`guild-${interaction.guildId}`);
       let config: unknown = {};
