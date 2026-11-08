@@ -92,7 +92,7 @@ export async function handleUnbelievaBoatCommand(i: ChatInputCommandInteraction,
   });
 }
 
-export async function handleUnbelievaBoatModal(i: any, client: Client): Promise<void> {
+export async function handleUnbelievaBoatModal(i: any, _client: Client): Promise<void> {
   if (!i.guildId || !i.guild || !i.memberPermissions?.has(PermissionFlagsBits.ManageGuild) && !i.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
     await i.reply({ content: "You need Manage Server permission in the server you are configuring.", ephemeral: true });
     return;
@@ -120,7 +120,7 @@ export async function handleUnbelievaBoatModal(i: any, client: Client): Promise<
     }
     await configs.saveNewRevision(PREFIX + i.guildId, JSON.stringify({ encryptedToken: encryptToken(token) }), i.user.id);
     await i.editReply("🟢 **Connected!** This server's UnbelievaBoat token was tested and saved encrypted. Cash prizes in this server's giveaways and raffles can now be paid out.");
-  } catch (error) {
+  } catch {
     // Do not log the request, response body, or credential.
     await i.editReply("Could not verify the UnbelievaBoat connection. Please try again later. Your token was not saved.");
   }
