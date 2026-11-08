@@ -24,7 +24,8 @@ export function getMatchingMessageRecentActions(
   const totalCount = recentActions.reduce((total, action) => total + action.count, 0);
 
   stopProfiling();
-  if (totalCount >= count) {
+  // A zero/negative threshold must never turn an empty action window into a match.
+  if (count >= 1 && totalCount > 0 && totalCount >= count) {
     return {
       recentActions,
     };
