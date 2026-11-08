@@ -16,7 +16,7 @@ export class CreateGiveawaysTables1794140000000 implements MigrationInterface {
         { name: "kind", type: "varchar", length: "16" },
         { name: "winner_count", type: "int" },
         { name: "required_role_id", type: "varchar", length: "32", isNullable: true },
-        { name: "cash_reward", type: "bigint", isNullable: true },
+        { name: "cash_reward", type: "int", isNullable: true },
         { name: "ends_at", type: "datetime" },
         { name: "status", type: "varchar", length: "16", default: "'active'" },
         { name: "winner_ids", type: "text", isNullable: true },

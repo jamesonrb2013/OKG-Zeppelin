@@ -13,7 +13,7 @@ export class Giveaway {
   @Column({ type: "varchar", length: 16 }) kind: string;
   @Column({ type: "int" }) winner_count: number;
   @Column({ type: "varchar", length: 32, nullable: true }) required_role_id: string | null;
-  @Column({ type: "bigint", nullable: true }) cash_reward: number | null;
+  @Column({ type: "int", nullable: true }) cash_reward: number | null;
   @Column({ type: "datetime" }) ends_at: Date;
   @Column({ type: "varchar", length: 16 }) status: string;
   @Column({ type: "text", nullable: true }) winner_ids: string | null;
