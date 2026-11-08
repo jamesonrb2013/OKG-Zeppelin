@@ -50,7 +50,7 @@ export const unbelievaboatCommand = new SlashCommandBuilder()
   .addSubcommand((s) => s.setName("status").setDescription("Check this server's connection status"))
   .addSubcommand((s) => s.setName("disconnect").setDescription("Remove this server's saved API token"));
 
-export async function handleUnbelievaBoatCommand(i: ChatInputCommandInteraction, client: Client): Promise<void> {
+export async function handleUnbelievaBoatCommand(i: ChatInputCommandInteraction, _client: Client): Promise<void> {
   if (!i.inGuild() || !i.guildId) {
     await i.reply({ content: "Use this command inside the server you want to configure.", ephemeral: true });
     return;
@@ -98,7 +98,7 @@ export async function handleUnbelievaBoatModal(i: any, _client: Client): Promise
     return;
   }
   const token = String(i.fields.getTextInputValue("token") || "").trim();
-  if (token.length < 20 || /\\s/.test(token)) {
+  if (token.length < 20 || /\s/.test(token)) {
     await i.reply({ content: "That token format doesn't look valid. Copy the complete token and try again.", ephemeral: true });
     return;
   }
