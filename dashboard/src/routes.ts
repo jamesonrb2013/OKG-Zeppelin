@@ -81,6 +81,10 @@ export const router = createRouter({
           component: () => import("./components/dashboard/Features.vue"),
         },
         {
+          path: "features/:guildId/unbelievaboat",
+          component: () => import("./components/dashboard/UnbelievaBoat.vue"),
+        },
+        {
           path: "features/:guildId/support/config",
           component: () => import("./components/dashboard/SupportConfig.vue"),
         },
