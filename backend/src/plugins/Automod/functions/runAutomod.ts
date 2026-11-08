@@ -168,6 +168,7 @@ export async function runAutomod(
         }
 
         if (matchResult) {
+          result.triggered = true;
           if (rule.cooldown) applyCooldown(pluginData, rule, ruleName, context);
 
           contexts = [context, ...(matchResult.extraContexts || [])];
@@ -212,7 +213,6 @@ export async function runAutomod(
         }
 
         if (matchResult) {
-          result.triggered = true;
           ruleResult.outcome = {
             success: true,
             matchedTrigger: {
