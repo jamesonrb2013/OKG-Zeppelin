@@ -42,6 +42,37 @@ export async function getUnbelievaBoatToken(guildId: string): Promise<string | n
   }
 }
 
+export async function connectUnbelievaBoatGuild(guildId: string, token: string, editedBy: string): Promise<void> {
+  const response = await fetch("https://unbelievaboat.com/api/v1/guilds/" + encodeURIComponent(guildId), {
+    method: "GET",
+    headers: { Authorization: token, Accept: "application/json" },
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!response.ok) {
+    if (response.status === 401 || response.status === 403) throw new Error("UnbelievaBoat rejected this token or it does not have access to this server.");
+    if (response.status === 404) throw new Error("UnbelievaBoat could not find this Discord server for the supplied token.");
+    throw new Error("UnbelievaBoat connection test failed (HTTP " + response.status + ").");
+  }
+  const guild = (await response.json()) as { id?: string };
+  if (guild.id !== guildId) throw new Error("The token did not validate for this Discord server.");
+  await configs.saveNewRevision(PREFIX + guildId, JSON.stringify({ encryptedToken: encryptToken(token) }), editedBy);
+}
+
+export async function disconnectUnbelievaBoatGuild(guildId: string, editedBy: string): Promise<void> {
+  await configs.saveNewRevision(PREFIX + guildId, "", editedBy);
+}
+
+export async function hasUnbelievaBoatConnection(guildId: string): Promise<boolean> {
+  const saved = await configs.getActiveByKey(PREFIX + guildId);
+  if (!saved?.config) return false;
+  try {
+    const parsed = JSON.parse(saved.config) as { encryptedToken?: string };
+    return Boolean(parsed.encryptedToken && decryptToken(parsed.encryptedToken));
+  } catch {
+    return false;
+  }
+}
+
 export const unbelievaboatCommand = new SlashCommandBuilder()
   .setName("unbelievaboat")
   .setDescription("Configure this server's UnbelievaBoat connection")
@@ -78,7 +109,7 @@ export async function handleUnbelievaBoatCommand(i: ChatInputCommandInteraction,
   }
 
   if (action === "disconnect") {
-    await configs.saveNewRevision(key, "", i.user.id);
+    await disconnectUnbelievaBoatGuild(i.guildId, i.user.id);
     await i.reply({ content: "UnbelievaBoat has been disconnected for this server. Existing giveaways and raffles still work; cash payouts will require reconnecting.", ephemeral: true });
     return;
   }
@@ -104,21 +135,7 @@ export async function handleUnbelievaBoatModal(i: any, _client: Client): Promise
   }
   await i.deferReply({ ephemeral: true });
   try {
-    const response = await fetch("https://unbelievaboat.com/api/v1/guilds/" + encodeURIComponent(i.guildId), {
-      method: "GET",
-      headers: { Authorization: token, Accept: "application/json" },
-      signal: AbortSignal.timeout(15000),
-    });
-    if (!response.ok) {
-      const message = response.status === 401 || response.status === 403
-        ? "UnbelievaBoat rejected this token or it does not have access to this server."
-        : response.status === 404
-          ? "UnbelievaBoat could not find this Discord server for the supplied token."
-          : "UnbelievaBoat connection test failed (HTTP " + response.status + ").";
-      await i.editReply(message + " Your previous connection was not changed.");
-      return;
-    }
-    await configs.saveNewRevision(PREFIX + i.guildId, JSON.stringify({ encryptedToken: encryptToken(token) }), i.user.id);
+    await connectUnbelievaBoatGuild(i.guildId, token, i.user.id);
     await i.editReply("🟢 **Connected!** This server's UnbelievaBoat token was tested and saved encrypted. Cash prizes in this server's giveaways and raffles can now be paid out.");
   } catch {
     // Do not log the request, response body, or credential.
