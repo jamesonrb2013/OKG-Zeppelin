@@ -586,6 +586,10 @@ connect().then(async () => {
         "mod-massban",
         "mod-massmute",
         "mod-massunban",
+        // Retired standalone features; remove stale Discord registrations.
+        "economy",
+        "ticket",
+        "support-panel",
       ]);
 
       const commandsToRegister = [
