@@ -66,7 +66,7 @@ export const MatchLinksTrigger = automodTrigger<MatchResultType>()({
       trigger.phisherman?.include_verified,
     );
 
-    typeLoop: for await (const [type, str] of matchMultipleTextTypesOnMessage(pluginData, trigger, context.message)) {
+    for await (const [type, str] of matchMultipleTextTypesOnMessage(pluginData, trigger, context.message)) {
       const links = getUrlsInString(str, true);
 
       linkLoop: for (const link of links) {
