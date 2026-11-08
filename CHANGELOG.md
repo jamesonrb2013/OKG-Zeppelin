@@ -1,3 +1,19 @@
+## 1.3.19
+
+### Fixed
+- Fixed a critical AutoMod false-positive path where zero or negative link/message spam thresholds could match ordinary messages with no corresponding spam activity.
+- Added runtime validation for invalid spam thresholds in both AutoMod and the legacy Spam plugin without invalidating existing server configurations.
+- Fixed message-edit accounting so editing one message replaces only that message's recent-action contribution instead of erasing the member's entire spam history.
+- Made recent-action recording idempotent when a saved-message event is delivered more than once.
+- Fixed AutoMod debug results so successful matches, including silent-clean matches, are correctly reported as triggered.
+
+### Reliability
+- Preserved existing configuration compatibility while safely ignoring invalid spam thresholds.
+- Kept per-user and per-channel spam history accurate across message edits.
+
+### Credits
+- Updated by Jeffery Spinnel.
+
 ## 1.3.18
 
 ### Added
