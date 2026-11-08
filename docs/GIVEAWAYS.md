@@ -17,13 +17,28 @@ The bot's normal TypeORM migration process creates `giveaways` and `giveaway_ent
 
 The UnbelievaBoat API does not provide a native giveaway/raffle endpoint. OKG Manager runs the event and selects winners itself, then uses UnbelievaBoat's economy API to add the configured cash amount to each winner's cash balance.
 
-Add this secret to the bot service environment:
+Each Discord server connects its own UnbelievaBoat API token. No shared `UNBELIEVABOAT_API_TOKEN` environment variable is used.
 
-```text
-UNBELIEVABOAT_API_TOKEN=your_unbelievaboat_api_token
-```
+### Connect from the OKG Manager dashboard
 
-The token must belong to an UnbelievaBoat API application with access to the target server. Do not put it in source code, Discord messages, or client-side dashboard settings. Without this secret, ordinary prizes and winner selection still work, while cash payouts remain pending.
+1. Open the OKG Manager dashboard and select the Discord server.
+2. Open **Features → UnbelievaBoat integration**.
+3. Create or copy an API token from [UnbelievaBoat Applications](https://unbelievaboat.com/applications).
+4. Paste the token into the password field and choose **Test & connect**.
+5. OKG Manager verifies that the token can access that exact Discord server before saving it.
+
+The token is encrypted at rest with AES-256-GCM using the existing server-side `KEY` secret. It is never returned to the dashboard or shown again after saving. Only users with the server's **Edit Config** dashboard permission can connect or disconnect the integration.
+
+### Discord command alternative
+
+Server administrators can also use:
+- `/unbelievaboat connect` — opens a private modal to enter and test the token.
+- `/unbelievaboat status` — checks whether this server is connected.
+- `/unbelievaboat disconnect` — removes this server's active credential.
+
+Each credential is keyed to its Discord server ID. Payouts only use the token saved for the giveaway's own server. Never share a real API token in public messages or source code. If a token is exposed, revoke it in UnbelievaBoat and connect a replacement.
+
+Without a connection, ordinary prizes and winner selection still work. Cash prizes cannot be paid until the server connects its own token.
 
 ## Permissions
 
