@@ -160,6 +160,17 @@
       </div>
     </form>
 
+    <section class="rounded-xl border border-gray-700 bg-gray-800 p-5 md:p-6 mt-6">
+      <h2 class="text-lg font-semibold">Native ticket staff tools</h2>
+      <p class="text-sm text-gray-400 mt-1">These commands work inside an open OKG ticket and are restricted to your configured support team.</p>
+      <div class="grid md:grid-cols-2 gap-3 mt-4">
+        <div v-for="item in staffTools" :key="item.command" class="rounded-lg border border-gray-700 bg-gray-900 p-3">
+          <code class="text-indigo-200 text-sm">{{ item.command }}</code>
+          <p class="text-xs text-gray-400 mt-1">{{ item.description }}</p>
+        </div>
+      </div>
+      <p class="text-xs text-gray-500 mt-4">Private staff notes are delivered to the configured transcript/log channel and are not posted where ticket owners can read them.</p>
+    </section>
     <section class="rounded-xl border border-indigo-500/30 bg-indigo-950/20 p-5 mt-6">
       <h2 class="font-semibold">Next step: publish your panel</h2>
       <p class="text-sm text-gray-300 mt-2">
@@ -222,6 +233,15 @@ export default {
       panelDescription: defaults.panel_description,
       welcomeMessage: defaults.welcome_message,
       maxOpenTickets: defaults.max_open_tickets,
+      staffTools: [
+        { command: "/ticket add", description: "Give another member access to the ticket." },
+        { command: "/ticket remove", description: "Remove a participant (not the ticket owner)." },
+        { command: "/ticket rename", description: "Rename the ticket channel." },
+        { command: "/ticket lock", description: "Prevent the ticket owner from sending messages." },
+        { command: "/ticket unlock", description: "Restore ticket-owner messaging." },
+        { command: "/ticket transfer", description: "Transfer ticket ownership to another member." },
+        { command: "/ticket note", description: "Write a private staff note to the Support log." },
+      ],
     };
   },
   computed: {
