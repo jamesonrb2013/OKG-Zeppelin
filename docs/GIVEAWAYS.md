@@ -5,13 +5,13 @@
 - `/giveaway create` — publish an event with a prize, duration, winner count, and optional type, channel, role requirement, description, and UnbelievaBoat cash reward.
 - `/giveaway list` — show active events and their IDs.
 - `/giveaway end id:<event-id>` — close an event early and draw winners.
-- `/giveaway reroll id:<event-id>` — draw replacement winners from entrants who have not already won.
+- `/giveaway reroll id:<event-id>` — draw replacement winners from entrants who have not won in any earlier draw for that event. If the event includes cash prizes, a replacement winner receives a new payout; account for this before rerolling.
 
-Durations use `m`, `h`, or `d` (for example `45m`, `6h`, or `2d`) and are limited to 30 days. Each Discord user can hold one entry per event and can withdraw it by pressing the entry button again. Role requirements are checked when the user enters.
+Durations use `m`, `h`, or `d` (for example `45m`, `6h`, or `2d`) and are limited to 30 days. Each Discord user can enter once per event. Repeated button clicks confirm that the member is already entered; they do not create duplicate entries or withdraw the existing entry. Role requirements are checked when the user enters.
 
 ## Database
 
-The bot's normal TypeORM migration process creates `giveaways` and `giveaway_entries`. The event and entry records survive bot restarts. Ensure the deployment runs the standard backend migration step before starting the bot.
+The bot's normal TypeORM migration process creates `giveaways` and `giveaway_entries`. The event and entry records survive bot restarts. Winner selection is saved before external cash payouts begin, so a restart cannot silently trigger a second draw for the same active event. Ensure the deployment runs the standard backend migration step before starting the bot.
 
 ## UnbelievaBoat cash prizes
 
@@ -38,7 +38,7 @@ Server administrators can also use:
 
 Each credential is keyed to its Discord server ID. Payouts only use the token saved for the giveaway's own server. Never share a real API token in public messages or source code. If a token is exposed, revoke it in UnbelievaBoat and connect a replacement.
 
-Without a connection, ordinary prizes and winner selection still work. Cash prizes cannot be paid until the server connects its own token.
+Without a connection, ordinary prizes and winner selection still work. Cash prizes cannot be paid until the server connects its own token. Failed or ambiguous transfers are marked `pending` or `partial` for review and are not automatically retried, because retrying an API request with an unknown outcome could pay a winner twice.
 
 ## Permissions
 
