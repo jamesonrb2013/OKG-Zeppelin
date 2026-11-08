@@ -8,7 +8,8 @@ import { getUnbelievaBoatToken } from "./unbelievaboat.js";
 const giveawayRepo = () => dataSource.getRepository(Giveaway);
 const entryRepo = () => dataSource.getRepository(GiveawayEntry);
 const PREFIX = "okg_giveaway:enter:";
-const COLOR = 0x5865f2;
+const COLOR = 0x6d5dfb;
+const completionLocks = new Set<string>();
 
 function durationMs(value: string): number | null {
   const match = value.trim().match(/^(\d{1,4})(m|h|d)$/i);
@@ -23,23 +24,51 @@ function winnerIds(g: Giveaway): string[] {
   catch { return []; }
 }
 function row(id: string, disabled = false) {
-  return new ActionRowBuilder<ButtonBuilder>().addComponents(new ButtonBuilder().setCustomId(PREFIX + id).setLabel("Enter").setEmoji("🎉").setStyle(ButtonStyle.Primary).setDisabled(disabled));
+  return new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId(PREFIX + id)
+      .setLabel(disabled ? "Entries closed" : "Enter giveaway")
+      .setEmoji("🎟️")
+      .setStyle(ButtonStyle.Success)
+      .setDisabled(disabled),
+  );
 }
 async function embed(g: Giveaway): Promise<EmbedBuilder> {
   const count = await entryRepo().count({ where: { giveaway_id: g.id } });
   const end = new Date(g.ends_at);
   const winners = winnerIds(g);
-  const result = new EmbedBuilder().setColor(g.status === "active" ? COLOR : 0x2ecc71).setTitle(g.title).setDescription(g.description || "Enter below for a chance to win!")
+  const active = g.status === "active";
+  const result = new EmbedBuilder()
+    .setColor(active ? COLOR : 0x238b68)
+    .setAuthor({ name: "ONE KID GAMING  /  COMMUNITY EVENTS" })
+    .setTitle(g.title)
+    .setDescription(
+      [g.description?.trim(), active ? "Select **Enter giveaway** below to join. Each member may enter once." : "This event is closed. Thank you to everyone who participated."]
+        .filter(Boolean)
+        .join("\n\n"),
+    )
     .addFields(
-      { name: "Prize", value: g.prize, inline: true },
-      { name: "Type", value: g.kind === "raffle" ? "🎟️ Raffle" : "🎉 Giveaway", inline: true },
-      { name: "Winners", value: String(g.winner_count), inline: true },
-      { name: "Entries", value: String(count), inline: true },
-      { name: g.status === "active" ? "Ends" : "Ended", value: g.status === "active" ? "<t:" + Math.floor(end.getTime()/1000) + ":R>" : "<t:" + Math.floor(end.getTime()/1000) + ":f>", inline: true },
-    ).setFooter({ text: "OKG Manager • One entry per member • Random draw" }).setTimestamp();
-  if (g.required_role_id) result.addFields({ name: "Eligibility", value: "<@&" + g.required_role_id + ">", inline: true });
-  if (g.cash_reward) result.addFields({ name: "UnbelievaBoat cash", value: g.cash_reward.toLocaleString() + " per winner", inline: true });
-  if (winners.length) result.addFields({ name: "Winner(s)", value: winners.map((id) => "<@!" + id + ">").join(", ") });
+      { name: "PRIZE", value: g.prize, inline: false },
+      { name: "WINNERS", value: String(g.winner_count), inline: true },
+      { name: "ENTRIES", value: String(count), inline: true },
+      {
+        name: active ? "TIME REMAINING" : "ENDED",
+        value: active ? "<t:" + Math.floor(end.getTime() / 1000) + ":R>" : "<t:" + Math.floor(end.getTime() / 1000) + ":f>",
+        inline: true,
+      },
+    )
+    .setFooter({ text: "OKG Manager • " + (g.kind === "raffle" ? "Raffle" : "Giveaway") + " • Event " + g.id })
+    .setTimestamp(new Date(g.created_at));
+  if (g.required_role_id) result.addFields({ name: "ENTRY REQUIREMENT", value: "<@&" + g.required_role_id + ">", inline: true });
+  if (g.cash_reward) {
+    result.addFields(
+      { name: "CASH PRIZE", value: g.cash_reward.toLocaleString() + " per winner", inline: true },
+      { name: "PAYOUT STATUS", value: g.payout_status === "paid" ? "Paid" : g.payout_status === "partial" ? "Partially paid — review required" : g.payout_status === "pending" ? "Pending review" : "Configured", inline: true },
+    );
+  }
+  if (winners.length) {
+    result.addFields({ name: "SELECTED WINNERS", value: winners.map((id) => "<@!" + id + ">").join(", ") });
+  }
   return result;
 }
 async function refresh(client: Client, g: Giveaway): Promise<void> {
@@ -70,22 +99,42 @@ async function draw(g: Giveaway, reroll: boolean): Promise<string[]> {
   return selected;
 }
 async function complete(client: Client, g: Giveaway, reroll = false): Promise<string[]> {
+  if (completionLocks.has(g.id)) throw new Error("This event is already being processed.");
   if (!reroll && g.status !== "active") return winnerIds(g);
   if (reroll && g.status !== "completed") throw new Error("Only completed events can be rerolled.");
-  const selected = await draw(g, reroll);
-  g.winner_ids = JSON.stringify(reroll ? winnerIds(g).concat(selected) : selected);
-  g.status = "completed";
-  if (g.cash_reward && selected.length) {
-    let paid = 0;
-    for (const userId of selected) {
-      try { await pay(g, userId); paid++; }
-      catch (error) { console.error("[GIVEAWAYS] Cash payout failed for " + userId + ":", error); }
+
+  completionLocks.add(g.id);
+  try {
+    const selected = await draw(g, reroll);
+
+    // Persist the draw before making external payment requests. If the process stops
+    // during a payout, the scheduler cannot accidentally draw and pay a second time.
+    g.winner_ids = JSON.stringify(selected);
+    g.status = "completed";
+    if (g.cash_reward && selected.length) g.payout_status = "pending";
+    await giveawayRepo().save(g);
+    await refresh(client, g);
+
+    if (g.cash_reward && selected.length) {
+      let paid = 0;
+      for (const userId of selected) {
+        try {
+          await pay(g, userId);
+          paid++;
+        } catch {
+          // Avoid logging provider response bodies or credentials. A failed/ambiguous
+          // transfer is left for manual review rather than retried automatically.
+          console.error("[GIVEAWAYS] Cash payout requires review for event " + g.id + " and winner " + userId);
+        }
+      }
+      g.payout_status = paid === selected.length ? "paid" : paid ? "partial" : "pending";
+      await giveawayRepo().save(g);
+      await refresh(client, g);
     }
-    g.payout_status = paid === selected.length ? "paid" : paid ? "partial" : "pending";
+    return selected;
+  } finally {
+    completionLocks.delete(g.id);
   }
-  await giveawayRepo().save(g);
-  await refresh(client, g);
-  return selected;
 }
 
 export const giveawayCommand = new SlashCommandBuilder().setName("giveaway").setDescription("Create and manage giveaways and raffles")
@@ -181,15 +230,16 @@ export async function handleGiveawayButton(i: any, client: Client): Promise<bool
   }
   const old = await entryRepo().findOne({ where: { giveaway_id: id, user_id: i.user.id } });
   if (old) {
-    await entryRepo().delete({ giveaway_id: id, user_id: i.user.id });
-    await i.reply({ content: "Your entry was removed.", ephemeral: true });
-  } else {
-    try {
-      await entryRepo().insert({ giveaway_id: id, user_id: i.user.id, entered_at: new Date() });
-      await i.reply({ content: "You're entered! Good luck. 🎉", ephemeral: true });
-    } catch {
-      await i.reply({ content: "Your entry is already registered.", ephemeral: true });
-    }
+    await i.reply({ content: "You're already entered. Each member can enter this event once.", ephemeral: true });
+    return true;
+  }
+
+  try {
+    await entryRepo().insert({ giveaway_id: id, user_id: i.user.id, entered_at: new Date() });
+    await i.reply({ content: "Your entry is confirmed. Good luck!", ephemeral: true });
+  } catch {
+    await i.reply({ content: "Your entry is already registered.", ephemeral: true });
+    return true;
   }
   await refresh(client, g);
   return true;
