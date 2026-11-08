@@ -521,11 +521,11 @@ export async function handleTicketCommand(interaction: ChatInputCommandInteracti
   }
   if (action === "list") {
     const tickets = interaction.guild.channels.cache.filter((item) => item instanceof TextChannel && item.topic?.startsWith("okg-support|"));
-    const rows = Array.from(tickets.values()).slice(0, 40).map((item) => {
+    const rows = Array.from(tickets.values()).slice(0, 15).map((item) => {
       const details = ticketMetadata(item as TextChannel);
       return `${details.status === "closed" ? "🔒" : "🎫"} <#${item.id}> · owner ${details.owner ? `<@${details.owner}>` : "unknown"} · ${details.claimed === "none" ? "unclaimed" : `claimed by <@${details.claimed}>`}`;
     });
-    await interaction.reply({ content: rows.length ? `**Support tickets (${tickets.size})**\\n${rows.join("\\n")}` : "There are no support tickets in this server.", ephemeral: true, allowedMentions: { parse: [] } });
+    await interaction.reply({ content: rows.length ? `**Support tickets (${tickets.size})**\\n${rows.join("\\n")}${tickets.size > rows.length ? `\\n…and ${tickets.size - rows.length} more. Use the channel links above to inspect tickets.` : ""}` : "There are no support tickets in this server.", ephemeral: true, allowedMentions: { parse: [] } });
     return;
   }
   if (!(interaction.channel instanceof TextChannel) || !interaction.channel.topic?.startsWith("okg-support|")) {
