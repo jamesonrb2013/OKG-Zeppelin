@@ -1,3 +1,19 @@
+## 1.3.17
+
+### Improved
+- Redesigned giveaway and raffle embeds with consistent OKG community-event branding, clearer prize and entry details, readable deadlines, and explicit closed states.
+- Reworked the server Features page into a consistent, responsive layout that clearly explains giveaways, UnbelievaBoat, and support tickets.
+- Improved entry confirmations and made repeat entry clicks idempotent instead of silently withdrawing a member's entry.
+
+### Reliability
+- Added per-event completion locking to prevent overlapping draws.
+- Persisted winner selection and payout-pending state before calling UnbelievaBoat, reducing the risk of duplicate transfers after a bot restart.
+- Kept previous winners in the reroll exclusion history and display only the latest draw's winners.
+- Removed provider response details from cash-payout error logs. Ambiguous or failed payouts remain marked for review and are not retried automatically.
+
+### Credits
+- Updated by Jeffery Spinnel.
+
 ## 1.3.16
 
 ### Added
