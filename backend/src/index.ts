@@ -59,6 +59,7 @@ import { loadYamlSafely } from "./utils/loadYamlSafely.js";
 import { announceCommand, handleAnnounceCommand } from "./slashCommands/announce.js";
 import { giveawayCommand, handleGiveawayCommand, handleGiveawayButton, startGiveawayEndingLoop } from "./slashCommands/giveaways.js";
 import { unbelievaboatCommand, handleUnbelievaBoatCommand, handleUnbelievaBoatModal } from "./slashCommands/unbelievaboat.js";
+import { economyCommand, handleEconomyCommand } from "./slashCommands/economy.js";
 import { permissionLevelCommand, handlePermissionLevelCommand } from "./slashCommands/permissionLevel.js";
 import { apiRouterCommand, handleApiRouterCommand } from "./slashCommands/apiRouter.js";
 import {
@@ -599,6 +600,7 @@ connect().then(async () => {
         announceCommand,
         giveawayCommand,
         unbelievaboatCommand,
+        economyCommand,
         permissionLevelCommand,
         supportPanelCommand,
         updatesSetupCommand,
@@ -727,6 +729,11 @@ connect().then(async () => {
 
     if (interaction.commandName === "unbelievaboat") {
       await handleUnbelievaBoatCommand(interaction, client);
+      return;
+    }
+
+    if (interaction.commandName === "economy") {
+      await handleEconomyCommand(interaction);
       return;
     }
 
