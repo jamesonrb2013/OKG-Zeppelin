@@ -115,11 +115,6 @@ export async function handleSupportPanelCommand(interaction: ChatInputCommandInt
     return;
   }
 
-  const embed = new EmbedBuilder()
-    .setColor(0x5865f2)
-    .setTitle(config.panel_title || "OKG Support Center")
-    .setDescription(config.panel_description || "Open a private support ticket below.")
-    .setFooter({ text: "OKG Manager • Support" });
 
   const panels = config.ticket_panels?.length ? config.ticket_panels : [{
     id: "default",
@@ -155,13 +150,16 @@ export async function handleSupportModal(interaction: ModalSubmitInteraction, ro
     await interaction.reply({ content: "Support is currently disabled for this server.", ephemeral: true });
     return;
   }
-  if (!config.category_id) {
-    await interaction.reply({ content: "Support is missing its ticket category configuration.", ephemeral: true });
+  const panelId = interaction.customId.split(":")[2] || "default";
+  const panel = config.ticket_panels?.find((item) => item.id === panelId);
+  const categoryId = panel?.category_id || config.category_id;
+  if (!categoryId) {
+    await interaction.reply({ content: "This ticket panel is missing its ticket category configuration.", ephemeral: true });
     return;
   }
 
   const guild = interaction.guild;
-  const category = await guild.channels.fetch(config.category_id).catch(() => null);
+  const category = await guild.channels.fetch(categoryId).catch(() => null);
   if (!category || category.type !== ChannelType.GuildCategory) {
     await interaction.reply({
       content: "The configured ticket category could not be found. Ask an administrator to check Support settings.",
@@ -235,7 +233,7 @@ export async function handleSupportModal(interaction: ModalSubmitInteraction, ro
       name: `${prefix}-${safeName}-${interaction.user.id.slice(-4)}`.slice(0, 95),
       type: ChannelType.GuildText,
       parent: category.id,
-      topic: `okg-support|owner=${interaction.user.id}|claimed=none|status=open`,
+      topic: `okg-support|owner=${interaction.user.id}|claimed=none|status=open|panel=${panelId}`,
       permissionOverwrites: overwrites,
       reason: `Support ticket opened by ${interaction.user.tag}`,
     });
@@ -277,9 +275,9 @@ export async function handleSupportInteraction(interaction: ButtonInteraction, r
   }
 
   const guild = interaction.guild;
-  if (interaction.customId === "okg_support:create") {
+  if (interaction.customId === "okg_support:create" || interaction.customId.startsWith("okg_support:create:")) {
     const modal = new ModalBuilder()
-      .setCustomId("okg_support:create_modal")
+      .setCustomId(`okg_support:create_modal:${interaction.customId.split(":")[2] || "default"}`)
       .setTitle("Open a support ticket")
       .addComponents(
         new ActionRowBuilder<TextInputBuilder>().addComponents(
