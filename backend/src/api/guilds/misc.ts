@@ -134,7 +134,7 @@ export function initGuildsMiscAPI(router: express.Router) {
 
   miscRouter.post("/:guildId/unbelievaboat/connect", requireGuildPermission(ApiPermissions.EditConfig), async (req, res) => {
     const token = typeof req.body.token === "string" ? req.body.token.trim() : "";
-    if (token.length < 20 || token.length > 2048 || /\\s/.test(token)) return clientError(res, "Enter a valid UnbelievaBoat API token.");
+    if (token.length < 20 || token.length > 2048 || /\s/.test(token)) return clientError(res, "Enter a valid UnbelievaBoat API token.");
     try {
       await connectUnbelievaBoatGuild(req.params.guildId, token, req.user!.userId);
       return ok(res);
