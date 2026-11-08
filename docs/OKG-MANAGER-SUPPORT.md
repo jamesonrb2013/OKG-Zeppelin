@@ -9,7 +9,8 @@ This guide covers the native Discord support-ticket workflow included in OKG Adm
 3. Set the public panel channel ID and ticket category ID.
 4. Add support staff role IDs. The bot needs Manage Channels, View Channel, Send Messages, Read Message History, and permission to create channels.
 5. Optionally set a transcript log channel, panel title/description, welcome message, ticket prefix, and the per-user open-ticket limit.
-6. Save, then run `/support-panel` in the server. The command requires Manage Server.
+6. Optionally define up to 10 ticket panels in the dashboard's JSON editor. Each panel needs a unique lowercase `id`, `title`, `description`, and its own `category_id`; `button_label` is optional. If no panels are defined, the original single-panel settings are used.
+7. Save, then run `/support-panel` in the server. The command requires Manage Server and posts every configured panel into the selected panel channel.
 
 ## Ticket workflow
 
