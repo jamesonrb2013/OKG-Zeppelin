@@ -12,7 +12,7 @@ import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import { env } from "../env.js";
 import { Configs } from "../data/Configs.js";
 
-const configs = new Configs();
+const configs = () => new Configs();
 const KEY = Buffer.from(env.KEY, "utf8");
 const PREFIX = "unbelievaboat:";
 
@@ -32,7 +32,7 @@ function decryptToken(value: string): string {
 }
 
 export async function getUnbelievaBoatToken(guildId: string): Promise<string | null> {
-  const saved = await configs.getActiveByKey(PREFIX + guildId);
+  const saved = await configs().getActiveByKey(PREFIX + guildId);
   if (!saved || !saved.config) return null;
   try {
     const parsed = JSON.parse(saved.config) as { encryptedToken?: string };
@@ -55,15 +55,15 @@ export async function connectUnbelievaBoatGuild(guildId: string, token: string, 
   }
   const guild = (await response.json()) as { id?: string };
   if (guild.id !== guildId) throw new Error("The token did not validate for this Discord server.");
-  await configs.saveNewRevision(PREFIX + guildId, JSON.stringify({ encryptedToken: encryptToken(token) }), editedBy);
+  await configs().saveNewRevision(PREFIX + guildId, JSON.stringify({ encryptedToken: encryptToken(token) }), editedBy);
 }
 
 export async function disconnectUnbelievaBoatGuild(guildId: string, editedBy: string): Promise<void> {
-  await configs.saveNewRevision(PREFIX + guildId, "", editedBy);
+  await configs().saveNewRevision(PREFIX + guildId, "", editedBy);
 }
 
 export async function hasUnbelievaBoatConnection(guildId: string): Promise<boolean> {
-  const saved = await configs.getActiveByKey(PREFIX + guildId);
+  const saved = await configs().getActiveByKey(PREFIX + guildId);
   if (!saved?.config) return false;
   try {
     const parsed = JSON.parse(saved.config) as { encryptedToken?: string };
@@ -114,7 +114,7 @@ export async function handleUnbelievaBoatCommand(i: ChatInputCommandInteraction,
     return;
   }
 
-  const saved = await configs.getActiveByKey(key);
+  const saved = await configs().getActiveByKey(key);
   await i.reply({
     content: saved?.config
       ? "🟢 UnbelievaBoat is connected for this server. The saved token is encrypted and cannot be viewed here."
