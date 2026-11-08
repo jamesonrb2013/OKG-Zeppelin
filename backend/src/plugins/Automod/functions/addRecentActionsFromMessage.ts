@@ -5,6 +5,13 @@ import { AutomodContext, AutomodPluginType } from "../types.js";
 
 export function addRecentActionsFromMessage(pluginData: GuildPluginData<AutomodPluginType>, context: AutomodContext) {
   const message = context.message!;
+
+  // Make message processing idempotent if the saved-message event is delivered
+  // more than once. An edited message is re-added with its current content only.
+  pluginData.state.recentActions = pluginData.state.recentActions.filter((action) => {
+    return action.context.message?.id !== message.id;
+  });
+
   const globalIdentifier = message.user_id;
   const perChannelIdentifier = `${message.channel_id}-${message.user_id}`;
 
