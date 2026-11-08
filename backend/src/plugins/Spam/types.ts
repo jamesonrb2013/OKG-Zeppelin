@@ -7,8 +7,8 @@ import { GuildSavedMessages } from "../../data/GuildSavedMessages.js";
 import { zSnowflake } from "../../utils.js";
 
 const zBaseSingleSpamConfig = z.strictObject({
-  interval: z.number(),
-  count: z.number(),
+  interval: z.number().positive(),
+  count: z.number().int().min(1).max(10000),
   mute: z.boolean().default(false),
   mute_time: z.number().nullable().default(null),
   remove_roles_on_mute: z.union([z.boolean(), z.array(zSnowflake)]).default(false),
