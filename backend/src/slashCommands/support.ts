@@ -242,6 +242,7 @@ export async function handleSupportModal(interaction: ModalSubmitInteraction, ro
       .setTitle(subject.slice(0, 256))
       .setDescription(details.slice(0, 4000))
       .addFields(
+        { name: "Welcome", value: (config.welcome_message || "Thanks for contacting support. Our team will be with you soon.").slice(0, 1024) },
         { name: "Ticket owner", value: `<@${interaction.user.id}>`, inline: true },
         { name: "Claimed by", value: "Not claimed yet", inline: true },
       )
