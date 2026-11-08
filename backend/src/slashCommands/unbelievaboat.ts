@@ -33,7 +33,7 @@ function decryptToken(value: string): string {
 
 export async function getUnbelievaBoatToken(guildId: string): Promise<string | null> {
   const saved = await configs.getActiveByKey(PREFIX + guildId);
-  if (!saved) return null;
+  if (!saved || !saved.config) return null;
   try {
     const parsed = JSON.parse(saved.config) as { encryptedToken?: string };
     return parsed.encryptedToken ? decryptToken(parsed.encryptedToken) : null;
