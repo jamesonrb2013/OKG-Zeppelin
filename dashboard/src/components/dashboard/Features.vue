@@ -1,47 +1,67 @@
 <template>
-  <div v-if="loading" class="text-gray-400 py-8">Loading server features…</div>
-  <div v-else class="max-w-5xl">
-    <router-link class="text-sm text-indigo-300 hover:underline" to="/dashboard">← Back to servers</router-link>
-    <div class="flex flex-wrap items-end justify-between gap-4 mt-3 mb-6">
+  <div v-if="loading" class="py-8 text-sm text-gray-400">Loading server features…</div>
+  <div v-else class="max-w-6xl">
+    <router-link class="text-sm text-gray-400 transition hover:text-white" to="/dashboard">← All servers</router-link>
+
+    <header class="mb-8 mt-4 flex flex-wrap items-end justify-between gap-4">
       <div>
-        <p class="text-xs uppercase tracking-widest text-indigo-300 font-semibold">OKG Manager</p>
-        <h1 class="text-3xl font-bold mt-1">Features</h1>
-        <p class="text-gray-400 mt-2">Configure server tools from one place. More features will be added here.</p>
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-300">OKG Manager / Server settings</p>
+        <h1 class="mt-2 text-3xl font-bold tracking-tight text-white">Features</h1>
+        <p class="mt-2 max-w-2xl text-sm text-gray-400">Manage the tools and community systems available in this server.</p>
       </div>
-      <div class="text-sm text-gray-400">{{ guild?.name }}</div>
+      <div class="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-300">{{ guild?.name }}</div>
+    </header>
+
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <section class="rounded-2xl border border-gray-700 bg-gray-900/80 p-6">
+        <div class="flex items-center justify-between gap-3">
+          <span class="text-xs font-semibold uppercase tracking-widest text-indigo-300">Community engagement</span>
+          <span class="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs text-emerald-300">Available</span>
+        </div>
+        <h2 class="mt-4 text-xl font-semibold text-white">Giveaways &amp; raffles</h2>
+        <p class="mt-2 text-sm leading-6 text-gray-400">
+          Run scheduled prize events with button-based entries, optional role eligibility, multiple winners,
+          automatic closing, and winner rerolls.
+        </p>
+        <div class="mt-5 rounded-xl border border-gray-700 bg-gray-950 px-4 py-3">
+          <p class="text-xs font-medium uppercase tracking-wider text-gray-500">Discord command</p>
+          <p class="mt-1 font-mono text-sm text-indigo-200">/giveaway create</p>
+          <p class="mt-2 text-xs text-gray-500">Manage active events with /giveaway list, /giveaway end, and /giveaway reroll.</p>
+        </div>
+      </section>
+
+      <router-link
+        class="group rounded-2xl border border-gray-700 bg-gray-900/80 p-6 transition hover:border-emerald-500/60 hover:bg-gray-900"
+        :to="'/dashboard/features/' + $route.params.guildId + '/unbelievaboat'"
+      >
+        <div class="flex items-center justify-between gap-3">
+          <span class="text-xs font-semibold uppercase tracking-widest text-emerald-300">Economy integration</span>
+          <span class="rounded-full border border-gray-600 px-2.5 py-1 text-xs text-gray-400">Optional</span>
+        </div>
+        <h2 class="mt-4 text-xl font-semibold text-white">UnbelievaBoat</h2>
+        <p class="mt-2 text-sm leading-6 text-gray-400">
+          Securely connect this server's own API credential to award cash prizes. Credentials are isolated by
+          server and encrypted before storage.
+        </p>
+        <p class="mt-5 text-sm font-semibold text-emerald-300">Configure integration <span aria-hidden="true">→</span></p>
+      </router-link>
+
+      <router-link
+        class="rounded-2xl border border-gray-700 bg-gray-900/80 p-6 transition hover:border-indigo-500/60 hover:bg-gray-900"
+        :to="'/dashboard/features/' + $route.params.guildId + '/support/config'"
+      >
+        <div class="flex items-center justify-between gap-3">
+          <span class="text-xs font-semibold uppercase tracking-widest text-indigo-300">Member support</span>
+          <span class="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2.5 py-1 text-xs text-indigo-200">Available</span>
+        </div>
+        <h2 class="mt-4 text-xl font-semibold text-white">Support tickets</h2>
+        <p class="mt-2 text-sm leading-6 text-gray-400">
+          Configure private ticket channels, staff claiming, close and reopen controls, transcripts, ticket limits,
+          and custom panel messages.
+        </p>
+        <p class="mt-5 text-sm font-semibold text-indigo-300">Configure support <span aria-hidden="true">→</span></p>
+      </router-link>
     </div>
-    <router-link
-      class="mb-4 block max-w-2xl rounded-xl border border-gray-700 bg-gray-800 p-6 hover:border-emerald-400 hover:bg-gray-800/80 transition"
-      :to="'/dashboard/features/' + $route.params.guildId + '/unbelievaboat'"
-    >
-      <div class="flex items-start gap-4">
-        <div class="flex h-14 w-14 items-center justify-center rounded-xl bg-emerald-500/15 text-3xl">💰</div>
-        <div class="flex-1">
-          <h2 class="text-xl font-semibold">UnbelievaBoat integration</h2>
-          <p class="mt-2 text-gray-300">Connect this server's private API token to enable automatic cash prizes for giveaways and raffles.</p>
-          <p class="mt-4 font-semibold text-emerald-300">Configure integration →</p>
-        </div>
-      </div>
-    </router-link>
-    <router-link
-      class="block max-w-2xl rounded-xl border border-gray-700 bg-gray-800 p-6 hover:border-indigo-400 hover:bg-gray-800/80 transition"
-      :to="'/dashboard/features/' + $route.params.guildId + '/support/config'"
-    >
-      <div class="flex items-start gap-4">
-        <div class="flex items-center justify-center w-14 h-14 rounded-xl bg-indigo-500/20 text-3xl">🎫</div>
-        <div class="flex-1">
-          <div class="flex flex-wrap items-center gap-2">
-            <h2 class="text-xl font-semibold">Support tickets</h2>
-            <span class="text-xs rounded-full bg-indigo-500/20 text-indigo-200 px-2 py-1">New</span>
-          </div>
-          <p class="text-gray-300 mt-2">
-            Build your own Ticket Tool-style system: private ticket channels, staff claiming, close/reopen controls,
-            transcripts, ticket limits, and custom messages.
-          </p>
-          <p class="text-indigo-300 font-semibold mt-4">Configure support →</p>
-        </div>
-      </div>
-    </router-link>
   </div>
 </template>
 
