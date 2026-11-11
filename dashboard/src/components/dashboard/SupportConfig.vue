@@ -351,7 +351,8 @@ export default {
             max_open_tickets: Math.max(1, Math.min(10, Number(this.maxOpenTickets) || 1)),
             modmail_enabled: this.modmailEnabled,
             modmail_inbox_channel_id: this.modmailInboxChannelId || null,
-            modmail_role_id: this.modmailRoleId || null,\n            modmail_admin_role_id: this.modmailAdminRoleId || null,
+            modmail_role_id: this.modmailRoleId || null,
+            modmail_admin_role_id: this.modmailAdminRoleId || null,
           },
         };
         await this.$store.dispatch("guilds/saveConfig", {
