@@ -308,7 +308,7 @@ export default {
       this.error = "";
       this.success = "";
       try {
-        if (this.modmailEnabled && (!/^\d{17,20}$/.test(this.modmailInboxChannelId) || !/^\d{17,20}$/.test(this.modmailRoleId) || !/^\d{17,20}$/.test(this.modmailAdminRoleId))) {
+        if (this.modmailEnabled && (!/^[0-9]{17,20}$/.test(this.modmailInboxChannelId) || !/^[0-9]{17,20}$/.test(this.modmailRoleId) || !/^[0-9]{17,20}$/.test(this.modmailAdminRoleId))) {
           throw new Error("Enable Modmail only after entering valid inbox, staff role, and admin role IDs.");
         }
         const response: any = await get("guilds/" + this.$route.params.guildId + "/config");
