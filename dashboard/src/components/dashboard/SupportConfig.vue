@@ -104,7 +104,8 @@
         </div>
         <div class="grid md:grid-cols-2 gap-4">
           <label class="block"><span class="block text-sm font-medium mb-2">Modmail inbox channel ID</span><input v-model.trim="modmailInboxChannelId" class="w-full rounded-lg border border-gray-600 bg-gray-900 px-3 py-2.5" placeholder="Discord text channel ID" /><span class="text-xs text-gray-500 block mt-1">Use a staff-only text channel. Restrict @everyone and grant access to your Modmail role and OKG Manager. Give the bot View Channel, Send Messages, Create Public Threads, Send Messages in Threads, and Read Message History.</span></label>
-          <label class="block"><span class="block text-sm font-medium mb-2">Modmail role ID</span><input v-model.trim="modmailRoleId" class="w-full rounded-lg border border-gray-600 bg-gray-900 px-3 py-2.5" placeholder="Your Modmail role ID" /><span class="text-xs text-gray-500 block mt-1">Only members with this role can reply or close conversations. Also restrict the inbox channel so other server members cannot read staff threads.</span></label>
+          <label class="block"><span class="block text-sm font-medium mb-2">Modmail staff role ID</span><input v-model.trim="modmailRoleId" class="w-full rounded-lg border border-gray-600 bg-gray-900 px-3 py-2.5" placeholder="Your Modmail staff role ID" /><span class="text-xs text-gray-500 block mt-1">Staff can reply to member conversations in their threads.</span></label>
+          <label class="block"><span class="block text-sm font-medium mb-2">Modmail admin role ID</span><input v-model.trim="modmailAdminRoleId" class="w-full rounded-lg border border-gray-600 bg-gray-900 px-3 py-2.5" placeholder="Your Modmail admin role ID" /><span class="text-xs text-gray-500 block mt-1">Admins can also reply and manage conversations. Both roles are notified when a new conversation arrives.</span></label>
         </div>
         <div class="rounded-lg border border-gray-700 bg-gray-900 p-3 text-sm text-gray-300"><p class="font-medium text-white">Staff workflow</p><p class="mt-1">Reply directly in the member's thread. Replies are delivered by DM. Type <code class="text-indigo-200">!close</code> to close a conversation.</p></div>
       </section>
@@ -255,6 +256,7 @@ export default {
       modmailEnabled: false,
       modmailInboxChannelId: "",
       modmailRoleId: "",
+      modmailAdminRoleId: "",
       staffTools: [
         { command: "/ticket add", description: "Give another member access to the ticket." },
         { command: "/ticket remove", description: "Remove a participant (not the ticket owner)." },
@@ -291,9 +293,11 @@ export default {
       this.welcomeMessage = config.welcome_message || defaults.welcome_message;
       this.maxOpenTickets = Number(config.max_open_tickets || defaults.max_open_tickets);
       this.ticketPanelsJson = JSON.stringify(config.ticket_panels || defaults.ticket_panels, null, 2);
-      this.modmailEnabled = config.modmail_enabled === true;
-      this.modmailInboxChannelId = config.modmail_inbox_channel_id || "";
-      this.modmailRoleId = config.modmail_role_id || "";
+      const isPrimaryOkgGuild = this.$route.params.guildId === "1488682722606977175";
+      this.modmailEnabled = config.modmail_enabled === true || (isPrimaryOkgGuild && config.modmail_enabled == null);
+      this.modmailInboxChannelId = config.modmail_inbox_channel_id || (isPrimaryOkgGuild ? "1570205899027390526" : "");
+      this.modmailRoleId = config.modmail_role_id || (isPrimaryOkgGuild ? "1550129765917130842" : "");
+      this.modmailAdminRoleId = config.modmail_admin_role_id || (isPrimaryOkgGuild ? "1550129533406019775" : "");
       this.error = "";
       this.success = "";
     },
@@ -347,7 +351,7 @@ export default {
             max_open_tickets: Math.max(1, Math.min(10, Number(this.maxOpenTickets) || 1)),
             modmail_enabled: this.modmailEnabled,
             modmail_inbox_channel_id: this.modmailInboxChannelId || null,
-            modmail_role_id: this.modmailRoleId || null,
+            modmail_role_id: this.modmailRoleId || null,\n            modmail_admin_role_id: this.modmailAdminRoleId || null,
           },
         };
         await this.$store.dispatch("guilds/saveConfig", {
