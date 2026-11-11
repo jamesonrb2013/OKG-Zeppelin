@@ -239,7 +239,7 @@ export default {
       panelDescription: defaults.panel_description,
       welcomeMessage: defaults.welcome_message,
       maxOpenTickets: defaults.max_open_tickets,
-      ticketPanelsJson: "[]",
+      ticketPanelsJson: "[]",\n      modmailEnabled: false,\n      modmailInboxChannelId: "",\n      modmailRoleId: "",
       staffTools: [
         { command: "/ticket add", description: "Give another member access to the ticket." },
         { command: "/ticket remove", description: "Remove a participant (not the ticket owner)." },
@@ -275,7 +275,7 @@ export default {
       this.panelDescription = config.panel_description || defaults.panel_description;
       this.welcomeMessage = config.welcome_message || defaults.welcome_message;
       this.maxOpenTickets = Number(config.max_open_tickets || defaults.max_open_tickets);
-      this.ticketPanelsJson = JSON.stringify(config.ticket_panels || defaults.ticket_panels, null, 2);
+      this.ticketPanelsJson = JSON.stringify(config.ticket_panels || defaults.ticket_panels, null, 2);\n      this.modmailEnabled = config.modmail_enabled === true;\n      this.modmailInboxChannelId = config.modmail_inbox_channel_id || "";\n      this.modmailRoleId = config.modmail_role_id || "";
       this.error = "";
       this.success = "";
     },
@@ -323,7 +323,7 @@ export default {
             panel_title: this.panelTitle || defaults.panel_title,
             panel_description: this.panelDescription || defaults.panel_description,
             welcome_message: this.welcomeMessage || defaults.welcome_message,
-            max_open_tickets: Math.max(1, Math.min(10, Number(this.maxOpenTickets) || 1)),
+            max_open_tickets: Math.max(1, Math.min(10, Number(this.maxOpenTickets) || 1)),\n            modmail_enabled: this.modmailEnabled,\n            modmail_inbox_channel_id: this.modmailInboxChannelId || null,\n            modmail_role_id: this.modmailRoleId || null,
           },
         };
         await this.$store.dispatch("guilds/saveConfig", {
