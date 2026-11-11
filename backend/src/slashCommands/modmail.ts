@@ -10,7 +10,6 @@ import {
 } from "discord.js";
 import { Configs } from "../data/Configs.js";
 import { loadYamlSafely } from "../utils/loadYamlSafely.js";
-import { CORE_GUILD_ID } from "../env.js";
 
 const CONSENT = "okg_modmail:consent:";
 const MESSAGE_START = "\n\n**Your message:**\n";
@@ -44,7 +43,8 @@ async function configured(): Promise<ModmailConfig[]> {
       if (
         !/^\d{17,20}$/.test(guildId) ||
         !/^\d{17,20}$/.test(inboxChannelId) ||
-        !/^\d{17,20}$/.test(roleId)
+        !/^\d{17,20}$/.test(roleId) ||
+        !/^\d{17,20}$/.test(adminRoleId)
       ) {
         console.warn("[MODMAIL] Skipping invalid Modmail configuration for guild", guildId);
         continue;
@@ -178,6 +178,8 @@ async function openConversation(
     content:
       "<@&" +
       cfg.roleId +
+      "> <@&" +
+      cfg.adminRoleId +
       "> **New Modmail conversation**\n" +
       "**Member:** " +
       safeText(user.tag, 100) +
@@ -185,7 +187,7 @@ async function openConversation(
       user.id +
       "\x60)\n" +
       "**Reply by writing in this thread.**",
-    allowedMentions: { parse: [], roles: [cfg.roleId], users: [] },
+    allowedMentions: { parse: [], roles: [cfg.roleId, cfg.adminRoleId], users: [] },
   });
 
   const thread = await starter.startThread({
