@@ -1,127 +1,320 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, Client, Message, TextChannel, ThreadChannel } from "discord.js";
+import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  Client,
+  Message,
+  TextChannel,
+  ThreadChannel,
+} from "discord.js";
 import { Configs } from "../data/Configs.js";
 import { loadYamlSafely } from "../utils/loadYamlSafely.js";
 
 const CONSENT = "okg_modmail:consent:";
+const MESSAGE_START = "\n\n**Your message:**\n";
+const MESSAGE_END = "\n\n— End of original message —";
 const configs = new Configs();
-type ModmailConfig = { guildId: string; inboxChannelId: string; roleId: string };
+
+type ModmailConfig = {
+  guildId: string;
+  inboxChannelId: string;
+  roleId: string;
+};
 
 async function configured(): Promise<ModmailConfig[]> {
   const rows = await configs.getActive();
   const found: ModmailConfig[] = [];
+
   for (const row of rows) {
     if (!row.key.startsWith("guild-")) continue;
+
     try {
       const root: any = loadYamlSafely(row.config);
-      const support = root?.plugins?.support;
-      const cfg = support?.config || {};
-      if (support?.enabled === false || cfg.modmail_enabled !== true) continue;
+      const cfg = root?.plugins?.support?.config || {};
+      if (cfg.modmail_enabled !== true) continue;
+
       const guildId = row.key.slice(6);
-      if (!/^\d{17,20}$/.test(guildId) || !/^\d{17,20}$/.test(cfg.modmail_inbox_channel_id || "") || !/^\d{17,20}$/.test(cfg.modmail_role_id || "")) continue;
-      found.push({ guildId, inboxChannelId: cfg.modmail_inbox_channel_id, roleId: cfg.modmail_role_id });
-    } catch (error) { console.warn("[MODMAIL] Could not read guild config:", error); }
+      const inboxChannelId = String(cfg.modmail_inbox_channel_id || "");
+      const roleId = String(cfg.modmail_role_id || "");
+
+      if (
+        !/^\d{17,20}$/.test(guildId) ||
+        !/^\d{17,20}$/.test(inboxChannelId) ||
+        !/^\d{17,20}$/.test(roleId)
+      ) {
+        console.warn("[MODMAIL] Skipping invalid Modmail configuration for guild", guildId);
+        continue;
+      }
+
+      found.push({ guildId, inboxChannelId, roleId });
+    } catch (error) {
+      console.warn("[MODMAIL] Could not read guild config:", error);
+    }
   }
+
   return found;
 }
-function safeText(value: string): string {
-  return value.replace(/@everyone/gi, "@ everyone").replace(/@here/gi, "@ here").slice(0, 1800);
+
+function safeText(value: string, maxLength = 1700): string {
+  return value
+    .replace(/@everyone/gi, "@ everyone")
+    .replace(/@here/gi, "@ here")
+    .slice(0, maxLength);
 }
+
+function attachmentText(message: Message): string {
+  return [...message.attachments.values()]
+    .slice(0, 5)
+    .map((attachment) => "[" + safeText(attachment.name || "Attachment", 100) + "](" + attachment.url + ")")
+    .join("\n");
+}
+
+function originalMessageText(message: Message): string {
+  const text = safeText(message.content || "", 1200);
+  const attachments = attachmentText(message);
+  return [text, attachments].filter(Boolean).join("\n\n") || "[Message without text or attachments]";
+}
+
 async function findThread(channel: TextChannel, userId: string): Promise<ThreadChannel | null> {
+  const name = "modmail-" + userId;
   const active = await channel.threads.fetchActive();
-  let thread = active.threads.find((item) => item.name === "modmail-" + userId);
-  if (thread) return thread;
+  const activeThread = active.threads.find((item) => item.name === name);
+  if (activeThread) return activeThread;
+
   const archived = await channel.threads.fetchArchived({ type: "public", limit: 100 }).catch(() => null);
-  thread = archived?.threads.find((item) => item.name === "modmail-" + userId) || null;
-  if (thread?.archived) await thread.setArchived(false).catch(() => undefined);
-  return thread;
+  const archivedThread = archived?.threads.find((item) => item.name === name);
+  if (!archivedThread) return null;
+
+  if (archivedThread.archived) {
+    await archivedThread.setArchived(false);
+  }
+
+  return archivedThread;
 }
+
 async function sendConsent(message: Message, cfg: ModmailConfig): Promise<void> {
-  const content = safeText(message.content || (message.attachments.size ? "[Attachment included]" : "[Message without text]"));
   const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId(CONSENT + cfg.guildId + ":" + message.author.id).setLabel("Yes, contact support").setStyle(ButtonStyle.Success),
-    new ButtonBuilder().setCustomId(CONSENT + "no:" + message.author.id).setLabel("No").setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId(CONSENT + cfg.guildId + ":" + message.author.id)
+      .setLabel("Yes, contact support")
+      .setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
+      .setCustomId(CONSENT + "no:" + message.author.id)
+      .setLabel("No")
+      .setStyle(ButtonStyle.Secondary),
   );
-  await message.reply({ content: "**Would you like to send this message to OKG support staff?**\n\n> " + content, components: [row], allowedMentions: { parse: [] } });
+
+  const prompt =
+    "**Would you like to send this message to OKG support staff?**" +
+    MESSAGE_START +
+    originalMessageText(message) +
+    MESSAGE_END +
+    "\n\nChoose **Yes** to send it to the support team, or **No** to keep it private.";
+
+  await message.reply({
+    content: prompt.slice(0, 2000),
+    components: [row],
+    allowedMentions: { parse: [] },
+  });
 }
-async function openConversation(client: Client, userId: string, guildId: string, firstMessage: string): Promise<void> {
+
+async function openConversation(
+  client: Client,
+  userId: string,
+  guildId: string,
+  firstMessage: string,
+): Promise<void> {
   const cfg = (await configured()).find((item) => item.guildId === guildId);
-  if (!cfg) throw new Error("Modmail is not configured.");
+  if (!cfg) throw new Error("Modmail is not configured for this server.");
+
   const inbox = await client.channels.fetch(cfg.inboxChannelId);
-  if (!(inbox instanceof TextChannel)) throw new Error("The configured Modmail inbox is unavailable.");
+  if (!(inbox instanceof TextChannel)) {
+    throw new Error("The configured Modmail inbox is unavailable or is not a text channel.");
+  }
+
   const existing = await findThread(inbox, userId);
   if (existing) {
-    await existing.setArchived(false).catch(() => undefined);
-    await existing.send("↩️ The member has reopened this conversation.");
+    await existing.send({
+      content: "**New message from member:**\n" + safeText(firstMessage || "[No message text]"),
+      allowedMentions: { parse: [] },
+    });
     return;
   }
+
   const user = await client.users.fetch(userId);
   const starter = await inbox.send({
-    content: "<@&" + cfg.roleId + "> **New Modmail conversation**\n**Member:** " + user.tag + " (`" + user.id + "`)\n**Reply by writing in this thread.**",
-    allowedMentions: { roles: [cfg.roleId], users: [] },
+    content:
+      "<@&" +
+      cfg.roleId +
+      "> **New Modmail conversation**\n" +
+      "**Member:** " +
+      safeText(user.tag, 100) +
+      " (\x60" +
+      user.id +
+      "\x60)\n" +
+      "**Reply by writing in this thread.**",
+    allowedMentions: { parse: [], roles: [cfg.roleId], users: [] },
   });
-  const thread = await starter.startThread({ name: "modmail-" + userId, autoArchiveDuration: 10080, reason: "OKG Modmail conversation" });
-  await thread.send({ content: "**Original message from member:**\n" + safeText(firstMessage || "[No text content]") + "\n\nConversation opened. Staff replies in this thread are delivered to the member by DM.", allowedMentions: { parse: [] } });
+
+  const thread = await starter.startThread({
+    name: "modmail-" + userId,
+    autoArchiveDuration: 10080,
+    reason: "OKG Modmail conversation",
+  });
+
+  await thread.send({
+    content:
+      "**Original message from member:**\n" +
+      safeText(firstMessage || "[No message text]") +
+      "\n\nStaff replies in this thread are delivered to the member by DM.",
+    allowedMentions: { parse: [] },
+  });
 }
-export async function handleModmailMessage(client: Client, message: Message): Promise<void> {
+
+export async function handleModmailMessage(client: Client, incoming: Message): Promise<void> {
+  if (incoming.partial) {
+    const fetched = await incoming.fetch().catch(() => null);
+    if (!fetched) return;
+    incoming = fetched;
+  }
+
+  const message = incoming;
   if (message.author.bot || message.webhookId) return;
+
   if (!message.guildId) {
     const all = await configured();
     if (!all.length) return;
+
+    // This bot installation currently serves the primary OKG server.
     const cfg = all[0];
     const inbox = await client.channels.fetch(cfg.inboxChannelId).catch(() => null);
-    if (!(inbox instanceof TextChannel)) return;
-    const thread = await findThread(inbox, message.author.id);
-    if (thread) {
-      await thread.send({ content: "**" + safeText(message.author.tag) + ":**\n" + safeText(message.content || "[Attachment]"), files: [...message.attachments.values()].map((a) => a.url), allowedMentions: { parse: [] } });
+    if (!(inbox instanceof TextChannel)) {
+      await message.reply("OKG Support is temporarily unavailable. Please try again later.").catch(() => undefined);
       return;
     }
-    if (message.content.trim().length || message.attachments.size) await sendConsent(message, cfg);
+
+    const thread = await findThread(inbox, message.author.id).catch((error) => {
+      console.error("[MODMAIL] Could not find the member's thread:", error);
+      return null;
+    });
+
+    if (thread) {
+      await thread.send({
+        content:
+          "**" +
+          safeText(message.author.tag, 100) +
+          ":**\n" +
+          originalMessageText(message),
+        allowedMentions: { parse: [] },
+      });
+      return;
+    }
+
+    if (message.content.trim().length || message.attachments.size) {
+      await sendConsent(message, cfg);
+    }
     return;
   }
+
   if (!message.channel.isThread()) return;
+
   const thread = message.channel as ThreadChannel;
   if (!thread.name.startsWith("modmail-")) return;
-  const userId = thread.name.slice(7);
+
+  const userId = thread.name.slice("modmail-".length);
   if (!/^\d{17,20}$/.test(userId)) return;
+
   const cfg = (await configured()).find((item) => item.guildId === message.guildId);
   if (!cfg) return;
+
   const member = await message.guild?.members.fetch(message.author.id).catch(() => null);
   if (!member?.roles.cache.has(cfg.roleId)) return;
+
   if (message.content.trim().toLowerCase() === "!close") {
-    await thread.send("🔒 Conversation closed by " + safeText(message.author.tag) + ".");
+    await thread.send("🔒 Conversation closed by " + safeText(message.author.tag, 100) + ".");
     const user = await client.users.fetch(userId).catch(() => null);
-    await user?.send("Your OKG support conversation has been closed. You can DM OKG Manager again if you need further help.").catch(() => undefined);
+    await user
+      ?.send("Your OKG support conversation has been closed. You can DM OKG Manager again if you need further help.")
+      .catch(() => undefined);
     await thread.setArchived(true, "Closed by Modmail staff");
     return;
   }
-  const body = safeText(message.content || (message.attachments.size ? "[Attachment]" : ""));
-  if (!body && !message.attachments.size) return;
+
+  const body = originalMessageText(message);
+  if (body === "[Message without text or attachments]") return;
+
   const user = await client.users.fetch(userId).catch(() => null);
-  if (!user) { await thread.send("Could not deliver: the member is unavailable."); return; }
+  if (!user) {
+    await thread.send("Could not deliver this reply: the member is unavailable.");
+    return;
+  }
+
   try {
-    await user.send({ content: "**OKG Support — " + safeText(message.author.tag) + "**\n" + body, files: [...message.attachments.values()].map((a) => a.url), allowedMentions: { parse: [] } });
+    await user.send({
+      content: "**OKG Support — " + safeText(message.author.tag, 100) + "**\n" + safeText(body),
+      allowedMentions: { parse: [] },
+    });
     await message.react("📨").catch(() => undefined);
-  } catch { await thread.send("Delivery failed. The member may have DMs disabled."); }
+  } catch {
+    await thread.send("Delivery failed. The member may have DMs disabled.");
+  }
 }
+
 export async function handleModmailInteraction(client: Client, interaction: any): Promise<boolean> {
   if (!interaction.isButton() || !interaction.customId.startsWith(CONSENT)) return false;
+
   const parts = interaction.customId.slice(CONSENT.length).split(":");
-  if (parts[0] === "no") {
-    if (interaction.user.id !== parts[1]) { await interaction.reply({ content: "This confirmation belongs to another member.", ephemeral: true }); return true; }
-    await interaction.update({ content: "No problem. Your message was not sent to support staff.", components: [] });
+  const isDecline = parts[0] === "no";
+  const userId = isDecline ? parts[1] : parts[1];
+  if (interaction.user.id !== userId) {
+    await interaction.reply({
+      content: "This confirmation belongs to another member.",
+      ephemeral: true,
+    });
     return true;
   }
-  const guildId = parts[0], userId = parts[1];
-  if (interaction.user.id !== userId) { await interaction.reply({ content: "This confirmation belongs to another member.", ephemeral: true }); return true; }
+
+  if (isDecline) {
+    await interaction.update({
+      content: "No problem. Your message was not sent to support staff.",
+      components: [],
+    });
+    return true;
+  }
+
+  const guildId = parts[0];
+  if (!/^\d{17,20}$/.test(guildId || "") || !/^\d{17,20}$/.test(userId || "")) {
+    await interaction.update({
+      content: "This support confirmation has expired. Please DM OKG Manager again.",
+      components: [],
+    });
+    return true;
+  }
+
   await interaction.deferUpdate();
+
   try {
     const quoted = String(interaction.message?.content || "");
-    const firstMessage = quoted.includes("> ") ? quoted.slice(quoted.lastIndexOf("> ") + 2) : "";
+    const start = quoted.indexOf(MESSAGE_START);
+    const end = quoted.indexOf(MESSAGE_END, start + MESSAGE_START.length);
+    const firstMessage =
+      start >= 0
+        ? quoted.slice(start + MESSAGE_START.length, end >= 0 ? end : undefined).trim()
+        : "[Original message unavailable]";
+
     await openConversation(client, userId, guildId, firstMessage);
-    await interaction.editReply({ content: "Your message has been sent to OKG support staff. You can continue replying here whenever you need help.", components: [] });
+    await interaction.editReply({
+      content:
+        "Your message has been sent to OKG support staff. You can continue replying here whenever you need help.",
+      components: [],
+    });
   } catch (error) {
     console.error("[MODMAIL] Could not open conversation:", error);
-    await interaction.editReply({ content: "We couldn't open your support conversation right now. Please try again later.", components: [] });
+    await interaction.editReply({
+      content: "We couldn't open your support conversation right now. Please try again later.",
+      components: [],
+    });
   }
+
   return true;
 }
