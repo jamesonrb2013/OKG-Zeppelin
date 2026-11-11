@@ -292,7 +292,8 @@ export default {
       this.maxOpenTickets = Number(config.max_open_tickets || defaults.max_open_tickets);
       this.ticketPanelsJson = JSON.stringify(config.ticket_panels || defaults.ticket_panels, null, 2);
       this.modmailEnabled = config.modmail_enabled === true;
-      this.modmailInboxChannelId = config.modmail_inbox_channel_id || "";\n      this.modmailRoleId = config.modmail_role_id || "";
+      this.modmailInboxChannelId = config.modmail_inbox_channel_id || "";
+      this.modmailRoleId = config.modmail_role_id || "";
       this.error = "";
       this.success = "";
     },
@@ -303,7 +304,7 @@ export default {
       this.error = "";
       this.success = "";
       try {
-        if (this.modmailEnabled && (!/^\\d{17,20}$/.test(this.modmailInboxChannelId) || !/^\\d{17,20}$/.test(this.modmailRoleId))) {
+        if (this.modmailEnabled && (!/^\d{17,20}$/.test(this.modmailInboxChannelId) || !/^\d{17,20}$/.test(this.modmailRoleId))) {
           throw new Error("Enable Modmail only after entering a valid inbox channel ID and Modmail role ID.");
         }
         const response: any = await get("guilds/" + this.$route.params.guildId + "/config");
