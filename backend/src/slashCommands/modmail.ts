@@ -105,9 +105,9 @@ export async function handleModmailMessage(client: Client, message: Message): Pr
 }
 export async function handleModmailInteraction(client: Client, interaction: any): Promise<boolean> {
   if (!interaction.isButton() || !interaction.customId.startsWith(CONSENT)) return false;
-  const parts = interaction.customId.split(":");
-  if (parts[1] === "no") {
-    if (interaction.user.id !== parts[2]) { await interaction.reply({ content: "This confirmation belongs to another member.", ephemeral: true }); return true; }
+  const parts = interaction.customId.slice(CONSENT.length).split(":");
+  if (parts[0] === "no") {
+    if (interaction.user.id !== parts[1]) { await interaction.reply({ content: "This confirmation belongs to another member.", ephemeral: true }); return true; }
     await interaction.update({ content: "No problem. Your message was not sent to support staff.", components: [] });
     return true;
   }
