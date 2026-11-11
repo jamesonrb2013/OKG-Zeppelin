@@ -58,6 +58,7 @@ import { enableProfiling } from "./utils/easyProfiler.js";
 import { loadYamlSafely } from "./utils/loadYamlSafely.js";
 import { announceCommand, handleAnnounceCommand } from "./slashCommands/announce.js";
 import { giveawayCommand, handleGiveawayCommand, handleGiveawayButton, startGiveawayEndingLoop } from "./slashCommands/giveaways.js";
+import { handleModmailInteraction, handleModmailMessage } from "./slashCommands/modmail.js";
 import { unbelievaboatCommand, handleUnbelievaBoatCommand, handleUnbelievaBoatModal } from "./slashCommands/unbelievaboat.js";
 import { permissionLevelCommand, handlePermissionLevelCommand } from "./slashCommands/permissionLevel.js";
 import { apiRouterCommand, handleApiRouterCommand } from "./slashCommands/apiRouter.js";
@@ -671,7 +672,7 @@ connect().then(async () => {
     }
   });
 
-  client.on(Events.InteractionCreate, async (interaction) => {
+  client.on(Events.MessageCreate, async (message) => {\n    try { await handleModmailMessage(client, message); }\n    catch (error) { logger.error(`[MODMAIL] Message handler failed: ${error}`); }\n  });\n\n  client.on(Events.InteractionCreate, async (interaction) => {\n    if (await handleModmailInteraction(client, interaction)) return;
     if (interaction.isModalSubmit() && interaction.customId === "okg_unbelievaboat:connect") {
       await handleUnbelievaBoatModal(interaction, client);
       return;
