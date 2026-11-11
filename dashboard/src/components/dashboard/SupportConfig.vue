@@ -290,7 +290,8 @@ export default {
       this.panelDescription = config.panel_description || defaults.panel_description;
       this.welcomeMessage = config.welcome_message || defaults.welcome_message;
       this.maxOpenTickets = Number(config.max_open_tickets || defaults.max_open_tickets);
-      this.ticketPanelsJson = JSON.stringify(config.ticket_panels || defaults.ticket_panels, null, 2);\n      this.modmailEnabled = config.modmail_enabled === true;\n      this.modmailInboxChannelId = config.modmail_inbox_channel_id || "";\n      this.modmailRoleId = config.modmail_role_id || "";
+      this.ticketPanelsJson = JSON.stringify(config.ticket_panels || defaults.ticket_panels, null, 2);
+      this.modmailEnabled = config.modmail_enabled === true;\n      this.modmailInboxChannelId = config.modmail_inbox_channel_id || "";\n      this.modmailRoleId = config.modmail_role_id || "";
       this.error = "";
       this.success = "";
     },
