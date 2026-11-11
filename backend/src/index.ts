@@ -414,27 +414,6 @@ connect().then(async () => {
           try {
             const loaded = loadYamlSafely(row.config);
 
-            if (loaded.success_emoji || loaded.error_emoji) {
-              const deprecatedKeys = [] as string[];
-              // const exampleConfig = `plugins:
-  common:
-    config:
-      success_emoji: "👍"
-      error_emoji: "👎"`;
-
-              if (loaded.success_emoji) {
-                deprecatedKeys.push("success_emoji");
-              }
-
-              if (loaded.error_emoji) {
-                deprecatedKeys.push("error_emoji");
-              }
-
-              // logger.warn(`Deprecated config properties found in "${key}": ${deprecatedKeys.join(", ")}`);
-              // logger.warn(`You can now configure those emojis in the "common" plugin config
-${exampleConfig}`);
-            }
-
             // Remove deprecated properties some may still have in their config
             delete loaded.success_emoji;
             delete loaded.error_emoji;
@@ -804,8 +783,7 @@ ${exampleConfig}`);
     const topEntriesStr = entries
       .slice(0, 5)
       .map(([key, count]) => `${count}x ${key}`)
-      .join("
-");
+      .join("\n");
     // FIXME: Debug
     // tslint:disable-next-line:no-console
     console.log(`Top query entries in the past 5 minutes:
