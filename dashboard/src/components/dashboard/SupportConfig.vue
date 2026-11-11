@@ -308,8 +308,8 @@ export default {
       this.error = "";
       this.success = "";
       try {
-        if (this.modmailEnabled && (!/^\d{17,20}$/.test(this.modmailInboxChannelId) || !/^\d{17,20}$/.test(this.modmailRoleId))) {
-          throw new Error("Enable Modmail only after entering a valid inbox channel ID and Modmail role ID.");
+        if (this.modmailEnabled && (!/^\d{17,20}$/.test(this.modmailInboxChannelId) || !/^\d{17,20}$/.test(this.modmailRoleId) || !/^\d{17,20}$/.test(this.modmailAdminRoleId))) {
+          throw new Error("Enable Modmail only after entering valid inbox, staff role, and admin role IDs.");
         }
         const response: any = await get("guilds/" + this.$route.params.guildId + "/config");
         const root: any = jsYaml.load(response?.config || "") || {};
