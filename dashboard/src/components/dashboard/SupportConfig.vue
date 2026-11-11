@@ -97,6 +97,18 @@
         </div>
       </section>
 
+      <section class="rounded-xl border border-indigo-500/30 bg-gray-800 p-5 md:p-6 space-y-4">
+        <div class="flex items-center justify-between gap-4">
+          <div><h2 class="text-lg font-semibold">OKG Modmail · Direct-message support</h2><p class="text-sm text-gray-400 mt-1">Let members contact your team privately by DMing OKG Manager.</p></div>
+          <label class="flex items-center gap-3 cursor-pointer"><span class="text-sm">{{ modmailEnabled ? "Enabled" : "Disabled" }}</span><input v-model="modmailEnabled" type="checkbox" class="w-5 h-5 accent-indigo-500" /></label>
+        </div>
+        <div class="grid md:grid-cols-2 gap-4">
+          <label class="block"><span class="block text-sm font-medium mb-2">Modmail inbox channel ID</span><input v-model.trim="modmailInboxChannelId" class="w-full rounded-lg border border-gray-600 bg-gray-900 px-3 py-2.5" placeholder="Discord text channel ID" /><span class="text-xs text-gray-500 block mt-1">A private staff thread is created here for each member.</span></label>
+          <label class="block"><span class="block text-sm font-medium mb-2">Modmail role ID</span><input v-model.trim="modmailRoleId" class="w-full rounded-lg border border-gray-600 bg-gray-900 px-3 py-2.5" placeholder="Your Modmail role ID" /><span class="text-xs text-gray-500 block mt-1">Only members with this role can reply or close conversations.</span></label>
+        </div>
+        <div class="rounded-lg border border-gray-700 bg-gray-900 p-3 text-sm text-gray-300"><p class="font-medium text-white">Staff workflow</p><p class="mt-1">Reply directly in the member's thread. Replies are delivered by DM. Type <code class="text-indigo-200">!close</code> to close a conversation.</p></div>
+      </section>
+
       <section class="rounded-xl border border-gray-700 bg-gray-800 p-5 md:p-6 space-y-4">
         <div>
           <h2 class="text-lg font-semibold">Panel and ticket experience</h2>
