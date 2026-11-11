@@ -277,9 +277,16 @@ export async function handleModmailMessage(client: Client, incoming: Message): P
   if (!cfg) return;
 
   const member = await message.guild?.members.fetch(message.author.id).catch(() => null);
-  if (!member || (!member.roles.cache.has(cfg.roleId) && !member.roles.cache.has(cfg.adminRoleId))) return;
+  if (!member) return;
+  const isStaff = member.roles.cache.has(cfg.roleId);
+  const isAdmin = member.roles.cache.has(cfg.adminRoleId);
+  if (!isStaff && !isAdmin) return;
 
   if (message.content.trim().toLowerCase() === "!close") {
+    if (!isAdmin) {
+      await message.reply("Only the configured Modmail admin role can close conversations.");
+      return;
+    }
     await thread.send("🔒 Conversation closed by " + safeText(message.author.tag, 100) + ".");
     const user = await client.users.fetch(userId).catch(() => null);
     await user
