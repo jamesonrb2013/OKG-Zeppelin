@@ -79,17 +79,17 @@ async function findThread(channel: TextChannel, userId: string): Promise<ThreadC
   const name = "modmail-" + userId;
   const active = await channel.threads.fetchActive();
   const activeThread = active.threads.find((item) => item.name === name);
-  if (activeThread) return activeThread;
+  if (activeThread) return activeThread as ThreadChannel;
 
   const archived = await channel.threads.fetchArchived({ type: "public", limit: 100 }).catch(() => null);
-  const archivedThread = archived?.threads.find((item) => item.name === name);
+  const archivedThread = archived?.threads.find((item) => item.name === name) ?? null;
   if (!archivedThread) return null;
 
   if (archivedThread.archived) {
     await archivedThread.setArchived(false);
   }
 
-  return archivedThread;
+  return archivedThread as ThreadChannel;
 }
 
 async function sendConsent(message: Message, cfg: ModmailConfig): Promise<void> {
@@ -265,7 +265,7 @@ export async function handleModmailInteraction(client: Client, interaction: any)
 
   const parts = interaction.customId.slice(CONSENT.length).split(":");
   const isDecline = parts[0] === "no";
-  const userId = isDecline ? parts[1] : parts[1];
+  const userId = parts[1];
   if (interaction.user.id !== userId) {
     await interaction.reply({
       content: "This confirmation belongs to another member.",
