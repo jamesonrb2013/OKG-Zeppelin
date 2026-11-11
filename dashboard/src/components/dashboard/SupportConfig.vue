@@ -251,7 +251,10 @@ export default {
       panelDescription: defaults.panel_description,
       welcomeMessage: defaults.welcome_message,
       maxOpenTickets: defaults.max_open_tickets,
-      ticketPanelsJson: "[]",\n      modmailEnabled: false,\n      modmailInboxChannelId: "",\n      modmailRoleId: "",
+      ticketPanelsJson: "[]",
+      modmailEnabled: false,
+      modmailInboxChannelId: "",
+      modmailRoleId: "",
       staffTools: [
         { command: "/ticket add", description: "Give another member access to the ticket." },
         { command: "/ticket remove", description: "Remove a participant (not the ticket owner)." },
@@ -335,7 +338,10 @@ export default {
             panel_title: this.panelTitle || defaults.panel_title,
             panel_description: this.panelDescription || defaults.panel_description,
             welcome_message: this.welcomeMessage || defaults.welcome_message,
-            max_open_tickets: Math.max(1, Math.min(10, Number(this.maxOpenTickets) || 1)),\n            modmail_enabled: this.modmailEnabled,\n            modmail_inbox_channel_id: this.modmailInboxChannelId || null,\n            modmail_role_id: this.modmailRoleId || null,
+            max_open_tickets: Math.max(1, Math.min(10, Number(this.maxOpenTickets) || 1)),
+            modmail_enabled: this.modmailEnabled,
+            modmail_inbox_channel_id: this.modmailInboxChannelId || null,
+            modmail_role_id: this.modmailRoleId || null,
           },
         };
         await this.$store.dispatch("guilds/saveConfig", {
