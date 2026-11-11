@@ -20,8 +20,8 @@ export const zSupportConfig = z.strictObject({
     ),
   max_open_tickets: z.number().int().min(1).max(10).default(1),
   modmail_enabled: z.boolean().default(false),
-  modmail_inbox_channel_id: z.string().regex(/^\\d{17,20}$/).nullable().default(null),
-  modmail_role_id: z.string().regex(/^\\d{17,20}$/).nullable().default(null),
+  modmail_inbox_channel_id: z.string().regex(/^\d{17,20}$/).nullable().default(null),
+  modmail_role_id: z.string().regex(/^\d{17,20}$/).nullable().default(null),
   ticket_panels: z.array(z.object({
     id: z.string().regex(/^[a-z0-9_-]{1,24}$/),
     title: z.string().min(1).max(256),
