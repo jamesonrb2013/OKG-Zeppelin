@@ -17,7 +17,7 @@ async function configured(): Promise<ModmailConfig[]> {
       const cfg = support?.config || {};
       if (support?.enabled === false || cfg.modmail_enabled !== true) continue;
       const guildId = row.key.slice(6);
-      if (!/^\\d{17,20}$/.test(guildId) || !/^\\d{17,20}$/.test(cfg.modmail_inbox_channel_id || "") || !/^\\d{17,20}$/.test(cfg.modmail_role_id || "")) continue;
+      if (!/^\d{17,20}$/.test(guildId) || !/^\d{17,20}$/.test(cfg.modmail_inbox_channel_id || "") || !/^\d{17,20}$/.test(cfg.modmail_role_id || "")) continue;
       found.push({ guildId, inboxChannelId: cfg.modmail_inbox_channel_id, roleId: cfg.modmail_role_id });
     } catch (error) { console.warn("[MODMAIL] Could not read guild config:", error); }
   }
@@ -43,7 +43,7 @@ async function sendConsent(message: Message, cfg: ModmailConfig): Promise<void> 
   );
   await message.reply({ content: "**Would you like to send this message to OKG support staff?**\n\n> " + content, components: [row], allowedMentions: { parse: [] } });
 }
-async function openConversation(client: Client, userId: string, guildId: string): Promise<void> {
+async function openConversation(client: Client, userId: string, guildId: string, firstMessage: string): Promise<void> {
   const cfg = (await configured()).find((item) => item.guildId === guildId);
   if (!cfg) throw new Error("Modmail is not configured.");
   const inbox = await client.channels.fetch(cfg.inboxChannelId);
@@ -60,7 +60,7 @@ async function openConversation(client: Client, userId: string, guildId: string)
     allowedMentions: { roles: [cfg.roleId], users: [] },
   });
   const thread = await starter.startThread({ name: "modmail-" + userId, autoArchiveDuration: 10080, reason: "OKG Modmail conversation" });
-  await thread.send({ content: "Conversation opened. Staff replies in this thread are delivered to the member by DM.", allowedMentions: { parse: [] } });
+  await thread.send({ content: "**Original message from member:**\\n" + safeText(firstMessage || "[No text content]") + "\\n\\nConversation opened. Staff replies in this thread are delivered to the member by DM.", allowedMentions: { parse: [] } });
 }
 export async function handleModmailMessage(client: Client, message: Message): Promise<void> {
   if (message.author.bot || message.webhookId) return;
@@ -82,7 +82,7 @@ export async function handleModmailMessage(client: Client, message: Message): Pr
   const thread = message.channel as ThreadChannel;
   if (!thread.name.startsWith("modmail-")) return;
   const userId = thread.name.slice(7);
-  if (!/^\\d{17,20}$/.test(userId)) return;
+  if (!/^\d{17,20}$/.test(userId)) return;
   const cfg = (await configured()).find((item) => item.guildId === message.guildId);
   if (!cfg) return;
   const member = await message.guild?.members.fetch(message.author.id).catch(() => null);
@@ -115,7 +115,7 @@ export async function handleModmailInteraction(client: Client, interaction: any)
   if (interaction.user.id !== userId) { await interaction.reply({ content: "This confirmation belongs to another member.", ephemeral: true }); return true; }
   await interaction.deferUpdate();
   try {
-    await openConversation(client, userId, guildId);
+    const quoted = String(interaction.message?.content || "");\n    const firstMessage = quoted.includes("> ") ? quoted.slice(quoted.lastIndexOf("> ") + 2) : "";\n    await openConversation(client, userId, guildId, firstMessage);
     await interaction.editReply({ content: "Your message has been sent to OKG support staff. You can continue replying here whenever you need help.", components: [] });
   } catch (error) {
     console.error("[MODMAIL] Could not open conversation:", error);
