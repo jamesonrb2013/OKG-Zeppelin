@@ -111,7 +111,7 @@ export async function handleModmailInteraction(client: Client, interaction: any)
     await interaction.update({ content: "No problem. Your message was not sent to support staff.", components: [] });
     return true;
   }
-  const guildId = parts[1], userId = parts[2];
+  const guildId = parts[0], userId = parts[1];
   if (interaction.user.id !== userId) { await interaction.reply({ content: "This confirmation belongs to another member.", ephemeral: true }); return true; }
   await interaction.deferUpdate();
   try {
