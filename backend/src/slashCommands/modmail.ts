@@ -60,7 +60,7 @@ async function openConversation(client: Client, userId: string, guildId: string,
     allowedMentions: { roles: [cfg.roleId], users: [] },
   });
   const thread = await starter.startThread({ name: "modmail-" + userId, autoArchiveDuration: 10080, reason: "OKG Modmail conversation" });
-  await thread.send({ content: "**Original message from member:**\\n" + safeText(firstMessage || "[No text content]") + "\\n\\nConversation opened. Staff replies in this thread are delivered to the member by DM.", allowedMentions: { parse: [] } });
+  await thread.send({ content: "**Original message from member:**\n" + safeText(firstMessage || "[No text content]") + "\n\nConversation opened. Staff replies in this thread are delivered to the member by DM.", allowedMentions: { parse: [] } });
 }
 export async function handleModmailMessage(client: Client, message: Message): Promise<void> {
   if (message.author.bot || message.webhookId) return;
@@ -115,7 +115,9 @@ export async function handleModmailInteraction(client: Client, interaction: any)
   if (interaction.user.id !== userId) { await interaction.reply({ content: "This confirmation belongs to another member.", ephemeral: true }); return true; }
   await interaction.deferUpdate();
   try {
-    const quoted = String(interaction.message?.content || "");\n    const firstMessage = quoted.includes("> ") ? quoted.slice(quoted.lastIndexOf("> ") + 2) : "";\n    await openConversation(client, userId, guildId, firstMessage);
+    const quoted = String(interaction.message?.content || "");
+    const firstMessage = quoted.includes("> ") ? quoted.slice(quoted.lastIndexOf("> ") + 2) : "";
+    await openConversation(client, userId, guildId, firstMessage);
     await interaction.editReply({ content: "Your message has been sent to OKG support staff. You can continue replying here whenever you need help.", components: [] });
   } catch (error) {
     console.error("[MODMAIL] Could not open conversation:", error);
