@@ -9,6 +9,7 @@ import {
 } from "discord.js";
 import { Configs } from "../data/Configs.js";
 import { loadYamlSafely } from "../utils/loadYamlSafely.js";
+import { CORE_GUILD_ID } from "../env.js";
 
 const CONSENT = "okg_modmail:consent:";
 const MESSAGE_START = "\n\n**Your message:**\n";
@@ -185,8 +186,8 @@ export async function handleModmailMessage(client: Client, incoming: Message): P
     const all = await configured();
     if (!all.length) return;
 
-    // This bot installation currently serves the primary OKG server.
-    const cfg = all[0];
+    // Always route incoming DMs to OKG's primary server when it has Modmail enabled.
+    const cfg = all.find((item) => item.guildId === CORE_GUILD_ID) || all[0];
     const inbox = await client.channels.fetch(cfg.inboxChannelId).catch(() => null);
     if (!(inbox instanceof TextChannel)) {
       await message.reply("OKG Support is temporarily unavailable. Please try again later.").catch(() => undefined);
