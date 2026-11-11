@@ -4,6 +4,7 @@ import {
   ButtonStyle,
   Client,
   Message,
+  StringSelectMenuBuilder,
   TextChannel,
   ThreadChannel,
 } from "discord.js";
@@ -20,6 +21,7 @@ type ModmailConfig = {
   guildId: string;
   inboxChannelId: string;
   roleId: string;
+  adminRoleId: string;
 };
 
 async function configured(): Promise<ModmailConfig[]> {
@@ -37,6 +39,7 @@ async function configured(): Promise<ModmailConfig[]> {
       const guildId = row.key.slice(6);
       const inboxChannelId = String(cfg.modmail_inbox_channel_id || "");
       const roleId = String(cfg.modmail_role_id || "");
+      const adminRoleId = String(cfg.modmail_admin_role_id || "");
 
       if (
         !/^\d{17,20}$/.test(guildId) ||
@@ -47,7 +50,7 @@ async function configured(): Promise<ModmailConfig[]> {
         continue;
       }
 
-      found.push({ guildId, inboxChannelId, roleId });
+      found.push({ guildId, inboxChannelId, roleId, adminRoleId });
     } catch (error) {
       console.warn("[MODMAIL] Could not read guild config:", error);
     }
@@ -93,28 +96,56 @@ async function findThread(channel: TextChannel, userId: string): Promise<ThreadC
   return archivedThread as ThreadChannel;
 }
 
-async function sendConsent(message: Message, cfg: ModmailConfig): Promise<void> {
-  const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+function consentButtons(guildId: string, userId: string) {
+  return new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
-      .setCustomId(CONSENT + cfg.guildId + ":" + message.author.id)
+      .setCustomId(CONSENT + guildId + ":" + userId)
       .setLabel("Yes, contact support")
       .setStyle(ButtonStyle.Success),
     new ButtonBuilder()
-      .setCustomId(CONSENT + "no:" + message.author.id)
+      .setCustomId(CONSENT + "no:" + userId)
       .setLabel("No")
       .setStyle(ButtonStyle.Secondary),
   );
+}
 
-  const prompt =
-    "**Would you like to send this message to OKG support staff?**" +
+function consentPrompt(messageText: string): string {
+  return (
+    "**Would you like to send this message to support staff?**" +
     MESSAGE_START +
-    originalMessageText(message) +
+    messageText +
     MESSAGE_END +
-    "\n\nChoose **Yes** to send it to the support team, or **No** to keep it private.";
+    "\n\nChoose **Yes** to send it to the support team, or **No** to keep it private."
+  ).slice(0, 2000);
+}
+
+async function sendConsent(message: Message, cfg: ModmailConfig): Promise<void> {
+  await message.reply({
+    content: consentPrompt(originalMessageText(message)),
+    components: [consentButtons(cfg.guildId, message.author.id)],
+    allowedMentions: { parse: [] },
+  });
+}
+
+async function sendServerChoice(message: Message, choices: Array<{ cfg: ModmailConfig; name: string }>): Promise<void> {
+  const menu = new StringSelectMenuBuilder()
+    .setCustomId("okg_modmail:server:" + message.author.id)
+    .setPlaceholder("Choose which server should receive your message")
+    .addOptions(
+      choices.slice(0, 25).map(({ cfg, name }) => ({
+        label: name.slice(0, 100),
+        value: cfg.guildId,
+        description: "Send this message to this server's support team",
+      })),
+    );
 
   await message.reply({
-    content: prompt.slice(0, 2000),
-    components: [row],
+    content:
+      "**Which server would you like to contact?**" +
+      MESSAGE_START +
+      originalMessageText(message) +
+      MESSAGE_END,
+    components: [new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(menu)],
     allowedMentions: { parse: [] },
   });
 }
@@ -186,8 +217,23 @@ export async function handleModmailMessage(client: Client, incoming: Message): P
     const all = await configured();
     if (!all.length) return;
 
-    // Always route incoming DMs to OKG's primary server when it has Modmail enabled.
-    const cfg = all.find((item) => item.guildId === CORE_GUILD_ID) || all[0];
+    // A DM is global to the bot, so route it only to a server the member actually belongs to.
+    const choices: Array<{ cfg: ModmailConfig; name: string }> = [];
+    for (const cfg of all) {
+      const guild = client.guilds.cache.get(cfg.guildId) || await client.guilds.fetch(cfg.guildId).catch(() => null);
+      if (!guild) continue;
+      const member = await guild.members.fetch(message.author.id).catch(() => null);
+      if (member) choices.push({ cfg, name: guild.name });
+    }
+    if (!choices.length) {
+      await message.reply("OKG Support is not enabled in a server you share with this bot.").catch(() => undefined);
+      return;
+    }
+    if (choices.length > 1) {
+      await sendServerChoice(message, choices);
+      return;
+    }
+    const cfg = choices[0].cfg;
     const inbox = await client.channels.fetch(cfg.inboxChannelId).catch(() => null);
     if (!(inbox instanceof TextChannel)) {
       await message.reply("OKG Support is temporarily unavailable. Please try again later.").catch(() => undefined);
@@ -229,7 +275,7 @@ export async function handleModmailMessage(client: Client, incoming: Message): P
   if (!cfg) return;
 
   const member = await message.guild?.members.fetch(message.author.id).catch(() => null);
-  if (!member?.roles.cache.has(cfg.roleId)) return;
+  if (!member || (!member.roles.cache.has(cfg.roleId) && !member.roles.cache.has(cfg.adminRoleId))) return;
 
   if (message.content.trim().toLowerCase() === "!close") {
     await thread.send("🔒 Conversation closed by " + safeText(message.author.tag, 100) + ".");
@@ -262,6 +308,33 @@ export async function handleModmailMessage(client: Client, incoming: Message): P
 }
 
 export async function handleModmailInteraction(client: Client, interaction: any): Promise<boolean> {
+  if (interaction.isStringSelectMenu() && interaction.customId.startsWith("okg_modmail:server:")) {
+    const userId = interaction.customId.slice("okg_modmail:server:".length);
+    if (interaction.user.id !== userId) {
+      await interaction.reply({ content: "This server selection belongs to another member.", ephemeral: true });
+      return true;
+    }
+    const guildId = interaction.values[0];
+    const cfg = (await configured()).find((item) => item.guildId === guildId);
+    const guild = cfg ? (client.guilds.cache.get(guildId) || await client.guilds.fetch(guildId).catch(() => null)) : null;
+    const member = guild ? await guild.members.fetch(userId).catch(() => null) : null;
+    if (!cfg || !member) {
+      await interaction.update({ content: "That support destination is no longer available. Please DM OKG Manager again.", components: [] });
+      return true;
+    }
+    const quoted = String(interaction.message?.content || "");
+    const start = quoted.indexOf(MESSAGE_START);
+    const end = quoted.indexOf(MESSAGE_END, start + MESSAGE_START.length);
+    const firstMessage = start >= 0
+      ? quoted.slice(start + MESSAGE_START.length, end >= 0 ? end : undefined).trim()
+      : "[Original message unavailable]";
+    await interaction.update({
+      content: consentPrompt(firstMessage),
+      components: [consentButtons(guildId, userId)],
+    });
+    return true;
+  }
+
   if (!interaction.isButton() || !interaction.customId.startsWith(CONSENT)) return false;
 
   const parts = interaction.customId.slice(CONSENT.length).split(":");
