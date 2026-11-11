@@ -322,12 +322,19 @@ connect().then(async () => {
             const alertTextChannel = alertChannel as TextChannel;
             await alertTextChannel.send({
               content:
-                `🚨 **OKG Manager unauthorized-server alert**\n` +
-                `The bot was added to a server that is not authorized and is leaving now.\n\n` +
-                `**Server:** ${guild.name}\n` +
-                `**Server ID:** ${guild.id}\n` +
-                `**Owner:** <@${guild.ownerId}> (${guild.ownerId})\n` +
-                `**Members:** ${guild.memberCount ?? "unknown"}\n` +
+                `🚨 **OKG Manager unauthorized-server alert**
+` +
+                `The bot was added to a server that is not authorized and is leaving now.
+
+` +
+                `**Server:** ${guild.name}
+` +
+                `**Server ID:** ${guild.id}
+` +
+                `**Owner:** <@${guild.ownerId}> (${guild.ownerId})
+` +
+                `**Members:** ${guild.memberCount ?? "unknown"}
+` +
                 `<@&${alertRoleId}> please review this event.`,
               allowedMentions: { roles: [alertRoleId], users: [], parse: [] },
             });
@@ -409,7 +416,11 @@ connect().then(async () => {
 
             if (loaded.success_emoji || loaded.error_emoji) {
               const deprecatedKeys = [] as string[];
-              // const exampleConfig = `plugins:\n  common:\n    config:\n      success_emoji: "👍"\n      error_emoji: "👎"`;
+              // const exampleConfig = `plugins:
+  common:
+    config:
+      success_emoji: "👍"
+      error_emoji: "👎"`;
 
               if (loaded.success_emoji) {
                 deprecatedKeys.push("success_emoji");
@@ -420,7 +431,8 @@ connect().then(async () => {
               }
 
               // logger.warn(`Deprecated config properties found in "${key}": ${deprecatedKeys.join(", ")}`);
-              // logger.warn(`You can now configure those emojis in the "common" plugin config\n${exampleConfig}`);
+              // logger.warn(`You can now configure those emojis in the "common" plugin config
+${exampleConfig}`);
             }
 
             // Remove deprecated properties some may still have in their config
@@ -672,7 +684,13 @@ connect().then(async () => {
     }
   });
 
-  client.on(Events.MessageCreate, async (message) => {\n    try { await handleModmailMessage(client, message); }\n    catch (error) { logger.error(`[MODMAIL] Message handler failed: ${error}`); }\n  });\n\n  client.on(Events.InteractionCreate, async (interaction) => {\n    if (await handleModmailInteraction(client, interaction)) return;
+  client.on(Events.MessageCreate, async (message) => {
+    try { await handleModmailMessage(client, message); }
+    catch (error) { logger.error(`[MODMAIL] Message handler failed: ${error}`); }
+  });
+
+  client.on(Events.InteractionCreate, async (interaction) => {
+    if (await handleModmailInteraction(client, interaction)) return;
     if (interaction.isModalSubmit() && interaction.customId === "okg_unbelievaboat:connect") {
       await handleUnbelievaBoatModal(interaction, client);
       return;
@@ -786,10 +804,12 @@ connect().then(async () => {
     const topEntriesStr = entries
       .slice(0, 5)
       .map(([key, count]) => `${count}x ${key}`)
-      .join("\n");
+      .join("
+");
     // FIXME: Debug
     // tslint:disable-next-line:no-console
-    console.log(`Top query entries in the past 5 minutes:\n${topEntriesStr}`);
+    console.log(`Top query entries in the past 5 minutes:
+${topEntriesStr}`);
   }, 5 * MINUTES);
 
   bot.initialize();
