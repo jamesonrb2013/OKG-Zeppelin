@@ -1,3 +1,16 @@
+## 1.3.21
+
+### Fixed
+- Always prompt members to choose a destination server when DMing OKG Manager, including when only one eligible server exists.
+- Acknowledge server-selection interactions immediately before fetching guild/member data, preventing Discord's three-second interaction timeout.
+- Reply clearly when Modmail is not configured, and log incoming DM handling for production diagnosis.
+
+### Changed
+- Aligned root, backend, and dashboard package versions at 1.3.21.
+
+### Credits
+- Updated by Jeffery Spinnel.
+
 ## 1.3.20
 
 ### Added
