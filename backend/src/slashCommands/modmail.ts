@@ -120,14 +120,6 @@ function consentPrompt(messageText: string): string {
   ).slice(0, 2000);
 }
 
-async function sendConsent(message: Message, cfg: ModmailConfig): Promise<void> {
-  await message.reply({
-    content: consentPrompt(originalMessageText(message)),
-    components: [consentButtons(cfg.guildId, message.author.id)],
-    allowedMentions: { parse: [] },
-  });
-}
-
 async function sendServerChoice(message: Message, choices: Array<{ cfg: ModmailConfig; name: string }>): Promise<void> {
   if (choices.length > 25) {
     console.warn("[MODMAIL] More than 25 eligible servers found; Discord select menus support at most 25 options.");
