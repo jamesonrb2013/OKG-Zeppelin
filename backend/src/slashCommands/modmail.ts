@@ -545,6 +545,11 @@ export async function handleModmailCommand(interaction: ChatInputCommandInteract
   const action = interaction.options.getSubcommand();
   const user = interaction.options.getUser("user", true);
   const message = interaction.options.getString("message", true);
+  const targetMember = await interaction.guild!.members.fetch(user.id).catch(() => null);
+  if (!targetMember) {
+    await interaction.reply({ embeds: [brandEmbed("Member not found", "Choose a member of this server.", DANGER)], ephemeral: true });
+    return;
+  }
   await interaction.deferReply({ ephemeral: true });
   try {
     if (action === "dm") {
