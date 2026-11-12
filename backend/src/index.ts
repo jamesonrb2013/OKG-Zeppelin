@@ -59,6 +59,7 @@ import { loadYamlSafely } from "./utils/loadYamlSafely.js";
 import { announceCommand, handleAnnounceCommand } from "./slashCommands/announce.js";
 import { giveawayCommand, handleGiveawayCommand, handleGiveawayButton, startGiveawayEndingLoop } from "./slashCommands/giveaways.js";
 import { handleModmailInteraction, handleModmailMessage } from "./slashCommands/modmail.js";
+import { modmailCommand, handleModmailSlashCommand } from "./slashCommands/modmailCommand.js";
 import { unbelievaboatCommand, handleUnbelievaBoatCommand, handleUnbelievaBoatModal } from "./slashCommands/unbelievaboat.js";
 import { permissionLevelCommand, handlePermissionLevelCommand } from "./slashCommands/permissionLevel.js";
 import { apiRouterCommand, handleApiRouterCommand } from "./slashCommands/apiRouter.js";
@@ -592,6 +593,7 @@ connect().then(async () => {
         updatesSetupCommand,
         updatesConfigCommand,
         apiRouterCommand,
+        modmailCommand,
       ];
       const obsoleteAICommandNames = new Set(["ai-setup", "ai-config", "ai-admin", "ai-status"]);
 
@@ -681,6 +683,11 @@ connect().then(async () => {
     }
 
     if (!interaction.isChatInputCommand()) {
+      return;
+    }
+
+    if (interaction.commandName === "modmail") {
+      await handleModmailSlashCommand(interaction, client);
       return;
     }
 
