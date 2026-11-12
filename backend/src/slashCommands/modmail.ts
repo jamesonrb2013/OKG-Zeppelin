@@ -316,6 +316,34 @@ export async function handleModmailInteraction(client: Client, interaction: any)
     const firstMessage = start >= 0
       ? quoted.slice(start + MESSAGE_START.length, end >= 0 ? end : undefined).trim()
       : "[Original message unavailable]";
+
+    // Existing conversations should receive follow-ups immediately after the
+    // member selects the destination; consent is required only to open a new
+    // support conversation.
+    const inbox = await client.channels.fetch(cfg.inboxChannelId).catch(() => null);
+    if (!(inbox instanceof TextChannel)) {
+      await interaction.editReply({
+        content: "That server's support inbox is unavailable right now. Please try again later.",
+        components: [],
+      });
+      return true;
+    }
+    const existingThread = await findThread(inbox, userId).catch((error) => {
+      console.error("[MODMAIL] Could not find the member's existing thread:", error);
+      return null;
+    });
+    if (existingThread) {
+      await existingThread.send({
+        content: "**" + safeText(interaction.user.tag, 100) + ":**\\n" + safeText(firstMessage),
+        allowedMentions: { parse: [] },
+      });
+      await interaction.editReply({
+        content: "Your message has been delivered to your existing support conversation. Staff will reply here by DM.",
+        components: [],
+      });
+      return true;
+    }
+
     await interaction.editReply({
       content: consentPrompt(firstMessage),
       components: [consentButtons(guildId, userId)],
