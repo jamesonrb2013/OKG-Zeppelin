@@ -1,3 +1,22 @@
+## 1.3.22
+
+### Added
+- Rebuilt Modmail member and staff messages as branded OKG embeds with consistent status, delivery, and closure feedback.
+- Added multiple independent open Modmail conversations per member and server, with a member-facing conversation picker and a configurable per-server open-conversation limit.
+- Added staff slash commands: `/modmail dm` sends a branded direct message through the bot, and `/modmail open` creates a new conversation and notifies the member.
+- Added an administrator-only close button to each staff conversation thread.
+
+### Reliability and permissions
+- Revalidate server membership and conversation ownership when members use selection menus.
+- Enforce the configured staff/admin roles for Modmail staff commands and conversation closure.
+- Keep archived conversations out of the open-conversation limit and active conversation picker.
+
+### Configuration
+- Added `plugins.support.config.modmail_max_open_conversations`; defaults to 5 and supports 1–20 open conversations per member per server.
+
+### Credits
+- Updated by Jeffery Spinnel.
+
 ## 1.3.21
 
 ### Fixed
