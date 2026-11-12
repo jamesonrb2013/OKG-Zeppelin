@@ -1,3 +1,24 @@
+## 1.3.20
+
+### Added
+- Added per-server Modmail support with member consent, server selection, private staff inbox threads, staff notifications, and two-way member/staff messaging.
+- Added Modmail follow-up forwarding, attachment forwarding, and conversation closure notices.
+
+### Permissions and configuration
+- Added dashboard settings for enabling Modmail and selecting the inbox, staff role, and admin role for each server.
+- Restricted conversation closure to configured Modmail administrators while allowing staff to reply.
+- Prevented @everyone and @here mentions in forwarded member messages.
+
+### Reliability
+- Added active and archived inbox-thread lookup to reconnect member conversations after bot restarts.
+- Added documentation for staff-only inbox permissions and Modmail setup.
+
+### Changed
+- Aligned root, backend, and dashboard package versions at 1.3.20.
+
+### Credits
+- Updated by Jeffery Spinnel.
+
 ## 1.3.19
 
 ### Fixed
