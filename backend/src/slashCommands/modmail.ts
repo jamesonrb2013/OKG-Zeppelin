@@ -246,34 +246,6 @@ export async function handleModmailMessage(client: Client, incoming: Message): P
     await sendServerChoice(message, choices);
     return;
 
-    const cfg = choices[0].cfg;
-    const inbox = await client.channels.fetch(cfg.inboxChannelId).catch(() => null);
-    if (!(inbox instanceof TextChannel)) {
-      await message.reply("OKG Support is temporarily unavailable. Please try again later.").catch(() => undefined);
-      return;
-    }
-
-    const thread = await findThread(inbox, message.author.id).catch((error) => {
-      console.error("[MODMAIL] Could not find the member's thread:", error);
-      return null;
-    });
-
-    if (thread) {
-      await thread.send({
-        content:
-          "**" +
-          safeText(message.author.tag, 100) +
-          ":**\n" +
-          originalMessageText(message),
-        allowedMentions: { parse: [] },
-      });
-      return;
-    }
-
-    if (message.content.trim().length || message.attachments.size) {
-      await sendConsent(message, cfg);
-    }
-    return;
   }
 
   if (!message.channel.isThread()) return;
