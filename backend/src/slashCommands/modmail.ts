@@ -515,7 +515,7 @@ export async function handleModmailInteraction(client: Client, interaction: any)
       return true;
     }
     const channel = await client.channels.fetch(threadId).catch(() => null);
-    if (!(channel instanceof ThreadChannel) || channel.name !== "modmail-" + userId + "-" + channel.name.split("-").pop()) {
+    if (!(channel instanceof ThreadChannel) || channel.guildId !== guildId || !channel.name.startsWith("modmail-" + userId + "-")) {
       await interaction.editReply({ embeds: [brandEmbed("Conversation unavailable", "This conversation could not be found.", DANGER)] });
       return true;
     }
