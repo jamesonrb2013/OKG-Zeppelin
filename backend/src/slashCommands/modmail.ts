@@ -32,7 +32,7 @@ export type ModmailConfig = {
 function brandEmbed(title: string, description: string, color = COLOR): EmbedBuilder {
   return new EmbedBuilder()
     .setColor(color)
-    .setAuthor({ name: "ONE KID GAMING  •  OKG SUPPORT", iconURL: "https://cdn.discordapp.com/emojis/1198873274542809118.webp" })
+    .setAuthor({ name: "ONE KID GAMING  •  OKG SUPPORT" })
     .setTitle(title.slice(0, 256))
     .setDescription(description.slice(0, 4000))
     .setFooter({ text: "OKG Manager • Modmail" })
@@ -421,7 +421,8 @@ export async function handleModmailInteraction(client: Client, interaction: any)
       await interaction.editReply({ embeds: [brandEmbed("Inbox unavailable", "This server's support inbox is unavailable right now. Please try again later.", DANGER)], components: [] });
       return true;
     }
-    const firstMessage = String(interaction.message?.embeds?.[0]?.description || "");
+    const serverDescription = String(interaction.message?.embeds?.[0]?.description || "");
+    const firstMessage = serverDescription.split("**Your message**\\n").slice(1).join("**Your message**\\n") || "*(No message content.)*";
     await sendConversationPicker(interaction, cfg, userId, firstMessage, inbox);
     return true;
   }
@@ -437,7 +438,9 @@ export async function handleModmailInteraction(client: Client, interaction: any)
     await interaction.deferUpdate();
     const cfg = await getModmailConfig(guildId);
     const inbox = cfg ? await getInbox(client, cfg).catch(() => null) : null;
-    if (!cfg || !inbox || !(await (client.guilds.cache.get(guildId) || client.guilds.fetch(guildId).catch(() => null))?.members.fetch(userId).catch(() => null))) {
+    const guild = cfg ? (client.guilds.cache.get(guildId) || await client.guilds.fetch(guildId).catch(() => null)) : null;
+    const guildMember = guild ? await guild.members.fetch(userId).catch(() => null) : null;
+    if (!cfg || !inbox || !guildMember) {
       await interaction.editReply({ embeds: [brandEmbed("Support unavailable", "That support destination is no longer available.", DANGER)], components: [] });
       return true;
     }
