@@ -4,10 +4,12 @@ import { zBoundedCharacters, zBoundedRecord } from "../../utils.js";
 import { CommonPlugin } from "../Common/CommonPlugin.js";
 import { zAddRoleAction } from "./actions/addRoleAction.js";
 import { zCreateCaseAction } from "./actions/createCaseAction.js";
+import { zDirectMessageAction } from "./actions/directMessageAction.js";
 import { zMakeRoleMentionableAction } from "./actions/makeRoleMentionableAction.js";
 import { zMakeRoleUnmentionableAction } from "./actions/makeRoleUnmentionableAction.js";
 import { zMessageAction } from "./actions/messageAction.js";
 import { zMoveToVoiceChannelAction } from "./actions/moveToVoiceChannelAction.js";
+import { zRemoveRoleAction } from "./actions/removeRoleAction.js";
 import { zSetChannelPermissionOverridesAction } from "./actions/setChannelPermissionOverrides.js";
 
 const zCommandTrigger = z.strictObject({
@@ -21,9 +23,11 @@ const zAnyTrigger = zCommandTrigger; // TODO: Make into a union once we have mor
 
 const zAnyAction = z.union([
   zAddRoleAction,
+  zRemoveRoleAction,
   zCreateCaseAction,
   zMoveToVoiceChannelAction,
   zMessageAction,
+  zDirectMessageAction,
   zMakeRoleMentionableAction,
   zMakeRoleUnmentionableAction,
   zSetChannelPermissionOverridesAction,
