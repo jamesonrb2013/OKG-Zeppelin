@@ -422,7 +422,7 @@ export async function handleModmailInteraction(client: Client, interaction: any)
       return true;
     }
     const serverDescription = String(interaction.message?.embeds?.[0]?.description || "");
-    const firstMessage = serverDescription.split("**Your message**\\n").slice(1).join("**Your message**\\n") || "*(No message content.)*";
+    const firstMessage = serverDescription.split("**Your message**\n").slice(1).join("**Your message**\n") || "*(No message content.)*";
     await sendConversationPicker(interaction, cfg, userId, firstMessage, inbox);
     return true;
   }
