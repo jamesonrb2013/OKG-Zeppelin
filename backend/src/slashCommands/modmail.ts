@@ -32,8 +32,9 @@ async function configured(): Promise<ModmailConfig[]> {
 
     try {
       const root: any = loadYamlSafely(row.config);
-      const cfg = root?.plugins?.support?.config || {};
-      if (cfg.modmail_enabled !== true) continue;
+      const supportPlugin = root?.plugins?.support || {};
+      const cfg = supportPlugin.config || {};
+      if (supportPlugin.enabled === false || cfg.modmail_enabled !== true) continue;
 
       const guildId = row.key.slice(6);
       const inboxChannelId = String(cfg.modmail_inbox_channel_id || "");
@@ -128,6 +129,9 @@ async function sendConsent(message: Message, cfg: ModmailConfig): Promise<void> 
 }
 
 async function sendServerChoice(message: Message, choices: Array<{ cfg: ModmailConfig; name: string }>): Promise<void> {
+  if (choices.length > 25) {
+    console.warn("[MODMAIL] More than 25 eligible servers found; Discord select menus support at most 25 options.");
+  }
   const menu = new StringSelectMenuBuilder()
     .setCustomId("okg_modmail:server:" + message.author.id)
     .setPlaceholder("Choose which server should receive your message")
@@ -216,8 +220,14 @@ export async function handleModmailMessage(client: Client, incoming: Message): P
   if (message.author.bot || message.webhookId) return;
 
   if (!message.guildId) {
+    console.info("[MODMAIL] Received member DM", message.author.id);
     const all = await configured();
-    if (!all.length) return;
+    if (!all.length) {
+      await message.reply(
+        "OKG Modmail is not enabled in any server yet. Please contact a server administrator or use the server's support channel.",
+      ).catch((error) => console.error("[MODMAIL] Could not send the not-configured reply:", error));
+      return;
+    }
 
     // A DM is global to the bot, so route it only to a server the member actually belongs to.
     const choices: Array<{ cfg: ModmailConfig; name: string }> = [];
@@ -231,10 +241,11 @@ export async function handleModmailMessage(client: Client, incoming: Message): P
       await message.reply("OKG Support is not enabled in a server you share with this bot.").catch(() => undefined);
       return;
     }
-    if (choices.length > 1) {
-      await sendServerChoice(message, choices);
-      return;
-    }
+    // Always ask the member to choose the destination, even when only one server
+    // is currently eligible. This keeps the DM workflow explicit and consistent.
+    await sendServerChoice(message, choices);
+    return;
+
     const cfg = choices[0].cfg;
     const inbox = await client.channels.fetch(cfg.inboxChannelId).catch(() => null);
     if (!(inbox instanceof TextChannel)) {
@@ -323,12 +334,16 @@ export async function handleModmailInteraction(client: Client, interaction: any)
       await interaction.reply({ content: "This server selection belongs to another member.", ephemeral: true });
       return true;
     }
+
+    // A Discord interaction must be acknowledged within three seconds. Guild
+    // and member fetches can take longer, so acknowledge before doing any I/O.
+    await interaction.deferUpdate();
     const guildId = interaction.values[0];
     const cfg = (await configured()).find((item) => item.guildId === guildId);
     const guild = cfg ? (client.guilds.cache.get(guildId) || await client.guilds.fetch(guildId).catch(() => null)) : null;
     const member = guild ? await guild.members.fetch(userId).catch(() => null) : null;
     if (!cfg || !member) {
-      await interaction.update({ content: "That support destination is no longer available. Please DM OKG Manager again.", components: [] });
+      await interaction.editReply({ content: "That support destination is no longer available. Please DM OKG Manager again.", components: [] });
       return true;
     }
     const quoted = String(interaction.message?.content || "");
@@ -337,7 +352,7 @@ export async function handleModmailInteraction(client: Client, interaction: any)
     const firstMessage = start >= 0
       ? quoted.slice(start + MESSAGE_START.length, end >= 0 ? end : undefined).trim()
       : "[Original message unavailable]";
-    await interaction.update({
+    await interaction.editReply({
       content: consentPrompt(firstMessage),
       components: [consentButtons(guildId, userId)],
     });
