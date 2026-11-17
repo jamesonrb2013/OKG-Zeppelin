@@ -123,12 +123,18 @@ export async function getMemberConversations(inbox: TextChannel, userId: string)
     if (thread.name.startsWith(prefix)) results.set(thread.id, thread as ThreadChannel);
   }
 
-  return [...results.values()].sort((a, b) => b.createdTimestamp - a.createdTimestamp);
+  return [...results.values()].sort((a, b) => getThreadCreatedTimestamp(b) - getThreadCreatedTimestamp(a));
+}
+
+function getThreadCreatedTimestamp(thread: ThreadChannel): number {
+  // Discord can omit createdTimestamp on partial thread objects; the snowflake
+  // still contains the authoritative creation time.
+  return thread.createdTimestamp ?? Number((BigInt(thread.id) >> 22n) + 1420070400000n);
 }
 
 function conversationLabel(thread: ThreadChannel, index: number): string {
   const shortId = thread.name.split("-").pop()?.slice(0, 6) || String(index + 1);
-  const created = Math.floor(thread.createdTimestamp / 1000);
+  const created = Math.floor(getThreadCreatedTimestamp(thread) / 1000);
   return ("Conversation " + shortId + " • <t:" + created + ":d>").slice(0, 100);
 }
 
