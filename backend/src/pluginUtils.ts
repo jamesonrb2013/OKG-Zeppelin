@@ -141,30 +141,23 @@ export async function hasPermission(
   permission: string,
   matchParams: ExtendedMatchParams,
 ) {
+  // Explicit role_permissions grants are the sole source of access. For
+  // message commands, fetch the member's current roles so cached/partial
+  // Message.member data cannot incorrectly deny a configured moderator.
+  const message = (matchParams as any).message;
+  if (message?.author?.id) {
+    return hasExplicitRolePermission(pluginData, message.author.id, permission);
+  }
+
   const fullConfig = (pluginData as any).fullConfig as { role_permissions?: Record<string, string[]> } | undefined;
   const rolePermissions = fullConfig?.role_permissions;
+  const member = matchParams.member as GuildMember | null | undefined;
+  if (!member || !rolePermissions || Object.keys(rolePermissions).length === 0) return false;
 
-  // Explicit physical config is the sole source of permission grants.
-  // An absent or empty role_permissions section grants nothing; numeric levels
-  // and legacy/plugin defaults must never implicitly grant an action.
-  const message = (matchParams as any).message;
-  // The prefix dispatcher sets this flag only on a copied message authored by
-  // the fixed OKG platform-owner account after guild authorization succeeds.
-  if (message?.__okgAuthorizedOCommand === true) return true;
-
-  const member = (matchParams.member as GuildMember | null | undefined) ?? message?.member ?? undefined;
-  if (!member || !rolePermissions || Object.keys(rolePermissions).length === 0) {
-    return false;
-  }
-
-  for (const roleId of member.roles.cache.keys()) {
-    const grants = rolePermissions[roleId];
-    if (Array.isArray(grants) && (grants.includes("*") || grants.includes(permission))) {
-      return true;
-    }
-  }
-
-  return false;
+  return member.roles.cache.some((role) => {
+    const grants = rolePermissions[role.id];
+    return Array.isArray(grants) && (grants.includes("*") || grants.includes(permission));
+  });
 }
 
 export type GenericCommandSource = Message | CommandInteraction | ModalSubmitInteraction;
