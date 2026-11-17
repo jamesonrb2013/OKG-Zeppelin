@@ -26,6 +26,7 @@ export const zUtilityConfig = z.strictObject({
   can_nickname: z.boolean().default(false),
   can_dm: z.boolean().default(false),
   can_ping: z.boolean().default(false),
+  can_keepalive: z.boolean().default(false),
   can_source: z.boolean().default(false),
   can_vcmove: z.boolean().default(false),
   can_vckick: z.boolean().default(false),
