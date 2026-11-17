@@ -6,9 +6,6 @@ import { logger } from "../logger.js";
 
 export const OKG_PLATFORM_OWNER_ID = "1441223435043868735";
 
-export function isOkgPlatformOwner(userId: string): boolean {
-  return userId === OKG_PLATFORM_OWNER_ID;
-}
 const INTERNAL_COMMAND_PREFIX = "!";
 const CANONICAL_OKG_PREFIX = "!o";
 
@@ -26,6 +23,13 @@ export function extractPrefixedCommand(content: string, configuredPrefix = "!o "
     return remainder.trim();
   }
   return null;
+}
+
+/** Create the rewritten Message exactly as Vety documents; Message.content is inherited via an accessor. */
+export function createForwardedPrefixMessage(message: Message, content: string): Message {
+  return Object.create(message, {
+    content: { configurable: true, enumerable: true, value: content },
+  }) as Message;
 }
 
 function getHealthCommand(commandText: string): "ping" | "keepalive" | null {
@@ -140,18 +144,7 @@ export function registerPrefixCommandDispatcher(
 
       // Vety's native listener sees the original "!o ..." message as command "o".
       // Dispatch a copy using the one internal prefix that Vety is configured for.
-      const forwardedMessage = Object.create(message) as Message;
-      forwardedMessage.content = INTERNAL_COMMAND_PREFIX + commandText;
-
-      // Only the actual OKG platform owner receives the owner-command bypass.
-      if (isOkgPlatformOwner(message.author.id)) {
-        Object.defineProperty(forwardedMessage, "__okgAuthorizedOCommand", {
-          configurable: false,
-          enumerable: false,
-          value: true,
-          writable: false,
-        });
-      }
+      const forwardedMessage = createForwardedPrefixMessage(message, INTERNAL_COMMAND_PREFIX + commandText);
 
       logger.info(
         "Dispatching OKG prefix command " +
