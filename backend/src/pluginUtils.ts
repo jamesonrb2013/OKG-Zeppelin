@@ -30,6 +30,7 @@ import {
   Vety,
 } from "vety";
 import { z } from "zod";
+import { hasPermission as hasVetyPermission } from "vety/helpers";
 import { isStaff } from "./staff.js";
 import { Tail } from "./utils/typeUtils.js";
 
@@ -141,23 +142,13 @@ export async function hasPermission(
   permission: string,
   matchParams: ExtendedMatchParams,
 ) {
-  // Explicit role_permissions grants are the sole source of access. For
-  // message commands, fetch the member's current roles so cached/partial
-  // Message.member data cannot incorrectly deny a configured moderator.
-  const message = (matchParams as any).message;
-  if (message?.author?.id) {
-    return hasExplicitRolePermission(pluginData, message.author.id, permission);
-  }
+  const message = (matchParams as any).message as Message | undefined;
+  if (!message) return false;
 
-  const fullConfig = (pluginData as any).fullConfig as { role_permissions?: Record<string, string[]> } | undefined;
-  const rolePermissions = fullConfig?.role_permissions;
-  const member = matchParams.member as GuildMember | null | undefined;
-  if (!member || !rolePermissions || Object.keys(rolePermissions).length === 0) return false;
-
-  return member.roles.cache.some((role) => {
-    const grants = rolePermissions[role.id];
-    return Array.isArray(grants) && (grants.includes("*") || grants.includes(permission));
-  });
+  // Use the same effective plugin config that Vety uses for native prefix
+  // command authorization. This respects role, user, and channel overrides.
+  const effectiveConfig = await (pluginData as any).config.getForMessage(message);
+  return hasVetyPermission(effectiveConfig, permission);
 }
 
 export type GenericCommandSource = Message | CommandInteraction | ModalSubmitInteraction;
