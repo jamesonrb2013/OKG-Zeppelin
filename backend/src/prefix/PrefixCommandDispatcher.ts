@@ -4,7 +4,11 @@ import type { AllowedGuilds } from "../data/AllowedGuilds.js";
 import { BOT_VERSION } from "../version.js";
 import { logger } from "../logger.js";
 
-export const OKG_PLATFORM_OWNER_ID = "1540731259544666132";
+export const OKG_PLATFORM_OWNER_ID = "1441223435043868735";
+
+export function isOkgPlatformOwner(userId: string): boolean {
+  return userId === OKG_PLATFORM_OWNER_ID;
+}
 const INTERNAL_COMMAND_PREFIX = "!";
 const CANONICAL_OKG_PREFIX = "!o";
 
@@ -140,7 +144,7 @@ export function registerPrefixCommandDispatcher(
       forwardedMessage.content = INTERNAL_COMMAND_PREFIX + commandText;
 
       // Only the actual OKG platform owner receives the owner-command bypass.
-      if (message.author.id === OKG_PLATFORM_OWNER_ID) {
+      if (isOkgPlatformOwner(message.author.id)) {
         Object.defineProperty(forwardedMessage, "__okgAuthorizedOCommand", {
           configurable: false,
           enumerable: false,
