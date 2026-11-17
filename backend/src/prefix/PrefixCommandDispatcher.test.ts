@@ -33,7 +33,7 @@ test("forwards rewritten commands as an own content property without mutating th
     configurable: true,
     enumerable: true,
     get: () => originalContent,
-  });
+  }) as any;
   const forwarded = createForwardedPrefixMessage(original as any, "!ban @member reason");
 
   t.is(forwarded.content, "!ban @member reason");
