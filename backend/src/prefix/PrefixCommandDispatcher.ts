@@ -16,17 +16,18 @@ export function extractPrefixedCommand(content: string, configuredPrefix = "!o "
   for (const prefix of candidates) {
     if (content.slice(0, prefix.length).toLowerCase() !== prefix.toLowerCase()) continue;
     const remainder = content.slice(prefix.length);
-    if (prefix.toLowerCase() === CANONICAL_OKG_PREFIX && remainder.length > 0 && !/^\s/.test(remainder)) continue;
+    const firstCharacter = remainder.charAt(0);
+    const hasSeparator = [" ", "\t", "\n", "\r"].includes(firstCharacter);
+    if (prefix.toLowerCase() === CANONICAL_OKG_PREFIX && remainder.length > 0 && !hasSeparator) continue;
     return remainder.trim();
   }
   return null;
 }
 
 function getHealthCommand(commandText: string): "ping" | "keepalive" | null {
-  if (/^ping(?:\s|$)/i.test(commandText)) return "ping";
-  if (/^keepalive(?:\s|$)/i.test(commandText) || /^keep\s+alive(?:\s|$)/i.test(commandText)) {
-    return "keepalive";
-  }
+  const words = commandText.trim().toLowerCase().split(/\s+/);
+  if (words[0] === "ping") return "ping";
+  if (words[0] === "keepalive" || (words[0] === "keep" && words[1] === "alive")) return "keepalive";
   return null;
 }
 
