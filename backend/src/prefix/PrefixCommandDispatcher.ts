@@ -16,7 +16,7 @@ export function extractPrefixedCommand(content: string, configuredPrefix = "!o "
   for (const prefix of candidates) {
     if (content.slice(0, prefix.length).toLowerCase() !== prefix.toLowerCase()) continue;
     const remainder = content.slice(prefix.length);
-    if (remainder.length > 0 && !/^\s/.test(remainder)) continue;
+    if (prefix.toLowerCase() === CANONICAL_OKG_PREFIX && remainder.length > 0 && !/^\s/.test(remainder)) continue;
     return remainder.trim();
   }
   return null;
