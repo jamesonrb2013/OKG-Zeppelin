@@ -451,7 +451,11 @@ connect().then(async () => {
         }
 
         logger.warn(`No config with key "${key}"`);
-        return {};
+        // Even a newly authorized guild with no saved dashboard config must
+        // receive the normal OKG message prefix. Returning {} here leaves Vety
+        // on its mention-only fallback, making !o commands appear completely
+        // unresponsive until somebody saves a config in the dashboard.
+        return id === "global" ? {} : { prefix: "!o ", levels: {} };
       },
 
       logFn: (level, msg) => {
