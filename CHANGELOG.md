@@ -1,3 +1,20 @@
+## 1.3.23
+
+### Fixed
+- Rebuilt message-prefix routing with a dedicated dispatcher instead of the previous fragile prefix conversion.
+- Normalize the default `!o` prefix and configured per-server prefixes to Vety's internal command prefix before dispatch.
+- Preserve existing message-command handlers, arguments, plugin filters, and permission checks.
+- Apply the explicit OKG platform-owner authorization flag only to the platform owner's own prefix commands.
+- Normalize command aliases through the same internal prefix before dispatch.
+- Add reliable `!o ping`, `!o keepalive`, and `!o keep alive` health checks, including the authenticated Dyno webhook path.
+
+### Reliability
+- Add automated prefix parsing tests for case handling, whitespace, custom prefixes, and invalid prefix lookalikes.
+- Keep Modmail message processing independent from prefix command routing.
+
+### Credits
+- Updated by Jeffery Spinnel.
+
 ## 1.3.22
 
 ### Added
