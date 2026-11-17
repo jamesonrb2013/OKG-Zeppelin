@@ -1,3 +1,17 @@
+## 1.3.27
+
+### Fixed
+- Replaced the custom role_permissions moderation gate with Vety's native command permission pipeline. Prefix moderation commands now evaluate their configured permission keys (such as can_ban, can_kick, can_warn, and can_mute) against the effective guild plugin configuration.
+- Restored role, user, and channel-specific permission overrides through the same configuration resolver used by Vety.
+- Updated secondary moderation permission checks to use the effective command configuration instead of a separate role_permissions map.
+- Kept prefix dispatch available in every guild text channel and thread; command permissions, not a hard-coded channel allowlist, decide whether a command may run.
+
+### Changed
+- Aligned root, backend, and dashboard package versions at 1.3.27.
+
+### Credits
+- Updated by Jeffery Spinnel.
+
 ## 1.3.26
 
 ### Fixed
