@@ -18,7 +18,6 @@ import { Case } from "../../data/entities/Case.js";
 import { UserNotificationMethod, UserNotificationResult } from "../../utils.js";
 import { CaseArgs } from "../Cases/types.js";
 import { CommonPlugin } from "../Common/CommonPlugin.js";
-import { hasExplicitRolePermission } from "../../pluginUtils.js";
 
 export type AttachmentLinkReactionType = "none" | "warn" | "restrict" | null;
 
@@ -176,32 +175,12 @@ const rawModActionsMsgCmd = guildPluginMessageCommand<ModActionsPluginType>();
 export const modActionsSlashGroup = guildPluginSlashGroup<ModActionsPluginType>();
 const rawModActionsSlashCmd = guildPluginSlashCommand<ModActionsPluginType>();
 
-// Message commands (including !o) require explicit role_permissions grants.
-// Numeric levels and legacy level-based overrides never grant moderation actions.
-export const modActionsMsgCmd: any = (definition: any) => {
-  const permission = definition.permission as string | undefined;
-  const { permission: _permission, ...commandDefinition } = definition;
-  return rawModActionsMsgCmd({
-    ...commandDefinition,
-    async run(context: any) {
-      if (permission) {
-        const { message, pluginData } = context;
-        const allowed = await hasExplicitRolePermission(pluginData, message.author.id, permission);
+// Keep message moderation commands on Vety's native permission pipeline.
+// Vety evaluates each command's permission (for example, can_ban) against
+// the guild's effective ModActions config, including role/channel overrides.
+export const modActionsMsgCmd = rawModActionsMsgCmd;
 
-        if (!allowed) {
-          await message.reply({
-            content: "You don\u0027t have permission to use !o " + (definition.trigger ?? "this command") + ".",
-          });
-          return;
-        }
-      }
-      return commandDefinition.run(context);
-    },
-  });
-};
-
-// Each moderation action is also exposed as a separate slash command.
-// Permissions come only from explicit role_permissions entries.
+// Slash commands use the same effective plugin config permission keys.
 export const modActionsSlashCmd: any = (definition: any) => {
   const permission = definition.configPermission as string | undefined;
   const { configPermission: _configPermission, ...commandDefinition } = definition;
@@ -212,8 +191,8 @@ export const modActionsSlashCmd: any = (definition: any) => {
     async run(context: any) {
       if (permission) {
         const { interaction, pluginData } = context;
-        const allowed = await hasExplicitRolePermission(pluginData, interaction.user.id, permission);
-
+        const effectiveConfig = await pluginData.config.getForInteraction(interaction);
+        const allowed = effectiveConfig[permission] === true;
         if (!allowed) {
           await interaction.reply({
             content: "You don't have permission to use /" + commandName + ".",
