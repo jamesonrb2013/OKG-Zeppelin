@@ -24,6 +24,7 @@ import { InfoCmd } from "./commands/InfoCmd.js";
 import { InviteInfoCmd } from "./commands/InviteInfoCmd.js";
 import { JumboCmd } from "./commands/JumboCmd.js";
 import { LevelCmd } from "./commands/LevelCmd.js";
+import { KeepaliveCmd } from "./commands/KeepaliveCmd.js";
 import { MessageInfoCmd } from "./commands/MessageInfoCmd.js";
 import { NicknameCmd } from "./commands/NicknameCmd.js";
 import { NicknameResetCmd } from "./commands/NicknameResetCmd.js";
@@ -54,6 +55,12 @@ export const UtilityPlugin = guildPlugin<UtilityPluginType>()({
 
   configSchema: zUtilityConfig,
   defaultOverrides: [
+    {
+      level: ">=0",
+      config: {
+        can_keepalive: true,
+      },
+    },
     {
       level: ">=50",
       config: {
@@ -103,6 +110,7 @@ export const UtilityPlugin = guildPlugin<UtilityPluginType>()({
     NicknameCmd,
     DmCmd,
     PingCmd,
+    KeepaliveCmd,
     SourceCmd,
     ContextCmd,
     VcmoveCmd,
