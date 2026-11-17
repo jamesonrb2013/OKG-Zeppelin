@@ -5,6 +5,8 @@ import { zSnowflake } from "./utils.js";
 export const zZeppelinGuildConfig = z.strictObject({
   // From BaseConfig
   prefix: z.string().optional(),
+  // Public member-facing prefix; Vety uses the normalized internal prefix.
+  command_prefix: z.string().optional(),
   // Native Vety hierarchy field. Keep this for compatibility with the
   // framework permission engine and existing guild configuration files.
   levels: z.record(zSnowflake, z.number().finite()).optional(),
