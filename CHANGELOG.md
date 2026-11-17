@@ -1,3 +1,17 @@
+## 1.3.24
+
+### Fixed
+- Fixed the actual prefix dispatch failure: forwarded Discord messages now define their rewritten content as an own property, matching Vety's documented dispatch contract instead of assigning over the inherited Message.content accessor.
+- Removed the platform-owner permission bypass. Moderation message commands now require the matching configured role_permissions grant for every user.
+- Re-check the member's current Discord roles when evaluating configured message-command permissions, avoiding false denials from partial or stale cached member data.
+- Added a regression test proving forwarded command content is readable and the original Discord message remains unchanged.
+
+### Changed
+- Aligned root, backend, and dashboard package versions at 1.3.24.
+
+### Credits
+- Updated by Jeffery Spinnel.
+
 ## 1.3.23
 
 ### Fixed
