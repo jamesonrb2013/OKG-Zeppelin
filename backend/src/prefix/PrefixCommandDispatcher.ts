@@ -16,15 +16,15 @@ export function extractPrefixedCommand(content: string, configuredPrefix = "!o "
   for (const prefix of candidates) {
     if (content.slice(0, prefix.length).toLowerCase() !== prefix.toLowerCase()) continue;
     const remainder = content.slice(prefix.length);
-    if (remainder.length > 0 && !/^\\s/.test(remainder)) continue;
+    if (remainder.length > 0 && !/^\s/.test(remainder)) continue;
     return remainder.trim();
   }
   return null;
 }
 
 function getHealthCommand(commandText: string): "ping" | "keepalive" | null {
-  if (/^ping(?:\\s|$)/i.test(commandText)) return "ping";
-  if (/^keepalive(?:\\s|$)/i.test(commandText) || /^keep\\s+alive(?:\\s|$)/i.test(commandText)) {
+  if (/^ping(?:\s|$)/i.test(commandText)) return "ping";
+  if (/^keepalive(?:\s|$)/i.test(commandText) || /^keep\s+alive(?:\s|$)/i.test(commandText)) {
     return "keepalive";
   }
   return null;
@@ -47,7 +47,7 @@ async function replyToHealthCheck(message: Message, source: "discord" | "webhook
       source === "webhook"
         ? "Dyno webhook received. This confirms the bot is running; a Discord webhook cannot start a stopped hosting worker."
         : "Health check: `!o ping` / `!o keep alive`",
-    ].join("\\n"),
+    ].join("\n"),
     allowedMentions: { parse: [], repliedUser: false },
   });
 }
@@ -147,7 +147,7 @@ export function registerPrefixCommandDispatcher(
 
       logger.info(
         "Dispatching OKG prefix command " +
-          JSON.stringify(commandText.split(/\\s+/)[0]) +
+          JSON.stringify(commandText.split(/\s+/)[0]) +
           " from " +
           message.author.id +
           " in guild " +
