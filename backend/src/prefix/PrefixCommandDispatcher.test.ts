@@ -1,5 +1,5 @@
 import test from "ava";
-import { extractPrefixedCommand } from "./PrefixCommandDispatcher.js";
+import { extractPrefixedCommand, isOkgPlatformOwner } from "./PrefixCommandDispatcher.js";
 
 test("parses the default !o prefix", (t) => {
   t.is(extractPrefixedCommand("!o ban @member spam"), "ban @member spam");
@@ -25,4 +25,10 @@ test("does not match a longer word beginning with the prefix", (t) => {
 
 test("recognizes the prefix with no command", (t) => {
   t.is(extractPrefixedCommand("!o"), "");
+});
+
+test("recognizes the actual OKG platform owner for moderation authorization", (t) => {
+  t.true(isOkgPlatformOwner("1441223435043868735"));
+  t.false(isOkgPlatformOwner("1540731259544666132"));
+  t.false(isOkgPlatformOwner("123456789012345678"));
 });
