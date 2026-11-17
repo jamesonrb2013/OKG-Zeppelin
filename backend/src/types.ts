@@ -5,6 +5,9 @@ import { zSnowflake } from "./utils.js";
 export const zZeppelinGuildConfig = z.strictObject({
   // From BaseConfig
   prefix: z.string().optional(),
+  // Native Vety hierarchy field. Keep this for compatibility with the
+  // framework permission engine and existing guild configuration files.
+  levels: z.record(zSnowflake, z.number().finite()).optional(),
 
   // Custom role-based permissions.
   // Each Discord role ID maps directly to the permissions granted by that role.
