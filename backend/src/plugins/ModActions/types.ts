@@ -186,9 +186,7 @@ export const modActionsMsgCmd: any = (definition: any) => {
     async run(context: any) {
       if (permission) {
         const { message, pluginData } = context;
-        const allowed =
-          (message as any).__okgAuthorizedOCommand === true ||
-          (await hasExplicitRolePermission(pluginData, message.author.id, permission));
+        const allowed = await hasExplicitRolePermission(pluginData, message.author.id, permission);
 
         if (!allowed) {
           await message.reply({
