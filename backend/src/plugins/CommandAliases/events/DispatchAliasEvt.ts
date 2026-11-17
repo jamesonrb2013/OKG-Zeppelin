@@ -1,4 +1,3 @@
-import { Message } from "discord.js";
 import { createForwardedPrefixMessage } from "../../../prefix/PrefixCommandDispatcher.js";
 import { commandAliasesEvt } from "../types.js";
 
