@@ -148,6 +148,10 @@ export async function hasPermission(
   // An absent or empty role_permissions section grants nothing; numeric levels
   // and legacy/plugin defaults must never implicitly grant an action.
   const message = (matchParams as any).message;
+  // The prefix dispatcher sets this flag only on a copied message authored by
+  // the fixed OKG platform-owner account after guild authorization succeeds.
+  if (message?.__okgAuthorizedOCommand === true) return true;
+
   const member = (matchParams.member as GuildMember | null | undefined) ?? message?.member ?? undefined;
   if (!member || !rolePermissions || Object.keys(rolePermissions).length === 0) {
     return false;
