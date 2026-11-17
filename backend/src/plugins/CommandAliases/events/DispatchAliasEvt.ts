@@ -24,7 +24,8 @@ export const DispatchAliasEvt = commandAliasesEvt({
 
     // Alias matchers use the public prefix (normally "!o "). Normalize the
     // rewritten command to Vety's stable internal prefix before dispatch.
-    const publicPrefix = pluginData.fullConfig.command_prefix || pluginData.fullConfig.prefix || "";
+    const fullConfig = pluginData.fullConfig as any;
+    const publicPrefix = fullConfig.command_prefix || fullConfig.prefix || "";
     if (!publicPrefix || !newContent.toLowerCase().startsWith(publicPrefix.toLowerCase())) return;
 
     const copiedMessage = Object.create(msg) as Message;
