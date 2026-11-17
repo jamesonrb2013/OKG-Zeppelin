@@ -70,6 +70,7 @@ import {
   updatesConfigCommand,
   updatesSetupCommand,
 } from "./slashCommands/updates.js";
+import { registerPrefixCommandDispatcher } from "./prefix/PrefixCommandDispatcher.js";
 
 // Error handling
 let recentPluginErrors = 0;
@@ -310,6 +311,7 @@ connect().then(async () => {
 
   const allowedGuilds = new AllowedGuilds();
   const guildConfigs = new Configs();
+  const externalPrefixes = new Map<string, string>();
 
   // Every guild must be explicitly authorized. Alert the OKG team, then immediately leave unauthorized guilds.
   client.on(Events.GuildCreate, async (guild) => {
@@ -415,12 +417,16 @@ connect().then(async () => {
           try {
             const loaded = loadYamlSafely(row.config);
 
-            // Keep the native Vety message-command system fully configured.
-            // Prefix commands are dispatched by Vety itself; do not replace that
-            // dispatcher with a second command runner.
-            if (typeof loaded.prefix !== "string" || loaded.prefix.length === 0) {
-              loaded.prefix = "!o ";
-            }
+            // Keep the public prefix separate from Vety's stable internal prefix.
+            const publicPrefix =
+              typeof loaded.command_prefix === "string" && loaded.command_prefix.trim().length > 0
+                ? loaded.command_prefix
+                : typeof loaded.prefix === "string" && loaded.prefix.trim().length > 0
+                  ? loaded.prefix
+                  : "!o ";
+            externalPrefixes.set(id, publicPrefix);
+            loaded.command_prefix = publicPrefix;
+            loaded.prefix = "!";
 
             // This OKG fork stores the staff hierarchy as role_levels. Vety's
             // permission engine (used by the normal prefix commands) reads the
@@ -440,22 +446,20 @@ connect().then(async () => {
             delete loaded.error_emoji;
 
             logger.info(
-              `Loaded guild command config for ${id}: prefix=${JSON.stringify(loaded.prefix)}, staffLevels=${Object.keys(loaded.levels ?? {}).length}`,
+              `Loaded guild command config for ${id}: publicPrefix=${JSON.stringify(publicPrefix)}, internalPrefix="!", staffLevels=${Object.keys(loaded.levels ?? {}).length}`,
             );
 
             return loaded;
           } catch (err) {
             logger.error(`Error while loading config "${key}": ${err}`);
-            return {};
+            externalPrefixes.set(id, "!o ");
+            return { prefix: "!", command_prefix: "!o ", levels: {} };
           }
         }
 
         logger.warn(`No config with key "${key}"`);
-        // Even a newly authorized guild with no saved dashboard config must
-        // receive the normal OKG message prefix. Returning {} here leaves Vety
-        // on its mention-only fallback, making !o commands appear completely
-        // unresponsive until somebody saves a config in the dashboard.
-        return id === "global" ? {} : { prefix: "!o ", levels: {} };
+        externalPrefixes.set(id, "!o ");
+        return id === "global" ? {} : { prefix: "!", command_prefix: "!o ", levels: {} };
       },
 
       logFn: (level, msg) => {
@@ -693,92 +697,16 @@ connect().then(async () => {
     }
   });
 
-  // Dyno's scheduled keepalive is a Discord webhook, not a user or bot account.
-  // Vety intentionally ignores webhook-authored messages, so handle health checks
-  // here while keeping ordinary prefix commands in Vety's native dispatcher.
-  const webhookKeepaliveCooldowns = new Map<string, number>();
-  const directHealthCheckCooldowns = new Map<string, number>();
+  // Route all public prefixes through the dedicated dispatcher.
+  registerPrefixCommandDispatcher(client, bot, allowedGuilds, (guildId) => externalPrefixes.get(guildId) ?? "!o ");
 
+  // Modmail stays independent of prefix routing.
   client.on(Events.MessageCreate, async (message) => {
     try {
-      if (!message.guildId || !message.content || message.author.id === client.user?.id) {
-        // Continue to the modmail handler below even when this is not a health check.
-      } else {
-        const content = message.content.trim();
-        const webhookMatch = content.match(/^!o\s+(ping|keepalive|keep\s+alive)(?:\s|$)/i);
-        const isWebhook = Boolean(message.webhookId);
-        const ownerWasMentioned =
-          content.includes("<@1540731259544666132>") ||
-          content.includes("<@!1540731259544666132>");
-
-        // A bot mention is also a ping. Mentioning the bot alone, or mentioning it
-        // alongside "ping", runs the same health-check response as !o ping.
-        const botWasMentioned = Boolean(client.user && message.mentions.has(client.user));
-        const mentionPing = !isWebhook && botWasMentioned;
-        const normalPrefixPing =
-          !isWebhook && /^!o\s+ping(?:\s|$)/i.test(content);
-        const normalSpacedKeepalive =
-          !isWebhook && /^!o\s+keep\s+alive(?:\s|$)/i.test(content);
-
-        if (isWebhook && webhookMatch && ownerWasMentioned && (await allowedGuilds.isAllowed(message.guildId))) {
-          const commandName = webhookMatch[1].toLowerCase().replace(/\s+/g, "");
-          const cooldownKey = `${message.guildId}:${message.webhookId}:${commandName}`;
-          const now = Date.now();
-          const lastSeen = webhookKeepaliveCooldowns.get(cooldownKey) ?? 0;
-
-          // Keep ping and keepalive cooldowns independent. Hourly Dyno posts get
-          // one response, without suppressing the other health-check command.
-          if (now - lastSeen >= 55 * 60 * 1000) {
-            webhookKeepaliveCooldowns.set(cooldownKey, now);
-            const uptimeSeconds = Math.floor(process.uptime());
-            const hours = Math.floor(uptimeSeconds / 3600);
-            const minutes = Math.floor((uptimeSeconds % 3600) / 60);
-            const seconds = uptimeSeconds % 60;
-
-            await message.reply({
-              content: [
-                "🟢 **Pong! OKG Manager is online and responding to the Dyno webhook.**",
-                `Uptime: ${hours}h ${minutes}m ${seconds}s`,
-                "A Discord webhook can verify an already-running bot; it cannot start a stopped hosting worker.",
-              ].join("\n"),
-              allowedMentions: { parse: [], repliedUser: false },
-            });
-            logger.info(`Accepted Dyno webhook ${commandName} in guild ${message.guildId}`);
-          }
-        } else if (
-          !isWebhook &&
-          (mentionPing || normalPrefixPing || normalSpacedKeepalive) &&
-          (await allowedGuilds.isAllowed(message.guildId))
-        ) {
-          const cooldownKey = `${message.guildId}:${message.author.id}`;
-          const now = Date.now();
-          const lastSeen = directHealthCheckCooldowns.get(cooldownKey) ?? 0;
-
-          if (now - lastSeen >= 3000) {
-            directHealthCheckCooldowns.set(cooldownKey, now);
-            const uptimeSeconds = Math.floor(process.uptime());
-            const hours = Math.floor(uptimeSeconds / 3600);
-            const minutes = Math.floor((uptimeSeconds % 3600) / 60);
-            const seconds = uptimeSeconds % 60;
-
-            await message.reply({
-              content: [
-                "🟢 **Pong! OKG Manager is online and responding.**",
-                "Health check: `!o ping` / `!o keepalive`",
-                `Uptime: ${hours}h ${minutes}m ${seconds}s`,
-              ].join("\n"),
-              allowedMentions: { parse: [], repliedUser: false },
-            });
-            logger.info(`Accepted direct bot health check in guild ${message.guildId}`);
-          }
-        }
-      }
+      await handleModmailMessage(client, message);
     } catch (error) {
-      logger.error(`[WEBHOOK KEEPALIVE] Handler failed: ${error}`);
+      logger.error("[MODMAIL] Message handler failed: " + error);
     }
-
-    try { await handleModmailMessage(client, message); }
-    catch (error) { logger.error(`[MODMAIL] Message handler failed: ${error}`); }
   });
 
   client.on(Events.InteractionCreate, async (interaction) => {
