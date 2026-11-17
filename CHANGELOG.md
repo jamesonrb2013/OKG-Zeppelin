@@ -1,4 +1,4 @@
-## 1.3.24
+## 1.3.25
 
 ### Fixed
 - Fixed the actual prefix dispatch failure: forwarded Discord messages now define their rewritten content as an own property, matching Vety's documented dispatch contract instead of assigning over the inherited Message.content accessor.
@@ -7,7 +7,7 @@
 - Added a regression test proving forwarded command content is readable and the original Discord message remains unchanged.
 
 ### Changed
-- Aligned root, backend, and dashboard package versions at 1.3.24.
+- Aligned root, backend, and dashboard package versions at 1.3.25.
 
 ### Credits
 - Updated by Jeffery Spinnel.
