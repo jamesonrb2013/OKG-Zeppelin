@@ -693,7 +693,48 @@ connect().then(async () => {
     }
   });
 
+  // Dyno's scheduled keepalive is a Discord webhook, not a user or bot account.
+  // Vety intentionally does not dispatch webhook-authored messages as prefix commands,
+  // so handle this one narrowly-scoped health-check trigger directly.
+  const webhookKeepaliveCooldowns = new Map<string, number>();
   client.on(Events.MessageCreate, async (message) => {
+    try {
+      if (message.webhookId && message.guildId && message.content) {
+        const isKeepaliveTrigger = /^!o\\s+keepalive(?:\\s|$)/i.test(message.content);
+        const includesOwnerPing =
+          message.content.includes("<@1540731259544666132>") ||
+          message.content.includes("<@!1540731259544666132>");
+
+        if (isKeepaliveTrigger && includesOwnerPing && (await allowedGuilds.isAllowed(message.guildId))) {
+          const cooldownKey = `${message.guildId}:${message.webhookId}`;
+          const now = Date.now();
+          const lastSeen = webhookKeepaliveCooldowns.get(cooldownKey) ?? 0;
+
+          // A scheduled hourly webhook gets one response per hour; repeated webhook
+          // posts cannot be used to flood channels with health-check replies.
+          if (now - lastSeen >= 55 * 60 * 1000) {
+            webhookKeepaliveCooldowns.set(cooldownKey, now);
+            const uptimeSeconds = Math.floor(process.uptime());
+            const hours = Math.floor(uptimeSeconds / 3600);
+            const minutes = Math.floor((uptimeSeconds % 3600) / 60);
+            const seconds = uptimeSeconds % 60;
+
+            await message.reply({
+              content: [
+                "🟢 **OKG Manager received the scheduled webhook keepalive and is awake.**",
+                `Uptime: ${hours}h ${minutes}m ${seconds}s`,
+                "Note: a Discord webhook can confirm an already-running bot, but cannot start a stopped hosting service.",
+              ].join("\\n"),
+              allowedMentions: { parse: [], repliedUser: false },
+            });
+            logger.info(`Accepted scheduled webhook keepalive in guild ${message.guildId}`);
+          }
+        }
+      }
+    } catch (error) {
+      logger.error(`[WEBHOOK KEEPALIVE] Handler failed: ${error}`);
+    }
+
     try { await handleModmailMessage(client, message); }
     catch (error) { logger.error(`[MODMAIL] Message handler failed: ${error}`); }
   });
