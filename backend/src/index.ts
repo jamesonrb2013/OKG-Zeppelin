@@ -700,12 +700,12 @@ connect().then(async () => {
   client.on(Events.MessageCreate, async (message) => {
     try {
       if (message.webhookId && message.guildId && message.content) {
-        const isKeepaliveTrigger = /^!o\\s+keepalive(?:\\s|$)/i.test(message.content);
+        const webhookCommand = message.content.match(/^!o\\s+(keepalive|ping)(?:\\s|$)/i)?.[1]?.toLowerCase();
         const includesOwnerPing =
           message.content.includes("<@1540731259544666132>") ||
           message.content.includes("<@!1540731259544666132>");
 
-        if (isKeepaliveTrigger && includesOwnerPing && (await allowedGuilds.isAllowed(message.guildId))) {
+        if (webhookCommand && includesOwnerPing && (await allowedGuilds.isAllowed(message.guildId))) {
           const cooldownKey = `${message.guildId}:${message.webhookId}`;
           const now = Date.now();
           const lastSeen = webhookKeepaliveCooldowns.get(cooldownKey) ?? 0;
@@ -721,13 +721,13 @@ connect().then(async () => {
 
             await message.reply({
               content: [
-                "🟢 **OKG Manager received the scheduled webhook keepalive and is awake.**",
+                webhookCommand === "ping"\n                  ? "🟢 **Pong! OKG Manager is online and responding to the webhook ping.**"\n                  : "🟢 **OKG Manager received the scheduled webhook keepalive and is awake.**",
                 `Uptime: ${hours}h ${minutes}m ${seconds}s`,
                 "Note: a Discord webhook can confirm an already-running bot, but cannot start a stopped hosting service.",
               ].join("\\n"),
               allowedMentions: { parse: [], repliedUser: false },
             });
-            logger.info(`Accepted scheduled webhook keepalive in guild ${message.guildId}`);
+            logger.info(`Accepted scheduled webhook ${webhookCommand} in guild ${message.guildId}`);
           }
         }
       }
