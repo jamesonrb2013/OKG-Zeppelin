@@ -66,10 +66,11 @@ export function registerPrefixCommandDispatcher(
     try {
       if (!message.guildId || !message.guild || !message.content) return;
 
-      const commandText = extractPrefixedCommand(
-        message.content.trimStart(),
-        getConfiguredPrefix(message.guildId) || "!o ",
-      );
+      const configuredPrefix = getConfiguredPrefix(message.guildId) || "!o ";
+      // When a guild deliberately configures "!" Vety already handles that
+      // prefix natively; forwarding it again would execute the same command twice.
+      const publicPrefix = configuredPrefix.trimEnd() === "!" ? "!o " : configuredPrefix;
+      const commandText = extractPrefixedCommand(message.content.trimStart(), publicPrefix);
       const isWebhook = Boolean(message.webhookId);
       const ownerWasMentioned =
         message.content.includes("<@" + OKG_PLATFORM_OWNER_ID + ">") ||
