@@ -415,9 +415,33 @@ connect().then(async () => {
           try {
             const loaded = loadYamlSafely(row.config);
 
+            // Keep the native Vety message-command system fully configured.
+            // Prefix commands are dispatched by Vety itself; do not replace that
+            // dispatcher with a second command runner.
+            if (typeof loaded.prefix !== "string" || loaded.prefix.length === 0) {
+              loaded.prefix = "!o ";
+            }
+
+            // This OKG fork stores the staff hierarchy as role_levels. Vety's
+            // permission engine (used by the normal prefix commands) reads the
+            // canonical BaseConfig property named "levels". Without this bridge,
+            // every member is treated as level 0 and normal commands silently
+            // fail their can_* permission checks even though role_levels exists.
+            if (
+              (!loaded.levels || typeof loaded.levels !== "object" || Object.keys(loaded.levels).length === 0) &&
+              loaded.role_levels &&
+              typeof loaded.role_levels === "object"
+            ) {
+              loaded.levels = loaded.role_levels;
+            }
+
             // Remove deprecated properties some may still have in their config
             delete loaded.success_emoji;
             delete loaded.error_emoji;
+
+            logger.info(
+              `Loaded guild command config for ${id}: prefix=${JSON.stringify(loaded.prefix)}, staffLevels=${Object.keys(loaded.levels ?? {}).length}`,
+            );
 
             return loaded;
           } catch (err) {
