@@ -111,6 +111,8 @@ export function registerPrefixCommandDispatcher(
         return;
       }
 
+      if (commandText == null) return;
+
       if (commandText === "") {
         await message.reply({
           content: "The OKG Manager prefix is `!o`. Try `!o help` to see available commands.",
