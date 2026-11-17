@@ -15,6 +15,7 @@ test("parses keep alive as a normal multi-word command", (t) => {
 
 test("supports a configured per-guild prefix as well as !o", (t) => {
   t.is(extractPrefixedCommand("?   ban @member", "? "), "ban @member");
+  t.is(extractPrefixedCommand("?ban @member", "?"), "ban @member");
   t.is(extractPrefixedCommand("!o ban @member", "? "), "ban @member");
 });
 
