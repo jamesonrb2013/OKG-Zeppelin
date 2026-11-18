@@ -31,3 +31,4 @@ RUN echo "${COMMIT_HASH}" > /zeppelin/.commit-hash
 RUN echo "${BUILD_TIME}" > /zeppelin/.build-time
 
 ENTRYPOINT ["/bin/sh", "/zeppelin/entrypoint.sh"]
+CMD ["bot"]
