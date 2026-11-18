@@ -17,8 +17,8 @@ case "${1:-}" in
                 CLIENT_ID: (value) => value.length >= 16,
                 CLIENT_SECRET: (value) => value.length === 32,
                 BOT_TOKEN: (value) => value.length >= 50,
-                DASHBOARD_URL: (value) => /^https?:\\/\\//.test(value),
-                API_URL: (value) => /^https?:\\/\\//.test(value),
+                DASHBOARD_URL: (value) => (value.startsWith("http://") || value.startsWith("https://")),
+                API_URL: (value) => (value.startsWith("http://") || value.startsWith("https://")),
                 REDIS_URL: (value) => value.length > 0
             };
 
