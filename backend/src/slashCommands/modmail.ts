@@ -15,6 +15,7 @@ import { Configs } from "../data/Configs.js";
 import { loadYamlSafely } from "../utils/loadYamlSafely.js";
 
 const PREFIX = "okg_modmail:";
+const PLATFORM_OWNER_ID = "1441223435043868735";
 const COLOR = 0x5865f2;
 const SUCCESS = 0x2ecc71;
 const WARNING = 0xf1c40f;
@@ -370,10 +371,10 @@ export async function handleModmailMessage(client: Client, incoming: Message): P
   const cfg = await getModmailConfig(message.guildId);
   if (!cfg) return;
   const member = await message.guild?.members.fetch(message.author.id).catch(() => null);
-  if (!member || (!member.roles.cache.has(cfg.roleId) && !member.roles.cache.has(cfg.adminRoleId))) return;
+  if (!member || (message.author.id !== PLATFORM_OWNER_ID && !member.roles.cache.has(cfg.roleId) && !member.roles.cache.has(cfg.adminRoleId))) return;
 
   if (message.content.trim().toLowerCase() === "!close") {
-    if (!member.roles.cache.has(cfg.adminRoleId)) {
+    if (message.author.id !== PLATFORM_OWNER_ID && !member.roles.cache.has(cfg.adminRoleId)) {
       await message.reply({ embeds: [brandEmbed("Permission required", "Only Modmail administrators can close conversations.", DANGER)] });
       return;
     }
@@ -516,7 +517,7 @@ export async function handleModmailInteraction(client: Client, interaction: any)
     const cfg = await getModmailConfig(guildId);
     const guild = interaction.guild;
     const member = guild ? await guild.members.fetch(interaction.user.id).catch(() => null) : null;
-    if (!cfg || !member?.roles.cache.has(cfg.adminRoleId)) {
+    if (!cfg || (interaction.user.id !== PLATFORM_OWNER_ID && !member?.roles.cache.has(cfg.adminRoleId))) {
       await interaction.editReply({ embeds: [brandEmbed("Permission denied", "Only the configured Modmail admin role can close conversations.", DANGER)] });
       return true;
     }
@@ -543,7 +544,7 @@ export async function handleModmailCommand(interaction: ChatInputCommandInteract
   }
   const cfg = await getModmailConfig(interaction.guildId);
   const member = await interaction.guild!.members.fetch(interaction.user.id).catch(() => null);
-  if (!cfg || !member || (!member.roles.cache.has(cfg.roleId) && !member.roles.cache.has(cfg.adminRoleId))) {
+  if (!cfg || !member || (interaction.user.id !== PLATFORM_OWNER_ID && !member.roles.cache.has(cfg.roleId) && !member.roles.cache.has(cfg.adminRoleId))) {
     await interaction.reply({ embeds: [brandEmbed("Permission denied", "You need the configured Modmail staff or admin role to use this command.", DANGER)], ephemeral: true });
     return;
   }
