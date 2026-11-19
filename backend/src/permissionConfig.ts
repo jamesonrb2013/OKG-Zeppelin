@@ -11,6 +11,17 @@ function isRecord(value: unknown): value is Record<string, any> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+function hasContextualDenyTarget(override: Record<string, any>): boolean {
+  if (override.channel || override.category || override.thread_id || override.is_thread || override.user) return true;
+  for (const key of ["any", "all"]) {
+    if (Array.isArray(override[key]) && override[key].some((condition: unknown) => isRecord(condition) && hasContextualDenyTarget(condition))) {
+      return true;
+    }
+  }
+  if (isRecord(override.not)) return hasContextualDenyTarget(override.not);
+  return false;
+}
+
 function getPermissionKeys(pluginInfo: PluginWithConfigSchema): string[] {
   const schema = pluginInfo.plugin.configSchema as any;
   const shape = schema?.shape ?? (typeof schema?._def?.shape === "function" ? schema._def.shape() : schema?._def?.shape);
@@ -72,7 +83,9 @@ export function applyPermissionOverrides(
         }
 
         if (Object.keys(otherConfig).length > 0) ordinaryOverrides.push({ ...override, config: otherConfig });
-        if (Object.keys(deniedConfig).length > 0) explicitDenies.push({ ...override, config: deniedConfig });
+        if (Object.keys(deniedConfig).length > 0 && hasContextualDenyTarget(override)) {
+          explicitDenies.push({ ...override, config: deniedConfig });
+        }
         if (Object.keys(otherConfig).length === 0 && Object.keys(deniedConfig).length === 0) {
           // Keep unusual/empty overrides rather than silently discarding config.
           if (Object.keys(override.config).length === 0) ordinaryOverrides.push(override);
