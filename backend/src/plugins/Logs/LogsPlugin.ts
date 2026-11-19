@@ -1,5 +1,7 @@
 import { CooldownManager, guildPlugin } from "vety";
 import { GuildArchives } from "../../data/GuildArchives.js";
+import { ApiAuditLog } from "../../data/ApiAuditLog.js";
+import { AuditLogEventTypes } from "../../data/apiAuditLogTypes.js";
 import { GuildCases } from "../../data/GuildCases.js";
 import { GuildLogs } from "../../data/GuildLogs.js";
 import { GuildSavedMessages } from "../../data/GuildSavedMessages.js";
@@ -110,6 +112,43 @@ import { logVoiceChannelLeave } from "./logFunctions/logVoiceChannelLeave.js";
 import { logVoiceChannelMove } from "./logFunctions/logVoiceChannelMove.js";
 
 // The `any` cast here is to prevent TypeScript from locking up from the circular dependency
+const dashboardAuditLog = new ApiAuditLog();
+
+function makeAuditSafePayload(value: unknown): unknown {
+  const seen = new WeakSet<object>();
+  let serialized = "";
+  try {
+    serialized = JSON.stringify(value, (_key, item) => {
+      if (typeof item === "bigint") return item.toString();
+      if (item && typeof item === "object") {
+        if (seen.has(item)) return "[Circular]";
+        seen.add(item);
+      }
+      if (typeof item === "function") return undefined;
+      return item;
+    });
+  } catch (error) {
+    return { serialization_error: String(error) };
+  }
+
+  if (!serialized) return null;
+  if (serialized.length > 30000) {
+    return { truncated: true, preview: serialized.slice(0, 30000) };
+  }
+  try {
+    return JSON.parse(serialized);
+  } catch {
+    return { preview: serialized.slice(0, 30000) };
+  }
+}
+
+// The dashboard copy is stored in SQL independently of Discord log messages.
+// Deleting a message in the configured log channel cannot remove this record.
+function getAuditActorId(data: any): string {
+  const candidate = data?.mod?.id ?? data?.moderator?.id ?? data?.author?.id ?? data?.user?.id ?? data?.mod_id;
+  return typeof candidate === "string" && /^\\d{1,20}$/.test(candidate) ? candidate : "0";
+}
+
 function getCasesPlugin(): Promise<any> {
   return import("../Cases/CasesPlugin.js") as Promise<any>;
 }
@@ -247,7 +286,15 @@ export const LogsPlugin = guildPlugin<LogsPluginType>()({
   afterLoad(pluginData) {
     const { state } = pluginData;
 
-    state.logListener = ({ type, data }) => log(pluginData, type, data);
+    state.logListener = ({ type, data }) => {
+      log(pluginData, type, data);
+      void dashboardAuditLog.addEntry(
+        pluginData.guild.id,
+        getAuditActorId(data),
+        AuditLogEventTypes.GUILD_LOG_EVENT,
+        { log_type: String(type), payload: makeAuditSafePayload(data) },
+      ).catch((error) => logger.warn(`Could not persist dashboard audit event ${type}: ${error}`));
+    };
     state.guildLogs.on("log", state.logListener);
 
     state.onMessageDeleteFn = (msg) => onMessageDelete(pluginData, msg);
