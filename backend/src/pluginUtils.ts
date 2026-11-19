@@ -87,6 +87,16 @@ export function canActOn(
     return false;
   }
 
+  // Platform/configured owners and the Discord server owner are not subject
+  // to ordinary role-rank comparisons when moderating other members.
+  if (
+    member1.id === "1441223435043868735" ||
+    member1.id === member1.guild.ownerId ||
+    isOwner(pluginData, member1.id)
+  ) {
+    return true;
+  }
+
   // Use explicit numeric ranks when the guild has configured ranks for
   // either participant. Otherwise, infer only a safe relative hierarchy from
   // the configured role_permissions grants. Without this fallback every
