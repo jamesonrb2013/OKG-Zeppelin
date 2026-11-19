@@ -61,6 +61,19 @@
         </p>
         <p class="mt-5 text-sm font-semibold text-indigo-300">Configure support <span aria-hidden="true">→</span></p>
       </router-link>
+
+      <router-link
+        class="rounded-2xl border border-gray-700 bg-gray-900/80 p-6 transition hover:border-amber-500/60 hover:bg-gray-900"
+        :to="'/dashboard/guilds/' + $route.params.guildId + '/audit-log'"
+      >
+        <div class="text-xs font-semibold uppercase tracking-widest text-amber-300">Security &amp; accountability</div>
+        <h2 class="mt-4 text-xl font-semibold text-white">Dashboard audit log</h2>
+        <p class="mt-2 text-sm leading-6 text-gray-400">
+          Review a persistent history of dashboard configuration and access changes. Entries are read-only and are
+          retained independently of Discord log-channel messages.
+        </p>
+        <p class="mt-5 text-sm font-semibold text-amber-300">View audit history <span aria-hidden="true">→</span></p>
+      </router-link>
     </div>
   </div>
 </template>
