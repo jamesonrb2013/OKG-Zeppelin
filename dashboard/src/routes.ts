@@ -89,8 +89,13 @@ export const router = createRouter({
           component: () => import("./components/dashboard/SupportConfig.vue"),
         },
         {
+          path: "owner",
+          component: () => import("./components/dashboard/Owner.vue"),
+          beforeEnter: staffOnlyGuard,
+        },
+        {
           path: "invites",
-          component: () => import("./components/dashboard/InviteCodes.vue"),
+          redirect: "/dashboard/owner?tab=invites",
           beforeEnter: staffOnlyGuard,
         },
         {
