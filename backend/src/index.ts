@@ -71,6 +71,7 @@ import {
   updatesSetupCommand,
 } from "./slashCommands/updates.js";
 import { registerPrefixCommandDispatcher } from "./prefix/PrefixCommandDispatcher.js";
+import { applyPermissionOverrides } from "./permissionConfig.js";
 
 // Error handling
 let recentPluginErrors = 0;
@@ -416,6 +417,11 @@ connect().then(async () => {
         if (row) {
           try {
             const loaded = loadYamlSafely(row.config);
+            applyPermissionOverrides(
+              loaded,
+              id === "global" ? availableGlobalPlugins : availableGuildPlugins,
+              id === "global",
+            );
 
             // Keep the public prefix separate from Vety's stable internal prefix.
             const publicPrefix =
@@ -459,7 +465,13 @@ connect().then(async () => {
 
         logger.warn(`No config with key "${key}"`);
         externalPrefixes.set(id, "!o ");
-        return id === "global" ? {} : { prefix: "!", command_prefix: "!o ", levels: {} };
+        const fallbackConfig = id === "global" ? {} : { prefix: "!", command_prefix: "!o ", levels: {} };
+        applyPermissionOverrides(
+          fallbackConfig,
+          id === "global" ? availableGlobalPlugins : availableGuildPlugins,
+          id === "global",
+        );
+        return fallbackConfig;
       },
 
       logFn: (level, msg) => {
