@@ -4,6 +4,7 @@ import { canActOnByRolePermissions } from "./pluginUtils.js";
 const STAFF = "1563214978201424024";
 const ADMIN = "1531733163418845226";
 const CO_OWNER = "1563196172099780618";
+const EXECUTIVE = "1563209361004826825";
 const OWNER = "1532018400078069800";
 const MEMBER = "ordinary-member-role";
 
@@ -36,6 +37,7 @@ const rolePermissions: Record<string, string[]> = {
     "can_deletecase",
     "can_act_as_other",
   ],
+  [EXECUTIVE]: ["*"],
   [OWNER]: ["*"],
 };
 
@@ -56,9 +58,11 @@ test("co-owner can act on administrator and staff roles", (t) => {
   t.true(canActOnByRolePermissions([CO_OWNER], [STAFF], rolePermissions));
 });
 
-test("owner wildcard outranks moderation roles but equal owners remain protected peers", (t) => {
-  t.true(canActOnByRolePermissions([OWNER], [CO_OWNER], rolePermissions));
-  t.false(canActOnByRolePermissions([CO_OWNER], [OWNER], rolePermissions));
+test("executive outranks co-owner, owner outranks executive, and equal-rank owners stay protected", (t) => {
+  t.true(canActOnByRolePermissions([EXECUTIVE], [CO_OWNER], rolePermissions));
+  t.false(canActOnByRolePermissions([CO_OWNER], [EXECUTIVE], rolePermissions));
+  t.true(canActOnByRolePermissions([OWNER], [EXECUTIVE], rolePermissions));
+  t.false(canActOnByRolePermissions([EXECUTIVE], [OWNER], rolePermissions));
   t.false(canActOnByRolePermissions([OWNER], [OWNER], rolePermissions));
   t.true(canActOnByRolePermissions([OWNER], [OWNER], rolePermissions, true));
 });
