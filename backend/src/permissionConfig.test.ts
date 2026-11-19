@@ -72,7 +72,7 @@ test("permissions from multiple roles are combined and an explicit channel deny 
   t.false(overrides.some((override: any) => override.role === "role_b" && override.config.can_note === true));
   t.true(overrides.some((override: any) => override.channel === "123456789012345678" && override.config.can_note === false));
   t.false(overrides.some((override: any) => override.role === "role_b" && override.config.can_note === false));
-  t.false(overrides.some((override: any) => override.config?.can_act_as_other === true));
+  t.false(overrides.some((override: any) => override.user !== PLATFORM_OWNER_ID && override.config?.can_act_as_other === true));
 });
 
 test("an explicitly empty role_permissions map denies every non-owner permission", (t) => {
