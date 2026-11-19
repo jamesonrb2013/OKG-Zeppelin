@@ -1,6 +1,5 @@
-import { hasPermission } from "vety/helpers";
 import { commandTypeHelpers as ct } from "../../../../commandTypes.js";
-import { resolveMessageMember } from "../../../../pluginUtils.js";
+import { hasPermission, resolveMessageMember } from "../../../../pluginUtils.js";
 import { resolveUser } from "../../../../utils.js";
 import { readContactMethodsFromArgs } from "../../functions/readContactMethodsFromArgs.js";
 import { modActionsMsgCmd } from "../../types.js";
@@ -39,7 +38,7 @@ export const KickMsgCmd = modActionsMsgCmd({
     // The moderator who did the action is the message author or, if used, the specified -mod
     let mod = authorMember;
     if (args.mod) {
-      if (!(await hasPermission(await pluginData.config.getForMessage(msg), "can_act_as_other"))) {
+      if (!(await hasPermission(pluginData, "can_act_as_other", { message: msg }))) {
         pluginData.state.common.sendErrorMessage(msg, "You don't have permission to use -mod");
         return;
       }
