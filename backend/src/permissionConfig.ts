@@ -31,6 +31,34 @@ function getPermissionKeys(pluginInfo: PluginWithConfigSchema): string[] {
   return Object.keys(shape).filter((key) => key.startsWith("can_"));
 }
 
+function getRoleGrantsForPlugin(
+  pluginName: string,
+  permissionKeys: string[],
+  grants: string[],
+  permissionOwners: Map<string, string[]>,
+): string[] {
+  if (grants.includes("*")) return permissionKeys;
+
+  const allowed = new Set<string>();
+  for (const grant of grants) {
+    if (grant.startsWith(pluginName + ".")) {
+      const permission = grant.slice(pluginName.length + 1);
+      if (permissionKeys.includes(permission)) allowed.add(permission);
+      continue;
+    }
+
+    if (grant.includes(".")) continue;
+    const owners = permissionOwners.get(grant) ?? [];
+    if (owners.length === 1 && owners[0] === pluginName) {
+      allowed.add(grant);
+    } else if (pluginName === "mod_actions" && owners.includes("mod_actions")) {
+      // Preserve the existing unqualified moderation permission names.
+      allowed.add(grant);
+    }
+  }
+  return [...allowed];
+}
+
 /**
  * Make the per-role allow-list the effective source of command permissions.
  *
@@ -48,6 +76,14 @@ export function applyPermissionOverrides(
   const rolePermissions = rootConfig.role_permissions;
   const hasRolePermissionMap = isRecord(rolePermissions);
   const pluginConfigs = isRecord(rootConfig.plugins) ? rootConfig.plugins : (rootConfig.plugins = {});
+  const permissionOwners = new Map<string, string[]>();
+  for (const pluginInfo of plugins) {
+    for (const permission of getPermissionKeys(pluginInfo)) {
+      const owners = permissionOwners.get(permission) ?? [];
+      owners.push(pluginInfo.plugin.name);
+      permissionOwners.set(permission, owners);
+    }
+  }
 
   if (includePlatformOwner) {
     const owners = Array.isArray(rootConfig.owners) ? rootConfig.owners.filter((id: unknown) => typeof id === "string") : [];
@@ -101,7 +137,7 @@ export function applyPermissionOverrides(
 
       for (const [roleId, grants] of Object.entries(rolePermissions)) {
         if (!Array.isArray(grants)) continue;
-        const allowed = grants.includes("*") ? permissionKeys : permissionKeys.filter((permission) => grants.includes(permission));
+        const allowed = getRoleGrantsForPlugin(pluginName, permissionKeys, grants, permissionOwners);
         if (allowed.length === 0) continue;
         ordinaryOverrides.push({
           role: roleId,
