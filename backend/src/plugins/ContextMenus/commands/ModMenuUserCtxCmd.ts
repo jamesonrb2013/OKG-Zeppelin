@@ -6,7 +6,6 @@ import {
   ButtonStyle,
   ContextMenuCommandInteraction,
   GuildMember,
-  PermissionFlagsBits,
   User,
 } from "discord.js";
 import { GuildPluginData, guildPluginUserContextMenuCommand } from "vety";
@@ -37,7 +36,7 @@ const CASES_PER_PAGE = 10;
 
 export const ModMenuCmd = guildPluginUserContextMenuCommand({
   name: "Mod Menu",
-  defaultMemberPermissions: PermissionFlagsBits.ViewAuditLog.toString(),
+  defaultMemberPermissions: null,
   async run({ pluginData, interaction }) {
     await interaction.deferReply({ ephemeral: true });
 
