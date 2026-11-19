@@ -152,13 +152,41 @@ export async function hasPermission(
   permission: string,
   matchParams: ExtendedMatchParams,
 ) {
-  const message = (matchParams as any).message as Message | undefined;
-  if (!message) return false;
+  const params = matchParams as any;
+  const message = params.message as Message | undefined;
+  const member = (message?.member ?? params.member) as GuildMember | undefined;
+  const channel = (message?.channel ?? params.channel) as TextBasedChannel | undefined;
 
-  // Use the same effective plugin config that Vety uses for native prefix
-  // command authorization. This respects role, user, and channel overrides.
-  const effectiveConfig = await (pluginData as any).config.getForMessage(message);
-  return hasVetyPermission(effectiveConfig, permission);
+  // The acting moderator must be able to use the -mod override. Vety's global
+  // owners and the Discord guild owner are trusted administrators for this
+  // specific capability, even when no role override has been configured.
+  const actorId = message?.author.id ?? member?.id;
+  const guild = message?.guild ?? member?.guild;
+  if (
+    permission === "can_act_as_other" &&
+    actorId &&
+    (isOwner(pluginData, actorId) || guild?.ownerId === actorId)
+  ) {
+    return true;
+  }
+
+  // Prefix commands arrive with a Message; slash commands provide channel and
+  // member. Resolve both through Vety's effective config so role, user, and
+  // channel overrides work consistently for either command type.
+  if (message) {
+    const effectiveConfig = await (pluginData as any).config.getForMessage(message);
+    return hasVetyPermission(effectiveConfig, permission);
+  }
+
+  if (channel || member) {
+    const effectiveConfig = await (pluginData as any).config.getMatchingConfig({
+      channel,
+      member,
+    });
+    return hasVetyPermission(effectiveConfig, permission);
+  }
+
+  return false;
 }
 
 export type GenericCommandSource = Message | CommandInteraction | ModalSubmitInteraction;
