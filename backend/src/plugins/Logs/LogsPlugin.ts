@@ -146,7 +146,7 @@ function makeAuditSafePayload(value: unknown): unknown {
 // Deleting a message in the configured log channel cannot remove this record.
 function getAuditActorId(data: any): string {
   const candidate = data?.mod?.id ?? data?.moderator?.id ?? data?.author?.id ?? data?.user?.id ?? data?.mod_id;
-  return typeof candidate === "string" && /^\\d{1,20}$/.test(candidate) ? candidate : "0";
+  return typeof candidate === "string" && /^\d{1,20}$/.test(candidate) ? candidate : "0";
 }
 
 function getCasesPlugin(): Promise<any> {
