@@ -2,6 +2,8 @@ import { GuildMember, Snowflake } from "discord.js";
 import { GuildPluginData } from "vety";
 import { ModActionsPluginType } from "../types.js";
 
+const PLATFORM_OWNER_ID = "1441223435043868735";
+
 /**
  * Check only explicit role_permissions grants. An absent or empty map grants
  * no manual moderation permissions; numeric levels and legacy config defaults
@@ -13,21 +15,11 @@ async function hasModPermission(
   channelId: Snowflake,
   permission: string,
 ): Promise<boolean> {
-  const rolePermissions = (pluginData.fullConfig as any)?.role_permissions as Record<string, string[]> | undefined;
+  if (member.id === PLATFORM_OWNER_ID) return true;
 
-  if (rolePermissions && Object.keys(rolePermissions).length > 0) {
-    // Slash-command interaction members can have partial or stale role data.
-    // Fetch the current GuildMember just as the command wrapper does.
-    const currentMember = await pluginData.guild.members.fetch(member.id).catch(() => null);
-    const roles = currentMember?.roles.cache ?? member.roles.cache;
-
-    return roles.some((role) => {
-      const grants = rolePermissions[role.id];
-      return Array.isArray(grants) && (grants.includes("*") || grants.includes(permission));
-    });
-  }
-
-  return false;
+  const currentMember = await pluginData.guild.members.fetch(member.id).catch(() => member);
+  const effectiveConfig = await pluginData.config.getMatchingConfig({ member: currentMember, channelId });
+  return effectiveConfig[permission] === true;
 }
 
 export function hasNotePermission(
