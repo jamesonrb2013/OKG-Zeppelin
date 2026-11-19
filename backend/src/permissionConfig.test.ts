@@ -120,3 +120,27 @@ test("ambiguous permission names are scoped and can be granted with plugin-quali
   t.false(scopedModeration.some((override: any) => override.role === "staff" && override.config.can_view === true));
   t.true(scopedCounters.some((override: any) => override.role === "staff" && override.config.can_view === true));
 });
+
+
+test("platform owner access is injected into every plugin that declares permissions", (t) => {
+  const multiPluginSchemas: any = [
+    plugins[0],
+    {
+      plugin: {
+        name: "counters",
+        configSchema: { shape: { can_view: {}, can_edit: {} } },
+      },
+    },
+  ];
+  const config: any = { plugins: {} };
+  applyPermissionOverrides(config, multiPluginSchemas, true);
+
+  for (const pluginName of ["mod_actions", "counters"]) {
+    const ownerOverride = config.plugins[pluginName].overrides.find(
+      (override: any) => override.user === PLATFORM_OWNER_ID,
+    );
+    t.truthy(ownerOverride);
+    t.true(Object.keys(ownerOverride.config).length > 0);
+    t.true(Object.values(ownerOverride.config).every((allowed) => allowed === true));
+  }
+});
