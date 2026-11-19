@@ -1,4 +1,4 @@
-#!/bi#!/bin/sh
+#!/bin/sh
 
 export NODE_ENV=production
 
