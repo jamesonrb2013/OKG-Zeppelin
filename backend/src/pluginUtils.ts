@@ -141,8 +141,9 @@ export async function hasExplicitRolePermission(
   const member = await guild.members.fetch(memberId).catch(() => null);
   if (!member) return false;
 
-  return member.roles.cache.some((role) => {
-    const grants = rolePermissions[role.id];
+  const roleIds = new Set([guild.id, ...member.roles.cache.keys()]);
+  return [...roleIds].some((roleId) => {
+    const grants = rolePermissions[roleId];
     return Array.isArray(grants) && (grants.includes("*") || grants.includes(permission));
   });
 }
