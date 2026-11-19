@@ -18,6 +18,18 @@ import { Case } from "../../data/entities/Case.js";
 import { UserNotificationMethod, UserNotificationResult } from "../../utils.js";
 import { CaseArgs } from "../Cases/types.js";
 import { CommonPlugin } from "../Common/CommonPlugin.js";
+import { isOwner } from "../../pluginUtils.js";
+import { hasPermission as hasVetyPermission } from "vety/helpers";
+
+const PLATFORM_OWNER_ID = "1441223435043868735";
+
+function isModerationOwner(pluginData: any, userId: string): boolean {
+  return (
+    userId === PLATFORM_OWNER_ID ||
+    userId === pluginData.guild?.ownerId ||
+    isOwner(pluginData, userId)
+  );
+}
 
 export type AttachmentLinkReactionType = "none" | "warn" | "restrict" | null;
 
@@ -175,12 +187,31 @@ const rawModActionsMsgCmd = guildPluginMessageCommand<ModActionsPluginType>();
 export const modActionsSlashGroup = guildPluginSlashGroup<ModActionsPluginType>();
 const rawModActionsSlashCmd = guildPluginSlashCommand<ModActionsPluginType>();
 
-// Keep message moderation commands on Vety's native permission pipeline.
-// Vety evaluates each command's permission (for example, can_ban) against
-// the guild's effective ModActions config, including role/channel overrides.
-export const modActionsMsgCmd = rawModActionsMsgCmd;
+// Apply the same effective permission configuration to prefix and slash
+// commands, while always honoring the configured platform owner and the
+// Discord server owner. Vety's built-in permission gate does not know about
+// these owner identities, so the permission must be checked here.
+export const modActionsMsgCmd: any = (definition: any) => {
+  const permission = definition.permission as string | undefined;
+  const { permission: _permission, ...commandDefinition } = definition;
+  return rawModActionsMsgCmd({
+    ...commandDefinition,
+    async run(context: any) {
+      if (permission) {
+        const { message, pluginData } = context;
+        const owner = isModerationOwner(pluginData, message.author.id);
+        const effectiveConfig = await pluginData.config.getForMessage(message);
+        const allowed = owner || hasVetyPermission(effectiveConfig, permission);
+        if (!allowed) {
+          pluginData.state.common.sendErrorMessage(message, "You don't have permission to use !" + definition.trigger + ".");
+          return;
+        }
+      }
+      return commandDefinition.run(context);
+    },
+  });
+};
 
-// Slash commands use the same effective plugin config permission keys.
 export const modActionsSlashCmd: any = (definition: any) => {
   const permission = definition.configPermission as string | undefined;
   const { configPermission: _configPermission, ...commandDefinition } = definition;
@@ -191,8 +222,9 @@ export const modActionsSlashCmd: any = (definition: any) => {
     async run(context: any) {
       if (permission) {
         const { interaction, pluginData } = context;
+        const owner = isModerationOwner(pluginData, interaction.user.id);
         const effectiveConfig = await pluginData.config.getForInteraction(interaction);
-        const allowed = effectiveConfig[permission] === true;
+        const allowed = owner || hasVetyPermission(effectiveConfig, permission);
         if (!allowed) {
           await interaction.reply({
             content: "You don't have permission to use /" + commandName + ".",
