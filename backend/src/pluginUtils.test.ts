@@ -1,5 +1,6 @@
 import test from "ava";
 import { canActOnByRolePermissions } from "./pluginUtils.js";
+import { hasRolePermissionForRoles } from "./rolePermissions.js";
 
 const STAFF = "1563214978201424024";
 const ADMIN = "1531733163418845226";
