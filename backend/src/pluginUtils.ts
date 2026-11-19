@@ -32,6 +32,7 @@ import {
 import { z } from "zod";
 import { hasPermission as hasVetyPermission } from "vety/helpers";
 import { isStaff } from "./staff.js";
+import { hasRolePermissionForRoles } from "./rolePermissions.js";
 import { Tail } from "./utils/typeUtils.js";
 
 const { getMemberLevel } = helpers;
@@ -126,19 +127,6 @@ export function canActOn(
     fullConfig?.role_permissions,
     allowSameLevel,
   );
-}
-
-/** Resolve a permission against the union of explicitly assigned role grants. */
-export function hasRolePermissionForRoles(
-  roleIds: Iterable<string>,
-  rolePermissions: Record<string, string[]> | undefined,
-  permission: string,
-): boolean {
-  for (const roleId of roleIds) {
-    const grants = rolePermissions?.[roleId];
-    if (Array.isArray(grants) && (grants.includes("*") || grants.includes(permission))) return true;
-  }
-  return false;
 }
 
 /** Check explicit role_permissions grants using a freshly fetched guild member. */
