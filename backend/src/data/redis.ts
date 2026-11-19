@@ -6,32 +6,35 @@ type RedisClient = ReturnType<typeof createClient>;
 
 export const redis: RedisClient = createClient({
   url: env.REDIS_URL,
+  socket: {
+    // Blitz Redis may be temporarily unavailable while the bot is hosted elsewhere.
+    // Keep retrying with bounded backoff instead of making bot startup depend on Redis.
+    reconnectStrategy: (retries) => Math.min(1000 * 2 ** Math.min(retries, 5), 30000),
+  },
 });
+
+let lastErrorLogAt = 0;
 
 redis.on("error", (error) => {
-  console.error("[REDIS] Error:", error);
+  // Redis can emit an error for every reconnect attempt. Throttle logs so a DNS
+  // outage does not flood the Render log stream.
+  const now = Date.now();
+  if (now - lastErrorLogAt >= 30000) {
+    lastErrorLogAt = now;
+    console.error("[REDIS] Connection unavailable; reconnecting in the background:", error);
+  }
 });
 
-let connected = false;
+redis.on("ready", () => {
+  console.log("[REDIS] Connected successfully");
+});
 
-for (let attempt = 1; attempt <= 5; attempt++) {
-  try {
-    console.log(`[REDIS] Connection attempt ${attempt}/5`);
+redis.on("end", () => {
+  console.warn("[REDIS] Connection closed; automatic reconnection will continue");
+});
 
-    await redis.connect();
-    connected = true;
-
-    console.log("[REDIS] Connected successfully");
-    break;
-  } catch (error) {
-    console.error(`[REDIS] Connection attempt ${attempt}/5 failed:`, error);
-
-    if (attempt < 5) {
-      await new Promise((resolve) => setTimeout(resolve, 5000));
-    }
-  }
-}
-
-if (!connected) {
-  throw new Error("Unable to connect to Redis after 5 attempts");
-}
+// Do not use top-level await here. A Redis outage must never block importing this
+// module or prevent Discord.js and the bot command handlers from starting.
+void redis.connect().catch((error) => {
+  console.error("[REDIS] Initial connection could not be established; retrying in the background:", error);
+});
