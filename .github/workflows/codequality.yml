@@ -21,5 +21,9 @@ jobs:
         run: pnpm --filter @zeppelinbot/shared run build
       - name: Type-check backend
         run: pnpm --filter @zeppelinbot/backend run typecheck
+      - name: Run permission and prefix regression tests
+        run: |
+          pnpm --filter @zeppelinbot/backend run build
+          pnpm --filter @zeppelinbot/backend exec ava dist/pluginUtils.test.js dist/prefix/PrefixCommandDispatcher.test.js
       - name: Build dashboard
         run: pnpm --filter @zeppelinbot/dashboard run build
