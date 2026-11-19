@@ -94,6 +94,10 @@ export const router = createRouter({
           beforeEnter: staffOnlyGuard,
         },
         {
+          path: "guilds/:guildId/audit-log",
+          component: () => import("./components/dashboard/AuditLog.vue"),
+        },
+        {
           path: "guilds/:guildId/info",
           component: () => import("./components/dashboard/GuildInfo.vue"),
         },
