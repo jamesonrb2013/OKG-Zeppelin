@@ -182,15 +182,8 @@ export async function hasPermission(
   // platform-wide command permissions from owning an individual server.
   if (permission === "can_act_as_other" && actorId && guild?.ownerId === actorId) return true;
 
-  // When a guild defines role_permissions, treat that map as the authoritative
-  // allow-list. Do not fall through to Vety levels: a second permission system
-  // can otherwise silently grant commands that are absent from role_permissions.
-  const fullConfig = getFullGuildConfig(pluginData, guild?.id);
-  const rolePermissions = fullConfig.role_permissions as Record<string, string[]> | undefined;
-  if (rolePermissions && typeof rolePermissions === "object" && !Array.isArray(rolePermissions) && actorId) {
-    return hasExplicitRolePermission(pluginData, actorId, permission);
-  }
-
+  // The Vety effective config now includes the generated role allow-list
+  // overrides, so this single path honors role grants and channel-specific denies.
   // Prefix commands arrive with a Message; slash command handlers provide
   // channel and member. Resolve both through Vety's effective config.
   if (message) {
