@@ -1,14 +1,13 @@
 import { ApiPermissions, hasPermission, permissionArrToSet } from "@zeppelinbot/shared/apiPermissions.js";
 import { Request, Response } from "express";
 import { ApiPermissionAssignments } from "../data/ApiPermissionAssignments.js";
-import { isStaff } from "../staff.js";
 import { unauthorized } from "./responses.js";
 
 const PLATFORM_OWNER_ID = "1441223435043868735";
 const apiPermissionAssignments = new ApiPermissionAssignments();
 
 export const hasGuildPermission = async (userId: string, guildId: string, permission: ApiPermissions) => {
-  if (userId === PLATFORM_OWNER_ID || isStaff(userId)) {
+  if (userId === PLATFORM_OWNER_ID) {
     return true;
   }
 
