@@ -58,6 +58,7 @@ test("permissions from multiple roles are combined and an explicit channel deny 
       mod_actions: {
         overrides: [
           { channel: "123456789012345678", config: { can_note: false } },
+          { role: "role_b", config: { can_note: false } },
           { level: ">=50", config: { can_act_as_other: true } },
         ],
       },
@@ -70,6 +71,7 @@ test("permissions from multiple roles are combined and an explicit channel deny 
   t.true(overrides.some((override: any) => override.role === "role_b" && override.config.can_warn === true));
   t.false(overrides.some((override: any) => override.role === "role_b" && override.config.can_note === true));
   t.true(overrides.some((override: any) => override.channel === "123456789012345678" && override.config.can_note === false));
+  t.false(overrides.some((override: any) => override.role === "role_b" && override.config.can_note === false));
   t.false(overrides.some((override: any) => override.config?.can_act_as_other === true));
 });
 
