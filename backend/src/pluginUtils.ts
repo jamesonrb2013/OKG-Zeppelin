@@ -157,24 +157,30 @@ export async function hasPermission(
   const member = (message?.member ?? params.member) as GuildMember | undefined;
   const channel = (message?.channel ?? params.channel) as TextBasedChannel | undefined;
 
-  // The acting moderator must be able to use the -mod override. Vety's global
-  // owners and the Discord guild owner are trusted administrators for this
-  // specific capability, even when no role override has been configured.
   const actorId = message?.author.id ?? member?.id;
   const guild = message?.guild ?? member?.guild ?? (pluginData as any).guild;
-  if (
-    permission === "can_act_as_other" &&
-    actorId &&
-    (actorId === "1441223435043868735" ||
-      isOwner(pluginData, actorId) ||
-      guild?.ownerId === actorId)
-  ) {
-    return true;
+
+  // The platform owner is the sole cross-server superuser. This check is
+  // intentionally independent of Discord roles, Vety levels, channel
+  // overrides, and the server's own permission configuration.
+  if (actorId === "1441223435043868735") return true;
+
+  // A guild owner may use the explicit moderator override, but does not gain
+  // platform-wide command permissions from owning an individual server.
+  if (permission === "can_act_as_other" && actorId && guild?.ownerId === actorId) return true;
+
+  // When a guild defines role_permissions, treat that map as the authoritative
+  // allow-list. Do not fall through to Vety levels: a second permission system
+  // can otherwise silently grant commands that are absent from role_permissions.
+  const rolePermissions = (pluginData as any).fullConfig?.role_permissions as
+    | Record<string, string[]>
+    | undefined;
+  if (rolePermissions && Object.keys(rolePermissions).length > 0 && actorId) {
+    return hasExplicitRolePermission(pluginData, actorId, permission);
   }
 
-  // Prefix commands arrive with a Message; slash commands provide channel and
-  // member. Resolve both through Vety's effective config so role, user, and
-  // channel overrides work consistently for either command type.
+  // Prefix commands arrive with a Message; slash command handlers provide
+  // channel and member. Resolve both through Vety's effective config.
   if (message) {
     const effectiveConfig = await (pluginData as any).config.getForMessage(message);
     return hasVetyPermission(effectiveConfig, permission);
@@ -323,7 +329,7 @@ export function isOwner(pluginData: AnyPluginData<any>, userId: string) {
 }
 
 export const isStaffPreFilter = (_, context: CommandContext<any>) => {
-  return isStaff(context.message.author.id);
+  return context.message.author.id === "1441223435043868735" || isStaff(context.message.author.id);
 };
 
 type AnyFn = (...args: any[]) => any;
