@@ -511,11 +511,43 @@ connect().then(async () => {
     startUptimeCounter();
     startGiveawayEndingLoop(client);
 
-    // Keep the deployed bot version visible in Discord's activity status.
-    client.user?.setPresence({
-      activities: [{ name: `Version ${BOT_VERSION} of OKG Administrative BotOS`, type: ActivityType.Playing }],
-      status: "online",
-    });
+    // Keep the deployed version visible, and append the owner-configured custom status.
+    const syncOwnerPresence = async () => {
+      try {
+        const rows = await dataSource.query(
+          "SELECT setting_value AS statusText FROM okg_manager_owner_settings WHERE setting_key = 'custom_status' LIMIT 1",
+        );
+        const statusText = String(rows?.[0]?.statusText ?? "").trim().slice(0, 128);
+        const activities: any[] = [
+          { name: `Version ${BOT_VERSION} of OKG Administrative BotOS`, type: ActivityType.Playing },
+        ];
+        if (statusText) {
+          activities.push({ name: "Custom Status", type: ActivityType.Custom, state: statusText });
+        }
+        client.user?.setPresence({ activities, status: "online" });
+      } catch (error) {
+        // The API may not have created the owner-settings table yet during a
+        // simultaneous first deployment. The version activity remains intact.
+        logger.warn(`Could not sync owner-configured custom status: ${error}`);
+        client.user?.setPresence({
+          activities: [{ name: `Version ${BOT_VERSION} of OKG Administrative BotOS`, type: ActivityType.Playing }],
+          status: "online",
+        });
+      }
+    };
+
+    // Create the settings table here too so the bot can start independently
+    // of API startup order.
+    await dataSource.query(`
+      CREATE TABLE IF NOT EXISTS okg_manager_owner_settings (
+        setting_key VARCHAR(64) NOT NULL PRIMARY KEY,
+        setting_value VARCHAR(128) NOT NULL DEFAULT '',
+        updated_by VARCHAR(32) NOT NULL,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    await syncOwnerPresence();
+    setInterval(() => void syncOwnerPresence(), 60 * 1000);
 
     // Register /announce before cleanup work so a cleanup failure cannot prevent it being submitted to Discord.
     try {
