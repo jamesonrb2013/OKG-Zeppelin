@@ -27,6 +27,14 @@ export function initOwnerAPI(router: express.Router) {
     return false;
   };
 
+  ownerRouter.get("/audit-log", async (req: Request, res: Response) => {
+    await tableReady;
+    if (!requireOwner(req, res)) return;
+    const entries = await auditLog.getLatestEntries(Number(req.query.limit) || 500);
+    res.setHeader("Cache-Control", "no-store");
+    return res.json({ entries });
+  });
+
   ownerRouter.get("/presence", async (req: Request, res: Response) => {
     await tableReady;
     if (!requireOwner(req, res)) return;
