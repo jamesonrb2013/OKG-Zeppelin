@@ -93,3 +93,29 @@ test("the platform owner receives every declared can_* permission and is added t
   t.true(ownerOverride.config.can_act_as_other);
   t.is(ownerOverride.config.dm_on_warn, undefined);
 });
+
+
+test("ambiguous permission names are scoped to moderation unless explicitly namespaced", (t) => {
+  const multiPluginConfig: any = {
+    role_permissions: {
+      staff: ["can_view", "counters.can_view"],
+    },
+    plugins: {},
+  };
+  const multiPluginSchemas: any = [
+    plugins[0],
+    {
+      plugin: {
+        name: "counters",
+        configSchema: { shape: { can_view: {}, can_edit: {} } },
+      },
+    },
+  ];
+
+  applyPermissionOverrides(multiPluginConfig, multiPluginSchemas);
+  const moderationOverrides = multiPluginConfig.plugins.mod_actions.overrides;
+  const counterOverrides = multiPluginConfig.plugins.counters.overrides;
+  t.true(moderationOverrides.some((override: any) => override.role === "staff" && override.config.can_view === true));
+  t.true(counterOverrides.some((override: any) => override.role === "staff" && override.config.can_view === true));
+  t.false(counterOverrides.some((override: any) => override.role === "staff" && override.config.can_edit === true));
+});
