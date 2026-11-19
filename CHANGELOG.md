@@ -1,3 +1,15 @@
+## 1.3.28
+
+### Fixed
+- Decoupled bot startup from the Blitz Redis connection. Redis now connects in the background and retries with bounded exponential backoff, so a temporary Redis DNS/network outage no longer blocks Discord bot initialization.
+- Throttled repeated Redis connection errors in logs while preserving reconnect visibility.
+
+### Changed
+- Aligned root, backend, and dashboard package versions at 1.3.28.
+
+### Credits
+- Updated by Jeffery Spinnel.
+
 ## 1.3.27
 
 ### Fixed
