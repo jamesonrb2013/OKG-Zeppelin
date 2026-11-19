@@ -11,6 +11,7 @@
         @click="setTab(tab.id)">{{ tab.label }}</button>
     </nav>
     <InviteCodes v-if="activeTab === 'invites'" />
+    <OwnerAuditLog v-else-if="activeTab === 'audit'" />
     <section v-else-if="activeTab === 'presence'" class="max-w-3xl rounded-2xl border border-gray-800 bg-gray-900 p-6">
       <p class="text-xs font-semibold uppercase tracking-widest text-indigo-300">Discord bot profile</p>
       <h2 class="mt-2 text-xl font-semibold text-white">Custom status</h2>
@@ -37,11 +38,12 @@
 <script lang="ts">
 import { get, post } from "../../api";
 import InviteCodes from "./InviteCodes.vue";
+import OwnerAuditLog from "./OwnerAuditLog.vue";
 export default {
-  components: { InviteCodes },
+  components: { InviteCodes, OwnerAuditLog },
   data() {
     return {
-      tabs: [{ id: "invites", label: "Invite codes" }, { id: "presence", label: "Bot status" }],
+      tabs: [{ id: "invites", label: "Invite codes" }, { id: "audit", label: "Audit log" }, { id: "presence", label: "Bot status" }],
       activeTab: "invites",
       statusText: "",
       loading: false,
