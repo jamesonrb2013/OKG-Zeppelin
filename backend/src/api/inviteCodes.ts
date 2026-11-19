@@ -1,6 +1,9 @@
 import crypto from "node:crypto";
 import express, { Request, Response } from "express";
 import { AllowedGuilds } from "../data/AllowedGuilds.js";
+import { ApiAuditLog } from "../data/ApiAuditLog.js";
+import { AuditLogEventTypes } from "../data/apiAuditLogTypes.js";
+import { CORE_GUILD_ID } from "../env.js";
 import { dataSource } from "../data/dataSource.js";
 import { isInviteAdmin } from "../staff.js";
 import { apiTokenAuthHandlers } from "./auth.js";
@@ -8,6 +11,7 @@ import { apiTokenAuthHandlers } from "./auth.js";
 const CODE_PATTERN = /^OKG-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/;
 const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const attempts = new Map<string, { count: number; resetAt: number }>();
+const auditLog = new ApiAuditLog();
 
 function makeCodePart() {
   const bytes = crypto.randomBytes(4);
@@ -165,6 +169,12 @@ export function initInviteCodesAPI(router: express.Router) {
       codeHash,
       targetGuildId,
     ]);
+    await auditLog.addEntry(CORE_GUILD_ID, req.user!.userId, AuditLogEventTypes.INVITE_CODE_CREATED, {
+      code_hint: codeHint,
+      target_guild_id: targetGuildId,
+      max_uses: maxUses,
+      expires_at: expiresAt ? expiresAt.toISOString() : null,
+    });
     return res.status(201).json({
       code,
       codeHint,
@@ -184,6 +194,11 @@ export function initInviteCodesAPI(router: express.Router) {
       [id],
     );
     if (!result?.affectedRows) return res.status(404).json({ error: "Invite code not found." });
+    const rows = await dataSource.query("SELECT code_hint AS codeHint FROM okg_manager_invite_codes WHERE id = ? LIMIT 1", [id]);
+    await auditLog.addEntry(CORE_GUILD_ID, req.user!.userId, AuditLogEventTypes.INVITE_CODE_REVOKED, {
+      code_id: id,
+      code_hint: String(rows?.[0]?.codeHint ?? "unknown"),
+    });
     return res.json({ ok: true });
   });
   router.use("/invite-codes", adminRouter);
