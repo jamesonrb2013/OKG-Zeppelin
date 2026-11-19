@@ -12,7 +12,9 @@ function isRecord(value: unknown): value is Record<string, any> {
 }
 
 function hasContextualDenyTarget(override: Record<string, any>): boolean {
-  if (override.channel || override.category || override.thread_id || override.is_thread || override.user) return true;
+  if (["channel", "category", "thread_id", "is_thread", "user"].some((key) => Object.prototype.hasOwnProperty.call(override, key))) {
+    return true;
+  }
   for (const key of ["any", "all"]) {
     if (Array.isArray(override[key]) && override[key].some((condition: unknown) => isRecord(condition) && hasContextualDenyTarget(condition))) {
       return true;
