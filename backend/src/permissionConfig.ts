@@ -80,7 +80,7 @@ export function applyPermissionOverrides(
       }
 
       ordinaryOverrides.push({
-        level: ">=-1000000000000",
+        level: ">=0",
         config: Object.fromEntries(permissionKeys.map((permission) => [permission, false])),
       });
 
