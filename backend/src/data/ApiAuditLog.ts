@@ -20,6 +20,13 @@ export class ApiAuditLog extends BaseRepository {
     });
   }
 
+  getLatestEntries(limit = 500) {
+    return this.auditLog.find({
+      order: { created_at: "DESC", id: "DESC" },
+      take: Math.min(Math.max(Math.floor(limit), 1), 500),
+    });
+  }
+
   addEntry<TEventType extends AuditLogEventType>(
     guildId: string,
     authorId: string,
