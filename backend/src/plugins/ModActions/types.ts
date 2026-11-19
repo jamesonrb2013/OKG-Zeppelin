@@ -200,8 +200,9 @@ export const modActionsMsgCmd: any = (definition: any) => {
       if (permission) {
         const { message, pluginData } = context;
         const owner = isModerationOwner(pluginData, message.author.id);
-        const effectiveConfig = await pluginData.config.getForMessage(message);
-        const allowed = owner || hasVetyPermission(effectiveConfig, permission);
+        // Short-circuit owners before loading merged role/channel config.
+        const allowed =
+          owner || hasVetyPermission(await pluginData.config.getForMessage(message), permission);
         if (!allowed) {
           pluginData.state.common.sendErrorMessage(message, "You don't have permission to use !" + definition.trigger + ".");
           return;
@@ -223,8 +224,10 @@ export const modActionsSlashCmd: any = (definition: any) => {
       if (permission) {
         const { interaction, pluginData } = context;
         const owner = isModerationOwner(pluginData, interaction.user.id);
-        const effectiveConfig = await pluginData.config.getForInteraction(interaction);
-        const allowed = owner || hasVetyPermission(effectiveConfig, permission);
+        // Owner checks must not await config resolution before the command
+        // acknowledges Discord's 3-second interaction deadline.
+        const allowed =
+          owner || hasVetyPermission(await pluginData.config.getForInteraction(interaction), permission);
         if (!allowed) {
           await interaction.reply({
             content: "You don't have permission to use /" + commandName + ".",
