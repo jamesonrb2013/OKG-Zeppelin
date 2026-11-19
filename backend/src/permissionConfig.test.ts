@@ -39,7 +39,7 @@ test("role_permissions is a strict allow-list across the whole plugin permission
   const grants = overrides.filter((override: any) => override.role === "1499194560499154975");
   const denied = overrides.find((override: any) => override.level === ">=-1000000000000");
 
-  t.deeply(Object.keys(denied.config).sort(), [
+  t.deepEqual(Object.keys(denied.config).sort(), [
     "can_act_as_other", "can_addcase", "can_mute", "can_note", "can_view", "can_warn",
   ]);
   t.false(grants.some((override: any) => override.config.can_act_as_other === true));
@@ -89,5 +89,5 @@ test("the platform owner receives every declared can_* permission and is added t
   t.true(config.owners.includes(PLATFORM_OWNER_ID));
   t.true(ownerOverride.config.can_note);
   t.true(ownerOverride.config.can_act_as_other);
-  t.false(ownerOverride.config.dm_on_warn);
+  t.is(ownerOverride.config.dm_on_warn, undefined);
 });
