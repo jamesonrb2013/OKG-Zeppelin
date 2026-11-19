@@ -5,6 +5,7 @@ export const AuditLogEventTypes = {
   EDIT_API_PERMISSION: "EDIT_API_PERMISSION" as const,
   REMOVE_API_PERMISSION: "REMOVE_API_PERMISSION" as const,
   EDIT_CONFIG: "EDIT_CONFIG" as const,
+  OWNER_STATUS_UPDATED: "OWNER_STATUS_UPDATED" as const,
 };
 
 export type AuditLogEventType = keyof typeof AuditLogEventTypes;
@@ -40,6 +41,7 @@ export interface AuditLogEventData extends Record<AuditLogEventType, unknown> {
   };
 
   EDIT_CONFIG: Record<string, never>;
+  OWNER_STATUS_UPDATED: { status_text: string };
 }
 
 export type AnyAuditLogEventData = AuditLogEventData[AuditLogEventType];
