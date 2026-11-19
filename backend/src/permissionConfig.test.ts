@@ -95,13 +95,7 @@ test("the platform owner receives every declared can_* permission and is added t
 });
 
 
-test("ambiguous permission names are scoped to moderation unless explicitly namespaced", (t) => {
-  const multiPluginConfig: any = {
-    role_permissions: {
-      staff: ["can_view", "counters.can_view"],
-    },
-    plugins: {},
-  };
+test("ambiguous permission names are scoped and can be granted with plugin-qualified names", (t) => {
   const multiPluginSchemas: any = [
     plugins[0],
     {
@@ -112,10 +106,17 @@ test("ambiguous permission names are scoped to moderation unless explicitly name
     },
   ];
 
-  applyPermissionOverrides(multiPluginConfig, multiPluginSchemas);
-  const moderationOverrides = multiPluginConfig.plugins.mod_actions.overrides;
-  const counterOverrides = multiPluginConfig.plugins.counters.overrides;
-  t.true(moderationOverrides.some((override: any) => override.role === "staff" && override.config.can_view === true));
-  t.true(counterOverrides.some((override: any) => override.role === "staff" && override.config.can_view === true));
-  t.false(counterOverrides.some((override: any) => override.role === "staff" && override.config.can_edit === true));
+  const legacyConfig: any = { role_permissions: { staff: ["can_view"] }, plugins: {} };
+  applyPermissionOverrides(legacyConfig, multiPluginSchemas);
+  const legacyModeration = legacyConfig.plugins.mod_actions.overrides;
+  const legacyCounters = legacyConfig.plugins.counters.overrides;
+  t.true(legacyModeration.some((override: any) => override.role === "staff" && override.config.can_view === true));
+  t.false(legacyCounters.some((override: any) => override.role === "staff" && override.config.can_view === true));
+
+  const scopedConfig: any = { role_permissions: { staff: ["counters.can_view"] }, plugins: {} };
+  applyPermissionOverrides(scopedConfig, multiPluginSchemas);
+  const scopedModeration = scopedConfig.plugins.mod_actions.overrides;
+  const scopedCounters = scopedConfig.plugins.counters.overrides;
+  t.false(scopedModeration.some((override: any) => override.role === "staff" && override.config.can_view === true));
+  t.true(scopedCounters.some((override: any) => override.role === "staff" && override.config.can_view === true));
 });
