@@ -33,7 +33,7 @@ export class ApiAuditLog extends BaseRepository {
     eventType: TEventType,
     eventData: AuditLogEventData[TEventType],
   ) {
-    this.auditLog.insert({
+    return this.auditLog.insert({
       guild_id: guildId,
       author_id: authorId,
       event_type: eventType as any,
