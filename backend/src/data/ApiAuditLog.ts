@@ -12,6 +12,14 @@ export class ApiAuditLog extends BaseRepository {
     this.auditLog = dataSource.getRepository(ApiAuditLogEntry);
   }
 
+  getRecentEntries(guildId: string, limit = 250) {
+    return this.auditLog.find({
+      where: { guild_id: guildId },
+      order: { created_at: "DESC", id: "DESC" },
+      take: Math.min(Math.max(Math.floor(limit), 1), 500),
+    });
+  }
+
   addEntry<TEventType extends AuditLogEventType>(
     guildId: string,
     authorId: string,
