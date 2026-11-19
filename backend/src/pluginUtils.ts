@@ -134,8 +134,8 @@ export function canActOn(
   }
 
   return canActOnByRolePermissions(
-    member1.roles.cache.keys(),
-    member2.roles.cache.keys(),
+    [member1.guild.id, ...member1.roles.cache.keys()],
+    [member2.guild.id, ...member2.roles.cache.keys()],
     fullConfig?.role_permissions,
     allowSameLevel,
   );
