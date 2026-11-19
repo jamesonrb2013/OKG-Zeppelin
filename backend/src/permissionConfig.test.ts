@@ -37,7 +37,7 @@ test("role_permissions is a strict allow-list across the whole plugin permission
   applyPermissionOverrides(config, plugins);
   const overrides = config.plugins.mod_actions.overrides;
   const grants = overrides.filter((override: any) => override.role === "1499194560499154975");
-  const denied = overrides.find((override: any) => override.level === ">=-1000000000000");
+  const denied = overrides.find((override: any) => override.level === ">=0");
 
   t.deepEqual(Object.keys(denied.config).sort(), [
     "can_act_as_other", "can_addcase", "can_mute", "can_note", "can_view", "can_warn",
@@ -77,7 +77,7 @@ test("an explicitly empty role_permissions map denies every non-owner permission
   const config: any = { role_permissions: {}, plugins: {} };
   applyPermissionOverrides(config, plugins);
   const overrides = config.plugins.mod_actions.overrides;
-  t.true(overrides.some((override: any) => override.level === ">=-1000000000000"));
+  t.true(overrides.some((override: any) => override.level === ">=0"));
   t.true(overrides.some((override: any) => override.user === PLATFORM_OWNER_ID && override.config.can_act_as_other === true));
 });
 
