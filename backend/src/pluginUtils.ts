@@ -128,6 +128,19 @@ export function canActOn(
   );
 }
 
+/** Resolve a permission against the union of explicitly assigned role grants. */
+export function hasRolePermissionForRoles(
+  roleIds: Iterable<string>,
+  rolePermissions: Record<string, string[]> | undefined,
+  permission: string,
+): boolean {
+  for (const roleId of roleIds) {
+    const grants = rolePermissions?.[roleId];
+    if (Array.isArray(grants) && (grants.includes("*") || grants.includes(permission))) return true;
+  }
+  return false;
+}
+
 /** Check explicit role_permissions grants using a freshly fetched guild member. */
 export async function hasExplicitRolePermission(
   pluginData: AnyPluginData<any>,
@@ -142,10 +155,7 @@ export async function hasExplicitRolePermission(
   if (!member) return false;
 
   const roleIds = new Set([guild.id, ...member.roles.cache.keys()]);
-  return [...roleIds].some((roleId) => {
-    const grants = rolePermissions[roleId];
-    return Array.isArray(grants) && (grants.includes("*") || grants.includes(permission));
-  });
+  return hasRolePermissionForRoles(roleIds, rolePermissions, permission);
 }
 
 export async function hasPermission(
