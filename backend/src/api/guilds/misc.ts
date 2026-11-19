@@ -55,6 +55,16 @@ export function initGuildsMiscAPI(router: express.Router) {
   });
 
   miscRouter.get(
+    "/:guildId/audit-log",
+    requireGuildPermission(ApiPermissions.ViewGuild),
+    async (req: Request, res: Response) => {
+      const entries = await auditLog.getRecentEntries(req.params.guildId, Number(req.query.limit) || 250);
+      res.setHeader("Cache-Control", "no-store");
+      return res.json({ entries });
+    },
+  );
+
+  miscRouter.get(
     "/:guildId/config",
     requireGuildPermission(ApiPermissions.ReadConfig),
     async (req: Request, res: Response) => {
@@ -102,6 +112,7 @@ export function initGuildsMiscAPI(router: express.Router) {
     }
 
     await configs.saveNewRevision(`guild-${req.params.guildId}`, config, req.user!.userId);
+    await auditLog.addEntry(req.params.guildId, req.user!.userId, AuditLogEventTypes.EDIT_CONFIG, {});
 
     ok(res);
   });
