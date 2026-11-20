@@ -161,6 +161,9 @@ export const availableGuildPlugins: ZeppelinGuildPluginInfo[] = [
   {
     plugin: ModActionsPlugin,
     docs: modActionsPluginDocs,
+    // Moderation commands are core OKG Manager functionality and must always
+    // be registered. Individual actions remain protected by OKG permissions.
+    autoload: true,
   },
   {
     plugin: MutesPlugin,
