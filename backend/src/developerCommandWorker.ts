@@ -258,7 +258,7 @@ async function execute(client: Client, allowedGuilds: AllowedGuilds, command: De
         if (flags.some((flag) => flag === undefined)) throw new Error("One or more Discord permissions are invalid.");
         changes.permissions = new PermissionsBitField(flags);
       }
-      await role.edit(changes, { reason: "Edited through the OKG Manager owner Developer Center" });
+      await role.edit(changes, "Edited through the OKG Manager owner Developer Center");
       return { ok: true, output: "Updated role " + role.name + " (" + role.id + ") in " + guild.name + "." };
     }
     if (!snowflake(command.userId)) throw new Error("That user ID is invalid.");
