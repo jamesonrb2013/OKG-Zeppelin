@@ -51,18 +51,6 @@ async function discordGet<T>(path: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-async function isDiscordGuildMember(guildId: string, userId: string): Promise<boolean> {
-  const response = await fetch(`${DISCORD_API}/guilds/${guildId}/members/${userId}`, {
-    headers: { Authorization: `Bot ${env.BOT_TOKEN}`, "User-Agent": "OKG-Manager/RoleDetails" },
-  });
-  if (response.status === 404) return false;
-  if (!response.ok) {
-    const body = await response.text().catch(() => "");
-    throw new Error(`Discord API returned ${response.status}: ${body.slice(0, 240)}`);
-  }
-  return true;
-}
-
 function roleCreatedAt(roleId: string): string {
   const timestamp = Number((BigInt(roleId) >> 22n) + 1420070400000n);
   return new Date(timestamp).toISOString();
@@ -117,12 +105,11 @@ export function initGuildsRolesAPI(router: express.Router) {
   const allowedGuilds = new AllowedGuilds();
   router.get(
     "/:guildId/roles",
-    requireGuildPermission(ApiPermissions.ViewRoles),
+    requireGuildPermission(ApiPermissions.ViewGuild),
     rateLimit((req) => `role-details-${req.params.guildId}-${req.user!.userId}`, 15_000, "Please wait before refreshing role details again."),
     async (req: Request, res: Response) => {
       if (!(await allowedGuilds.isAllowed(req.params.guildId))) return unauthorized(res);
       try {
-        if (!(await isDiscordGuildMember(req.params.guildId, req.user!.userId))) return unauthorized(res);
         const roles = await loadRoleDetails(req.params.guildId);
         res.setHeader("Cache-Control", "no-store");
         return res.json({ roles, cachedForSeconds: Math.floor(CACHE_TTL_MS / 1000) });
