@@ -1,3 +1,16 @@
+## 1.3.34
+
+### Fixed
+- Fixed Vety command parser configuration when no global config row exists: the global fallback now receives the same private internal prefix as guild configs.
+- Replaced the invisible Unicode prefix marker with a private ASCII-only `~!` prefix so Vety can reliably parse forwarded messages.
+- Kept `!o` as the universal public prefix, configured server prefixes supported, and bare `!command` rejected.
+
+### Reliability
+- Added regression coverage for the explicit private prefix used by forwarded commands.
+
+### Credits
+- Updated by Jeffery Spinnel.
+
 ## 1.3.33
 
 ### Fixed
