@@ -62,6 +62,14 @@ export const DmCmd = utilityCmd({
       return;
     }
 
+    if (isModmailStaff) {
+      const targetMember = await msg.guild!.members.fetch(args.user.id).catch(() => null);
+      if (!targetMember) {
+        await msg.channel.send("❌ Modmail staff can use this command to contact members of this server only.");
+        return;
+      }
+    }
+
     const cooldownKey = msg.guildId + ":" + msg.author.id;
     const now = Date.now();
     const previous = staffCooldowns.get(cooldownKey) ?? 0;
