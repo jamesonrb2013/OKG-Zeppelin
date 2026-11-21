@@ -243,6 +243,7 @@ export function initOwnerAPI(router: express.Router) {
           '/admin role edit {serverId} {roleId} --name "{name}" --permissions {Permission,Permission|none}',
           "/bot status — Check bot heartbeat",
           "/bot stats — Show live bot version, latency, uptime, memory, and cache counts",
+          "/bot stats — Show live bot version, latency, uptime, memory, and cache counts",
           '/bot presence set "status text" — Update the custom status while keeping the version activity',
           "/bot presence clear — Clear the custom status and keep the version activity",
           "/database health — Check database connection",
