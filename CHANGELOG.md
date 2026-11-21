@@ -1,3 +1,17 @@
+## 1.3.30
+
+### Fixed
+- Restored reliable public message-prefix routing so `!o` and configured per-server prefixes are normalized to Vety's internal command prefix and dispatched through Vety's normal command pipeline.
+- Preserved the original Discord message while forwarding a rewritten message with an own `content` property, avoiding the inherited Message.content accessor failure.
+- Kept prefix command execution behind the authorized-guild check and Vety's configured command permission checks.
+- Added dispatcher-level regression coverage for default and custom public prefixes.
+
+### Changed
+- Aligned root, backend, and dashboard package versions at 1.3.30.
+
+### Credits
+- Updated by Jeffery Spinnel.
+
 ## 1.3.27
 
 ### Fixed
