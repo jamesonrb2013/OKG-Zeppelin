@@ -108,7 +108,7 @@ export default {
     },
     canViewRoles(guildId: string) {
       const permissions = this.myGuildPermissions(guildId);
-      return permissions.includes("ViewRoles") || hasPermission(new Set(permissions), ApiPermissions.ViewGuild);
+      return hasPermission(new Set(permissions), ApiPermissions.ViewRoles);
     },
     canManageAccess(guildId: string) {
       return hasPermission(new Set(this.myGuildPermissions(guildId)), ApiPermissions.ManageAccess);
