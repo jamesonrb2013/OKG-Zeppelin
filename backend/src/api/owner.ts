@@ -19,9 +19,12 @@ type DeveloperCommand =
   | { id: string; type: "servers.list" }
   | { id: string; type: "server.info"; guildId: string }
   | { id: string; type: "server.adminroles"; guildId: string }
+  | { id: string; type: "server.channels"; guildId: string }
   | { id: string; type: "user.inspect"; guildId: string; userId: string }
   | { id: string; type: "message.send"; guildId: string; channelId: string; message: string }
-  | { id: string; type: "role.create"; guildId: string; name: string; give: string[]; position?: number; permissions: string[] };
+  | { id: string; type: "role.create"; guildId: string; name: string; give: string[]; position?: number; permissions: string[] }
+  | { id: string; type: "role.assign" | "role.remove"; guildId: string; roleId: string; userId: string }
+  | { id: string; type: "role.delete"; guildId: string; roleId: string; confirmed: true };
 
 function parseDeveloperCommand(raw: string, id: string): DeveloperCommand | null {
   const command = raw.replace(/^\/+/, "").trim();
@@ -31,10 +34,17 @@ function parseDeveloperCommand(raw: string, id: string): DeveloperCommand | null
   if (match) return { id, type: "server.info", guildId: match[1] };
   match = command.match(/^adminroles\s+(\d{17,20})$/i);
   if (match) return { id, type: "server.adminroles", guildId: match[1] };
+  match = command.match(/^server\s+channels\s+(\d{17,20})$/i);
+  if (match) return { id, type: "server.channels", guildId: match[1] };
   match = command.match(/^user\s+inspect\s+(\d{17,20})\s+(\d{17,20})$/i);
   if (match) return { id, type: "user.inspect", guildId: match[1], userId: match[2] };
   match = command.match(/^message\s+send\s+(\d{17,20})\s+(\d{17,20})\s+([\s\S]+)$/i);
   if (match) return { id, type: "message.send", guildId: match[1], channelId: match[2], message: match[3].trim() };
+
+  match = command.match(/^admin\s+role\s+(assign|remove)\s+(\d{17,20})\s+(\d{17,20})\s+(\d{17,20})$/i);
+  if (match) return { id, type: match[1].toLowerCase() === "assign" ? "role.assign" : "role.remove", guildId: match[2], roleId: match[3], userId: match[4] };
+  match = command.match(/^admin\s+role\s+delete\s+(\d{17,20})\s+(\d{17,20})\s+--confirm$/i);
+  if (match) return { id, type: "role.delete", guildId: match[1], roleId: match[2], confirmed: true };
 
   const roleMatch = command.match(/^admin\s+role\s+create\s+(\d{17,20})\s+(?:"([^"]{1,100})"|([^\s]+))(.*)$/i);
   if (roleMatch) {
@@ -169,9 +179,13 @@ export function initOwnerAPI(router: express.Router) {
           "/servers list — List authorized servers",
           "/server info {serverId} — Inspect a server",
           "/adminroles {serverId} — List roles with administrative permissions",
+          "/server channels {serverId} — List channel names, types, and IDs",
           "/user inspect {serverId} {userId} — Inspect a server member",
           "/message send {serverId} {channelId} {message} — Send a message as the bot",
           '/admin role create {serverId} "{name}" --give {userId,userId} --position {number} --permissions {Permission,Permission}',
+          "/admin role assign {serverId} {roleId} {userId} — Assign a role",
+          "/admin role remove {serverId} {roleId} {userId} — Remove a role",
+          "/admin role delete {serverId} {roleId} --confirm — Permanently delete a role",
           "/bot status — Check bot heartbeat",
           "/database health — Check database connection",
           "/redis health — Check Redis connection",
