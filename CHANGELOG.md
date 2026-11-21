@@ -1,3 +1,21 @@
+## 1.3.39
+
+### Added
+- Added the member-facing `/role` command so every server member can inspect roles without Administrator or Manage Roles permissions.
+- Added a private interactive role viewer with role selection, member count and paginated member list, full permission list, and powerful-permission warnings.
+- Added role color, ID, creation date, hierarchy position, hoisted, mentionable, and integration-managed details.
+- Added section navigation, pagination, and refresh controls; the command is read-only and never modifies roles.
+
+### Reliability
+- Fetch the guild member list using the existing privileged Guild Members intent so role counts are based on the full member list rather than only startup cache entries.
+- Cache successful full-member fetches per guild and refresh them only when requested.
+
+### Changed
+- Aligned root, backend, and dashboard package versions at 1.3.39.
+
+### Credits
+- Updated by Jeffery Spinnel.
+
 ## 1.3.38
 
 ### Fixed
