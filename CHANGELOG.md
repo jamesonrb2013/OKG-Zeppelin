@@ -1,3 +1,17 @@
+## 1.3.32
+
+### Fixed
+- Isolated Vety's internal message-command prefix behind an invisible private marker, so users cannot invoke commands with bare `!command`.
+- Kept `!o` as the universal public default and retained per-server custom prefixes through the same Vety command dispatcher.
+- Updated Help output to display the configured public prefix instead of Vety's private internal marker.
+- Added regression coverage confirming bare `!mute` and `!warn` are not public commands and that rewritten commands use the private internal prefix.
+
+### Changed
+- Aligned root, backend, and dashboard package versions at 1.3.32.
+
+### Credits
+- Updated by Jeffery Spinnel.
+
 ## 1.3.31
 
 ### Fixed
