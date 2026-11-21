@@ -1,3 +1,16 @@
+## 1.3.31
+
+### Fixed
+- Made forwarded public-prefix messages writable, matching Vety's command-alias dispatch contract so the normal message-command parser can process rewritten commands.
+- Added an exact regression test for `!o mute <@1528924568020844655> 15m test`, verifying that the command name and all arguments reach Vety unchanged.
+- Added a visible, user-safe error response when public-prefix dispatch throws, while retaining full diagnostic details in bot logs.
+
+### Changed
+- Aligned root, backend, and dashboard package versions at 1.3.31.
+
+### Credits
+- Updated by Jeffery Spinnel.
+
 ## 1.3.30
 
 ### Fixed
