@@ -1,4 +1,4 @@
-import { createForwardedPrefixMessage } from "../../../prefix/PrefixCommandDispatcher.js";
+import { createForwardedPrefixMessage, INTERNAL_COMMAND_PREFIX } from "../../../prefix/PrefixCommandDispatcher.js";
 import { commandAliasesEvt } from "../types.js";
 
 export const DispatchAliasEvt = commandAliasesEvt({
@@ -28,7 +28,7 @@ export const DispatchAliasEvt = commandAliasesEvt({
     const publicPrefix = fullConfig.command_prefix || fullConfig.prefix || "";
     if (!publicPrefix || !newContent.toLowerCase().startsWith(publicPrefix.toLowerCase())) return;
 
-    const copiedMessage = createForwardedPrefixMessage(msg, "!" + newContent.slice(publicPrefix.length));
+    const copiedMessage = createForwardedPrefixMessage(msg, INTERNAL_COMMAND_PREFIX + newContent.slice(publicPrefix.length));
 
     await pluginData.getVetyInstance().dispatchMessageCommands(copiedMessage);
   },
