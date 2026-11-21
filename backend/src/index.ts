@@ -455,7 +455,7 @@ connect().then(async () => {
             delete loaded.error_emoji;
 
             logger.info(
-              `Loaded guild command config for ${id}: publicPrefix=${JSON.stringify(publicPrefix)}, internalPrefix="!", staffLevels=${Object.keys(loaded.levels ?? {}).length}`,
+              `Loaded guild command config for ${id}: publicPrefix=${JSON.stringify(publicPrefix)}, internalPrefix=<private>, staffLevels=${Object.keys(loaded.levels ?? {}).length}`,
             );
 
             return loaded;
