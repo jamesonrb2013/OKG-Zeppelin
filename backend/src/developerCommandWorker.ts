@@ -31,9 +31,12 @@ type DeveloperCommand =
   | { id: string; type: "servers.list" }
   | { id: string; type: "server.info"; guildId: string }
   | { id: string; type: "server.adminroles"; guildId: string }
+  | { id: string; type: "server.channels"; guildId: string }
   | { id: string; type: "user.inspect"; guildId: string; userId: string }
   | { id: string; type: "message.send"; guildId: string; channelId: string; message: string }
-  | { id: string; type: "role.create"; guildId: string; name: string; give: string[]; position?: number; permissions: string[] };
+  | { id: string; type: "role.create"; guildId: string; name: string; give: string[]; position?: number; permissions: string[] }
+  | { id: string; type: "role.assign" | "role.remove"; guildId: string; roleId: string; userId: string }
+  | { id: string; type: "role.delete"; guildId: string; roleId: string; confirmed: true };
 
 type CommandResult = { ok: boolean; output: string };
 
@@ -100,6 +103,19 @@ async function execute(client: Client, allowedGuilds: AllowedGuilds, command: De
         ? `Administrative roles in ${guild.name} (${adminRoles.size}):\n${adminRoles.map((role) => `• ${role.name} — ${role.id} [${role.permissions.toArray().join(", ")}]`).join("\n")}`
         : `No roles with administrative permissions were found in ${guild.name}.`,
     };
+  }
+
+  if (command.type === "server.channels") {
+    const channels = await guild.channels.fetch();
+    const rows = channels.filter((channel) => channel !== null).sort((a, b) => {
+      const aPosition = "rawPosition" in a ? a.rawPosition : 0;
+      const bPosition = "rawPosition" in b ? b.rawPosition : 0;
+      return aPosition - bPosition;
+    }).map((channel) => {
+      const kind = channel.type === 0 ? "text" : channel.type === 2 ? "voice" : channel.type === 4 ? "category" : channel.type === 5 ? "announcement" : channel.type === 13 ? "stage" : channel.type === 15 ? "forum" : channel.type === 16 ? "media" : "other";
+      return `• #${channel.name} [${kind}] — ${channel.id}`;
+    });
+    return { ok: true, output: rows.length ? `Channels in ${guild.name} (${rows.length}):\\n${rows.join("\\n")}` : `No channels found in ${guild.name}.` };
   }
 
   if (command.type === "user.inspect") {
@@ -185,6 +201,34 @@ async function execute(client: Client, allowedGuilds: AllowedGuilds, command: De
         skipped.length ? `Skipped: ${skipped.join("; ")}` : "",
       ].filter(Boolean).join("\n"),
     };
+  }
+
+  if (command.type === "role.assign" || command.type === "role.remove" || command.type === "role.delete") {
+    if (!snowflake(command.roleId)) throw new Error("That role ID is invalid.");
+    const botMember = guild.members.me ?? await guild.members.fetchMe();
+    if (!botMember.permissions.has(PermissionFlagsBits.ManageRoles)) throw new Error("The bot needs Manage Roles permission in that server.");
+    const role = await guild.roles.fetch(command.roleId);
+    if (!role || role.guild.id !== guild.id) throw new Error("That role was not found in the selected server.");
+    if (role.id === guild.id || role.managed || role.position >= botMember.roles.highest.position || !role.editable) {
+      throw new Error("That role is managed, is the @everyone role, or is at/above the bot highest role and cannot be changed.");
+    }
+    if (command.type === "role.delete") {
+      if (command.confirmed !== true) throw new Error("Role deletion requires the explicit --confirm flag.");
+      const roleName = role.name;
+      await role.delete("Deleted through the OKG Manager owner Developer Center with explicit confirmation");
+      return { ok: true, output: `Deleted role ${roleName} (${command.roleId}) from ${guild.name}.` };
+    }
+    if (!snowflake(command.userId)) throw new Error("That user ID is invalid.");
+    const member = await guild.members.fetch(command.userId);
+    if (!member.manageable) throw new Error("That member is above the bot or cannot be managed.");
+    if (command.type === "role.assign") {
+      if (member.roles.cache.has(role.id)) return { ok: true, output: `${member.user.tag} already has ${role.name}.` };
+      await member.roles.add(role, "Assigned through the OKG Manager owner Developer Center");
+      return { ok: true, output: `Assigned ${role.name} (${role.id}) to ${member.user.tag} in ${guild.name}.` };
+    }
+    if (!member.roles.cache.has(role.id)) return { ok: true, output: `${member.user.tag} does not have ${role.name}.` };
+    await member.roles.remove(role, "Removed through the OKG Manager owner Developer Center");
+    return { ok: true, output: `Removed ${role.name} (${role.id}) from ${member.user.tag} in ${guild.name}.` };
   }
 
   throw new Error("Unsupported developer command.");
