@@ -4,6 +4,7 @@ export enum ApiPermissions {
   EditConfig = "EDIT_CONFIG",
   ReadConfig = "READ_CONFIG",
   ViewGuild = "VIEW_GUILD",
+  ViewRoles = "VIEW_ROLES",
 }
 
 const reverseApiPermissions = Object.entries(ApiPermissions).reduce((map, [key, value]) => {
@@ -17,6 +18,7 @@ export const permissionNames = {
   [ApiPermissions.EditConfig]: "Bot operator",
   [ApiPermissions.ReadConfig]: "Read config",
   [ApiPermissions.ViewGuild]: "View server",
+  [ApiPermissions.ViewRoles]: "View role details",
 };
 
 export type TPermissionHierarchy = Array<ApiPermissions | [ApiPermissions, TPermissionHierarchy]>;
@@ -27,7 +29,7 @@ export const permissionHierarchy: TPermissionHierarchy = [
     [ApiPermissions.ManageAccess, [
       [ApiPermissions.EditConfig, [
         [ApiPermissions.ReadConfig, [
-          ApiPermissions.ViewGuild,
+          [ApiPermissions.ViewGuild, [ApiPermissions.ViewRoles]],
         ]],
       ]],
     ]],

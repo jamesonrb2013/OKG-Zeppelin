@@ -11,6 +11,7 @@
         configuration
       </li>
       <li><strong>Bot operator:</strong> Can edit server configuration</li>
+      <li><strong>View role details:</strong> Read-only access to server roles, member counts, creation dates, and permissions. Granted automatically to current server members.</li>
     </ul>
 
     <h2 class="mt-8">Dashboard users</h2>
@@ -109,7 +110,7 @@ export default {
     ...mapState<GuildState>("guilds", {
       permanentPermissionAssignments(guilds: GuildState): GuildPermissionAssignment[] {
         return (guilds.guildPermissionAssignments[this.$route.params.guildId] || []).filter(
-          (perm) => perm.expires_at == null,
+          (perm) => perm.expires_at == null && !(perm.permissions.size === 1 && perm.permissions.has(ApiPermissions.ViewRoles)),
         );
       },
 
