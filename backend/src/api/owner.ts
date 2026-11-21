@@ -111,13 +111,13 @@ export function initOwnerAPI(router: express.Router) {
     if (!requireOwner(req, res)) return;
     const command = typeof req.body?.command === "string" ? req.body.command.trim() : "";
     if (!command || command.length > 200) return res.status(400).json({ error: "Enter a command of 1–200 characters." });
-    const normalized = command.replace(/^\\/+/, "").trim().replace(/\\s+/g, " ");
+    const normalized = command.replace(/^\/+/, "").trim().replace(/\s+/g, " ");
     let output = "";
     let success = true;
     let attachedLogs: DeveloperLogEntry[] | undefined;
     try {
       if (normalized === "help") {
-        output = ["/help — Show available commands", "/bot status — Check the bot heartbeat", "/database health — Check the database connection", "/redis health — Check Redis connectivity", "/logs tail [1-100] — Show recent console entries"].join("\\n");
+        output = ["/help — Show available commands", "/bot status — Check the bot heartbeat", "/database health — Check the database connection", "/redis health — Check Redis connectivity", "/logs tail [1-100] — Show recent console entries"].join("\n");
       } else if (normalized === "bot status") {
         const heartbeat = await redis.get("okg:developer:heartbeat:bot");
         const lastSeen = heartbeat ? Number(heartbeat) : 0;
@@ -126,7 +126,7 @@ export function initOwnerAPI(router: express.Router) {
         await dataSource.query("SELECT 1 AS ok"); output = "Database connection successful.";
       } else if (normalized === "redis health") {
         await redis.ping(); output = "Redis connection successful.";
-      } else if (/^logs tail(?: \\d{1,3})?$/.test(normalized)) {
+      } else if (/^logs tail(?: \d{1,3})?$/.test(normalized)) {
         const count = Math.min(Math.max(Number(normalized.split(" ")[2] || 30), 1), 100);
         const raw = await redis.lRange(DEVELOPER_LOG_KEY, 0, count - 1);
         attachedLogs = raw.map(parseLog).filter((entry): entry is DeveloperLogEntry => Boolean(entry));
