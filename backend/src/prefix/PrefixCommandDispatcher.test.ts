@@ -88,6 +88,43 @@ test("registers one public !o handler and forwards ordinary commands to Vety", a
   t.is(Object.getPrototypeOf(forwarded), original);
 });
 
+test("routes the exact mute test command to Vety with its arguments intact", async (t) => {
+  let messageHandler: ((message: any) => Promise<void>) | undefined;
+  let forwarded: any;
+  const fakeClient = {
+    user: null,
+    on(event: string, handler: (message: any) => Promise<void>) {
+      if (event === "messageCreate") messageHandler = handler;
+      return this;
+    },
+  };
+  const fakeVety = {
+    async dispatchMessageCommands(message: any) {
+      forwarded = message;
+    },
+  };
+  const fakeAllowedGuilds = {
+    async isAllowed() {
+      return true;
+    },
+  };
+
+  registerPrefixCommandDispatcher(fakeClient as any, fakeVety as any, fakeAllowedGuilds as any, () => "!o ");
+
+  const original = {
+    guildId: "guild-1",
+    guild: {},
+    content: "!o mute <@1528924568020844655> 15m test",
+    author: { id: "user-1", bot: false },
+    mentions: { users: { has: () => false } },
+    async reply() {},
+  };
+  await messageHandler!(original);
+
+  t.is(forwarded.content, "!mute <@1528924568020844655> 15m test");
+  t.is(original.content, "!o mute <@1528924568020844655> 15m test");
+});
+
 test("dispatches configured custom prefixes through the same Vety command pipeline", async (t) => {
   let messageHandler: ((message: any) => Promise<void>) | undefined;
   let forwarded: any;
