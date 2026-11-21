@@ -26,7 +26,7 @@ declare global {
 }
 
 const DISCORD_API_URL = "https://discord.com/api";
-const VIEW_ROLES_PERMISSION = "ViewRoles" as ApiPermissions;
+const VIEW_ROLES_PERMISSION = ApiPermissions.ViewRoles;
 
 function simpleDiscordAPIRequest(bearerToken, path): Promise<any> {
   return new Promise((resolve, reject) => {
