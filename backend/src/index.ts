@@ -71,6 +71,7 @@ import {
   updatesSetupCommand,
 } from "./slashCommands/updates.js";
 import { applyPermissionOverrides } from "./permissionConfig.js";
+import { registerPrefixCommandDispatcher } from "./prefix/PrefixCommandDispatcher.js";
 
 // Error handling
 let recentPluginErrors = 0;
@@ -311,6 +312,8 @@ connect().then(async () => {
 
   const allowedGuilds = new AllowedGuilds();
   const guildConfigs = new Configs();
+  // Public prefixes are tracked separately from Vety's internal command prefix.
+  const externalPrefixes = new Map<string, string>();
 
   // Every guild must be explicitly authorized. Alert the OKG team, then immediately leave unauthorized guilds.
   client.on(Events.GuildCreate, async (guild) => {
@@ -421,17 +424,18 @@ connect().then(async () => {
               id === "global",
             );
 
-            // Use Vety's native message-command dispatcher with the actual public
-            // prefix. This is the previously working OKG setup: Vety itself strips
-            // "!o " (or the guild's configured prefix) before parsing the command.
+            // Keep the public prefix separate from Vety's internal parser prefix.
+            // The dedicated dispatcher rewrites public !o commands to !commands
+            // before handing them to Vety, preserving the normal command pipeline.
             const publicPrefix =
               typeof loaded.command_prefix === "string" && loaded.command_prefix.trim().length > 0
                 ? loaded.command_prefix
                 : typeof loaded.prefix === "string" && loaded.prefix.trim().length > 0
                   ? loaded.prefix
                   : "!o ";
+            externalPrefixes.set(id, publicPrefix);
             loaded.command_prefix = publicPrefix;
-            loaded.prefix = publicPrefix;
+            loaded.prefix = "!";
 
             // This OKG fork stores the staff hierarchy as role_levels. Vety's
             // permission engine (used by the normal prefix commands) reads the
@@ -457,12 +461,14 @@ connect().then(async () => {
             return loaded;
           } catch (err) {
             logger.error(`Error while loading config "${key}": ${err}`);
-            return { prefix: "!o ", command_prefix: "!o ", levels: {} };
+            externalPrefixes.set(id, "!o ");
+            return { prefix: "!", command_prefix: "!o ", levels: {} };
           }
         }
 
         logger.warn(`No config with key "${key}"`);
-        const fallbackConfig = id === "global" ? {} : { prefix: "!o ", command_prefix: "!o ", levels: {} };
+        externalPrefixes.set(id, "!o ");
+        const fallbackConfig = id === "global" ? {} : { prefix: "!", command_prefix: "!o ", levels: {} };
         applyPermissionOverrides(
           fallbackConfig,
           id === "global" ? availableGlobalPlugins : availableGuildPlugins,
@@ -737,6 +743,10 @@ connect().then(async () => {
       logger.error(`Failed to register slash commands: ${error}`);
     }
   });
+
+  // Route every public prefix command through Vety's normal command dispatcher.
+  // This must be registered exactly once and before the bot logs in.
+  registerPrefixCommandDispatcher(client, bot, allowedGuilds, (guildId) => externalPrefixes.get(guildId) ?? "!o ");
 
   // Modmail stays independent of prefix routing.
   client.on(Events.MessageCreate, async (message) => {
