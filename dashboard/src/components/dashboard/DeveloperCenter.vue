@@ -48,6 +48,7 @@
           <p><code>/server channels {serverId}</code> <span class="font-sans text-gray-400">List channel names, types, and IDs</span></p>
           <p><code>/channel create {serverId} {text|voice|category} "general"</code> <span class="font-sans text-gray-400">Create a channel</span></p>
           <p><code>/channel delete {serverId} {channelId} --confirm</code> <span class="font-sans text-gray-400">Delete a channel after confirmation</span></p>
+          <p><code>/channel rename {serverId} {channelId} "general-chat"</code> <span class="font-sans text-gray-400">Rename a channel</span></p>
           <p><code>/user inspect {serverId} {userId}</code> <span class="font-sans text-gray-400">Inspect a server member</span></p>
           <p><code>/message send {serverId} {channelId} {message}</code> <span class="font-sans text-gray-400">Send a bot message (mentions disabled)</span></p>
         </div>
