@@ -157,11 +157,15 @@ export function initOwnerAPI(router: express.Router) {
     const level = String(req.query.level || "").toUpperCase();
     const source = String(req.query.source || "").toLowerCase();
     const search = String(req.query.search || "").slice(0, 200).toLowerCase();
+    const hoursRaw = String(req.query.hours || "24");
+    const hours = hoursRaw === "all" ? null : Math.min(Math.max(Number(hoursRaw) || 24, 1), 720);
+    const cutoff = hours === null ? null : Date.now() - hours * 60 * 60 * 1000;
     const entries = rawEntries.map(parseLog)
       .filter((entry): entry is DeveloperLogEntry => Boolean(entry))
       .filter((entry) => !level || level === "ALL" || entry.level === level)
       .filter((entry) => !source || source === "all" || entry.source === source)
       .filter((entry) => !search || entry.message.toLowerCase().includes(search))
+      .filter((entry) => cutoff === null || Date.parse(entry.timestamp) >= cutoff)
       .slice(0, limit);
     res.setHeader("Cache-Control", "no-store");
     return res.json({ entries, retained: rawEntries.length, limit });
@@ -173,11 +177,15 @@ export function initOwnerAPI(router: express.Router) {
     const level = String(req.query.level || "").toUpperCase();
     const source = String(req.query.source || "").toLowerCase();
     const search = String(req.query.search || "").slice(0, 200).toLowerCase();
+    const hoursRaw = String(req.query.hours || "24");
+    const hours = hoursRaw === "all" ? null : Math.min(Math.max(Number(hoursRaw) || 24, 1), 720);
+    const cutoff = hours === null ? null : Date.now() - hours * 60 * 60 * 1000;
     const entries = rawEntries.map(parseLog)
       .filter((entry): entry is DeveloperLogEntry => Boolean(entry))
       .filter((entry) => !level || level === "ALL" || entry.level === level)
       .filter((entry) => !source || source === "all" || entry.source === source)
-      .filter((entry) => !search || entry.message.toLowerCase().includes(search));
+      .filter((entry) => !search || entry.message.toLowerCase().includes(search))
+      .filter((entry) => cutoff === null || Date.parse(entry.timestamp) >= cutoff);
     const csvCell = (value: string) => {
       const safe = /^[=+\-@]/.test(value) ? "'" + value : value;
       return '"' + safe.replace(/"/g, '""') + '"';
@@ -196,7 +204,7 @@ export function initOwnerAPI(router: express.Router) {
     const memory = process.memoryUsage();
     res.setHeader("Cache-Control", "no-store");
     return res.json({
-      api: { status: "online", uptimeSeconds: Math.floor(process.uptime()), memoryBytes: memory.rss },
+      api: { status: "online", uptimeSeconds: Math.floor(process.uptime()), memoryBytes: memory.rss, heapUsedBytes: memory.heapUsed, nodeVersion: process.version },
       bot: { status: botLastSeen && Date.now() - botLastSeen < 45_000 ? "online" : "offline", lastSeen: botLastSeen ? new Date(botLastSeen).toISOString() : null },
       redis: { status: redisResult.status === "fulfilled" ? "online" : "error" },
       database: { status: databaseResult.status === "fulfilled" ? "online" : "error" },
