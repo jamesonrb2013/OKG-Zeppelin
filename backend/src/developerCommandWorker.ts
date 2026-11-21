@@ -111,6 +111,7 @@ async function execute(client: Client, allowedGuilds: AllowedGuilds, command: De
 
   if (command.type === "server.adminroles") {
     const roles = await guild.roles.fetch();
+    const botMember = guild.members.me ?? await guild.members.fetchMe();
     const adminRoles = roles.filter((role) =>
       role.permissions.any([
         PermissionFlagsBits.Administrator,
@@ -122,11 +123,54 @@ async function execute(client: Client, allowedGuilds: AllowedGuilds, command: De
         PermissionFlagsBits.ManageMessages,
       ]),
     ).sort((a, b) => b.position - a.position);
+
+    // Count role assignments from Discord's complete, paginated member list.
+    // The gateway cache may not contain every server member.
+    const memberCounts = new Map<string, number>(adminRoles.map((role) => [role.id, 0]));
+    let after = "0";
+    while (true) {
+      const response = await fetch(`https://discord.com/api/v10/guilds/${guild.id}/members?limit=1000&after=${after}`, {
+        headers: { Authorization: `Bot ${client.token}`, "User-Agent": "OKG-Manager/AdminRoles" },
+      });
+      if (!response.ok) {
+        const body = await response.text().catch(() => "");
+        throw new Error(`Could not count role members (Discord ${response.status}): ${body.slice(0, 180)}`);
+      }
+      const members = await response.json() as Array<{ user: { id: string }; roles: string[] }>;
+      if (members.length === 0) break;
+      for (const member of members) {
+        for (const roleId of member.roles) {
+          if (memberCounts.has(roleId)) memberCounts.set(roleId, (memberCounts.get(roleId) ?? 0) + 1);
+        }
+      }
+      after = members[members.length - 1].user.id;
+      if (members.length < 1000) break;
+    }
+
+    const highest = botMember.roles.highest;
+    const lines = adminRoles.map((role, index) => {
+      const flags = role.permissions.toArray();
+      const warning = flags.includes("Administrator") ? "  ⚠ ADMINISTRATOR" : "";
+      return [
+        `${index + 1}. ${role.name}${warning}`,
+        `   Members: ${(memberCounts.get(role.id) ?? 0).toLocaleString()}  •  Position: ${role.position}`,
+        `   Permissions: ${flags.join(", ") || "None"}`,
+        `   Role ID: ${role.id}`,
+      ].join("\n");
+    });
     return {
       ok: true,
-      output: adminRoles.size
-        ? `Administrative roles in ${guild.name} (${adminRoles.size}):\n${adminRoles.map((role) => `• ${role.name} — ${role.id} [${role.permissions.toArray().join(", ")}]`).join("\n")}`
-        : `No roles with administrative permissions were found in ${guild.name}.`,
+      output: [
+        `ADMINISTRATIVE ROLES  /  ${guild.name}`,
+        `Found ${adminRoles.size} role${adminRoles.size === 1 ? "" : "s"} with elevated permissions`,
+        "",
+        `BOT HIGHEST ROLE  /  ${highest.name}`,
+        `Position: ${highest.position}  •  Role ID: ${highest.id}`,
+        "",
+        adminRoles.size ? lines.join("\n\n") : "No roles with administrative permissions were found.",
+        "",
+        "Member counts are based on Discord's complete server-member list.",
+      ].join("\n"),
     };
   }
 
