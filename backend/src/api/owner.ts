@@ -20,10 +20,13 @@ type DeveloperCommand =
   | { id: string; type: "server.info"; guildId: string }
   | { id: string; type: "server.adminroles"; guildId: string }
   | { id: string; type: "server.channels"; guildId: string }
+  | { id: string; type: "channel.create"; guildId: string; channelType: "text" | "voice" | "category"; name: string }
+  | { id: string; type: "channel.delete"; guildId: string; channelId: string; confirmed: true }
   | { id: string; type: "user.inspect"; guildId: string; userId: string }
   | { id: string; type: "message.send"; guildId: string; channelId: string; message: string }
   | { id: string; type: "role.create"; guildId: string; name: string; give: string[]; position?: number; permissions: string[] }
   | { id: string; type: "role.assign" | "role.remove"; guildId: string; roleId: string; userId: string }
+  | { id: string; type: "role.edit"; guildId: string; roleId: string; name?: string; permissions?: string[] }
   | { id: string; type: "role.delete"; guildId: string; roleId: string; confirmed: true };
 
 function parseDeveloperCommand(raw: string, id: string): DeveloperCommand | null {
