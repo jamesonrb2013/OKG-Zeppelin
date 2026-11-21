@@ -1,5 +1,5 @@
 import test from "ava";
-import { createForwardedPrefixMessage, extractPrefixedCommand } from "./PrefixCommandDispatcher.js";
+import { createForwardedPrefixMessage, extractPrefixedCommand, registerPrefixCommandDispatcher } from "./PrefixCommandDispatcher.js";
 
 test("parses the default !o prefix", (t) => {
   t.is(extractPrefixedCommand("!o ban @member spam"), "ban @member spam");
@@ -40,4 +40,89 @@ test("forwards rewritten commands as an own content property without mutating th
   t.is(original.content, originalContent);
   t.is(Object.getPrototypeOf(forwarded), original);
   t.true(Object.prototype.hasOwnProperty.call(forwarded, "content"));
+});
+
+
+test("registers one public !o handler and forwards ordinary commands to Vety", async (t) => {
+  let messageHandler: ((message: any) => Promise<void>) | undefined;
+  let forwarded: any;
+  const fakeClient = {
+    user: null,
+    on(event: string, handler: (message: any) => Promise<void>) {
+      if (event === "messageCreate") messageHandler = handler;
+      return this;
+    },
+  };
+  const fakeVety = {
+    async dispatchMessageCommands(message: any) {
+      forwarded = message;
+    },
+  };
+  const fakeAllowedGuilds = {
+    async isAllowed() {
+      return true;
+    },
+  };
+
+  registerPrefixCommandDispatcher(
+    fakeClient as any,
+    fakeVety as any,
+    fakeAllowedGuilds as any,
+    () => "!o ",
+  );
+
+  t.is(typeof messageHandler, "function");
+  const original = {
+    guildId: "guild-1",
+    guild: {},
+    content: "!o help",
+    author: { id: "user-1", bot: false },
+    mentions: { users: { has: () => false } },
+    async reply() {},
+  };
+  await messageHandler!(original);
+
+  t.is(forwarded.content, "!help");
+  t.is(original.content, "!o help");
+  t.is(Object.getPrototypeOf(forwarded), original);
+});
+
+test("dispatches configured custom prefixes through the same Vety command pipeline", async (t) => {
+  let messageHandler: ((message: any) => Promise<void>) | undefined;
+  let forwarded: any;
+  const fakeClient = {
+    user: null,
+    on(event: string, handler: (message: any) => Promise<void>) {
+      if (event === "messageCreate") messageHandler = handler;
+      return this;
+    },
+  };
+  const fakeVety = {
+    async dispatchMessageCommands(message: any) {
+      forwarded = message;
+    },
+  };
+  const fakeAllowedGuilds = {
+    async isAllowed() {
+      return true;
+    },
+  };
+
+  registerPrefixCommandDispatcher(
+    fakeClient as any,
+    fakeVety as any,
+    fakeAllowedGuilds as any,
+    () => "? ",
+  );
+
+  await messageHandler!({
+    guildId: "guild-1",
+    guild: {},
+    content: "? help",
+    author: { id: "user-1", bot: false },
+    mentions: { users: { has: () => false } },
+    async reply() {},
+  });
+
+  t.is(forwarded.content, "!help");
 });
