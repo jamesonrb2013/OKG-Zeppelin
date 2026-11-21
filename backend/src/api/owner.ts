@@ -38,6 +38,12 @@ export function initOwnerAPI(router: express.Router) {
     return false;
   };
 
+  ownerRouter.get("/access", (req: Request, res: Response) => {
+    if (!requireOwner(req, res)) return;
+    res.setHeader("Cache-Control", "no-store");
+    return res.json({ isOwner: true });
+  });
+
   ownerRouter.get("/audit-log", async (req: Request, res: Response) => {
     await tableReady;
     if (!requireOwner(req, res)) return;
