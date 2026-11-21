@@ -196,6 +196,11 @@ export const modActionsMsgCmd: any = (definition: any) => {
   const { permission: _permission, ...commandDefinition } = definition;
   return rawModActionsMsgCmd({
     ...commandDefinition,
+    // Vety's built-in pre-filter rejects missing permissions before this
+    // wrapper can apply the platform/server-owner exception. Explicit null
+    // disables only that built-in check; the wrapper below still enforces
+    // the exact can_* permission for every non-owner.
+    permission: null,
     async run(context: any) {
       if (permission) {
         const { message, pluginData } = context;
