@@ -71,7 +71,7 @@ import {
   updatesSetupCommand,
 } from "./slashCommands/updates.js";
 import { applyPermissionOverrides } from "./permissionConfig.js";
-import { registerPrefixCommandDispatcher } from "./prefix/PrefixCommandDispatcher.js";
+import { INTERNAL_COMMAND_PREFIX, registerPrefixCommandDispatcher } from "./prefix/PrefixCommandDispatcher.js";
 
 // Error handling
 let recentPluginErrors = 0;
