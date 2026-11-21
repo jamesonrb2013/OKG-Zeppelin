@@ -1,3 +1,45 @@
+## 1.3.38
+
+### Fixed
+- Hardened the prefix Modmail DM command so only configured Modmail staff/admin roles or existing `can_dm` grants can use it.
+- Added shared, tested Modmail staff-role authorization logic for the bot command.
+- Limited the 10-second cooldown to Modmail-role access, preserving existing `can_dm` behavior, and bounded cooldown memory usage.
+- Corrected the command usage example to show the configured `!o` prefix.
+
+### Credits
+- Updated by Jeffery Spinnel.
+
+## 1.3.37
+
+### Added
+- Added an owner-only Developer Center with live console output, recent log history, filters, system health cards, and an allowlisted diagnostic command terminal.
+- Captured bot and API console output into a shared Redis-backed log history with a 1,000-entry retention limit.
+- Added bot/API heartbeats and live database/Redis health checks.
+- Added audited developer command execution and secret redaction before log persistence.
+- Added a Redis-backed API-to-bot command bridge for real Discord operations: authorized server listing, server inspection, administrative role discovery, member inspection, and bot-authored channel messages.
+- Added guarded role creation with optional member assignment, explicit permission selection, and Discord role-hierarchy enforcement.
+- Added authorized-server channel discovery with channel names, types, and IDs.
+- Added role assignment and removal with member-manageability and bot role-hierarchy checks.
+- Added explicitly confirmed role deletion; the bot refuses to delete @everyone, managed roles, or roles at/above its highest role.
+- Added role editing for names and allowlisted permissions, with role hierarchy enforcement.
+- Added text, voice, and category channel creation plus explicitly confirmed channel deletion; the bot checks Manage Channels and channel deletability.
+- Added channel renaming with Manage Channels and per-channel manageability checks.
+- Added filtered CSV export for the Developer Center log explorer, including spreadsheet-formula injection protection.
+- Added read-only database table-size/row-estimate and Redis memory/uptime/connection diagnostics.
+- Added bot runtime statistics (version, WebSocket latency, connected servers, cached users, uptime, and memory).
+- Added owner-only bot custom-presence controls that preserve the version activity, plus an owner Developer Center controls tab.
+- Added log time-range filtering (1 hour through 30 days, or all retained entries) to the log explorer and CSV export.
+- Added API process memory and Node.js runtime details to the monitoring panel.
+- Enabled configured Modmail staff and administrators to use `!o dm` in their own server, while preserving normal `can_dm` grants; Modmail-role DMs are restricted to that server's members and rate-limited.
+- Kept `/modmail dm`, `/modmail open`, and Modmail thread replies available to configured staff/admin roles.
+
+### Security
+- Kept Developer Center endpoints behind the existing platform-owner authorization check.
+- Disabled arbitrary shell execution; only explicit read-only diagnostic commands are accepted.
+
+### Credits
+- Updated by Jeffery Spinnel.
+
 ## 1.3.36
 
 ### Fixed

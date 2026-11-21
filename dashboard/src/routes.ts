@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
-import { authGuard, authRedirectGuard, loginCallbackGuard, staffOnlyGuard } from "./auth";
+import { authGuard, authRedirectGuard, loginCallbackGuard, ownerOnlyGuard, staffOnlyGuard } from "./auth";
 import Splash from "./components/Splash.vue";
 import InviteLanding from "./components/InviteLanding.vue";
 
@@ -91,7 +91,7 @@ export const router = createRouter({
         {
           path: "owner",
           component: () => import("./components/dashboard/Owner.vue"),
-          beforeEnter: staffOnlyGuard,
+          beforeEnter: ownerOnlyGuard,
         },
         {
           path: "invites",

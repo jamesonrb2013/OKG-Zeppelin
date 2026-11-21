@@ -9,7 +9,7 @@ export function initStaff(router: express.Router) {
   staffRouter.get("/status", (req: Request, res: Response) => {
     const userIsStaff = isInviteAdmin(req.user!.userId);
     res.setHeader("Cache-Control", "no-store");
-    res.json({ isStaff: userIsStaff });
+    res.json({ isStaff: userIsStaff, isOwner: isInviteAdmin(req.user!.userId) });
   });
 
   router.use("/staff", staffRouter);

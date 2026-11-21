@@ -2,6 +2,9 @@
 // See comment in module for details
 import "./threadsSignalFix.js";
 
+import { installDeveloperConsole } from "./developerConsole.js";
+import { startDeveloperCommandWorker } from "./developerCommandWorker.js";
+
 import {
   ActivityType,
   Client,
@@ -72,6 +75,8 @@ import {
 } from "./slashCommands/updates.js";
 import { applyPermissionOverrides } from "./permissionConfig.js";
 import { INTERNAL_COMMAND_PREFIX, registerPrefixCommandDispatcher } from "./prefix/PrefixCommandDispatcher.js";
+
+installDeveloperConsole("bot");
 
 // Error handling
 let recentPluginErrors = 0;
@@ -512,6 +517,7 @@ connect().then(async () => {
   });
 
   client.once("clientReady", async () => {
+    startDeveloperCommandWorker(client, allowedGuilds);
     // Refresh the names, icons, and owner IDs of already-allowed servers on every startup.
     for (const guild of client.guilds.cache.values()) {
       try {
