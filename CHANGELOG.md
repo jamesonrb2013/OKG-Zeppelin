@@ -1,3 +1,16 @@
+## 1.3.35
+
+### Fixed
+- Corrected the private Vety command prefix to the single-character `!` prefix used by Vety's message-command dispatcher.
+- Intercepted public messages before Vety's native listener so bare `!command` messages are not executed, while `!o` and configured custom prefixes are explicitly forwarded through the normal command pipeline.
+- Unified command-alias forwarding with the same internal prefix.
+
+### Reliability
+- Added regression coverage for the Vety-compatible internal prefix and early prefix interception.
+
+### Credits
+- Updated by Jeffery Spinnel.
+
 ## 1.3.34
 
 ### Fixed
