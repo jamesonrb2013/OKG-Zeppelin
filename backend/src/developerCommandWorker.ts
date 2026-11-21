@@ -37,11 +37,10 @@ type DeveloperCommand =
 
 type CommandResult = { ok: boolean; output: string };
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const snowflake = (value: string) => /^\d{17,20}$/.test(value);
 
 function safeText(value: string, max = 1800) {
-  return value.replace(/@everyone|@here/g, "@\u200b$&").slice(0, max);
+  return value.replace(/@everyone|@here/g, "\u200bvalue.replace(/@everyone|@here/g, "@\u200b$&")").slice(0, max);
 }
 
 async function getAllowedGuild(client: Client, allowedGuilds: AllowedGuilds, guildId: string) {
@@ -59,7 +58,7 @@ async function execute(client: Client, allowedGuilds: AllowedGuilds, command: De
       allowed: await allowedGuilds.isAllowed(guild.id).catch(() => false),
     })));
     const allowed = rows.filter((row) => row.allowed).map(({ guild }) => `• ${guild.name} — ${guild.id}`);
-    return { ok: true, output: allowed.length ? `Authorized servers (${allowed.length}):\\n${allowed.join("\\n")}` : "No authorized servers are currently cached." };
+    return { ok: true, output: allowed.length ? `Authorized servers (${allowed.length}):\n${allowed.join("\n")}` : "No authorized servers are currently cached." };
   }
 
   const guild = await getAllowedGuild(client, allowedGuilds, command.guildId);
@@ -78,14 +77,14 @@ async function execute(client: Client, allowedGuilds: AllowedGuilds, command: De
         `Roles: ${guild.roles.cache.size}`,
         `Created: ${guild.createdAt.toISOString()}`,
         `Bot highest role: ${me.roles.highest.name} (position ${me.roles.highest.position})`,
-      ].join("\\n"),
+      ].join("\n"),
     };
   }
 
   if (command.type === "server.adminroles") {
     const roles = await guild.roles.fetch();
     const adminRoles = roles.filter((role) =>
-      role.permissions.has([
+      role.permissions.any([
         PermissionFlagsBits.Administrator,
         PermissionFlagsBits.ManageGuild,
         PermissionFlagsBits.ManageRoles,
@@ -98,7 +97,7 @@ async function execute(client: Client, allowedGuilds: AllowedGuilds, command: De
     return {
       ok: true,
       output: adminRoles.size
-        ? `Administrative roles in ${guild.name} (${adminRoles.size}):\\n${adminRoles.map((role) => `• ${role.name} — ${role.id} [${role.permissions.toArray().join(", ")}]`).join("\\n")}`
+        ? `Administrative roles in ${guild.name} (${adminRoles.size}):\n${adminRoles.map((role) => `• ${role.name} — ${role.id} [${role.permissions.toArray().join(", ")}]`).join("\n")}`
         : `No roles with administrative permissions were found in ${guild.name}.`,
     };
   }
@@ -117,7 +116,7 @@ async function execute(client: Client, allowedGuilds: AllowedGuilds, command: De
         `Timed out: ${member.communicationDisabledUntil?.toISOString() ?? "No"}`,
         `Roles: ${member.roles.cache.filter((role) => role.id !== guild.id).map((role) => role.name).join(", ") || "None"}`,
         `Key permissions: ${member.permissions.toArray().join(", ") || "None"}`,
-      ].join("\\n"),
+      ].join("\n"),
     };
   }
 
@@ -137,7 +136,7 @@ async function execute(client: Client, allowedGuilds: AllowedGuilds, command: De
       content,
       allowedMentions: { parse: [], users: [], roles: [], repliedUser: false },
     });
-    return { ok: true, output: `Message sent successfully.\\nServer: ${guild.name}\\nChannel: #${"name" in channel ? channel.name : channel.id} (${channel.id})\\nMessage ID: ${sent.id}` };
+    return { ok: true, output: `Message sent successfully.\nServer: ${guild.name}\nChannel: #${"name" in channel ? channel.name : channel.id} (${channel.id})\nMessage ID: ${sent.id}` };
   }
 
   if (command.type === "role.create") {
@@ -184,7 +183,7 @@ async function execute(client: Client, allowedGuilds: AllowedGuilds, command: De
         `Permissions: ${permissionNames.join(", ") || "No elevated permissions"}`,
         `Assigned to: ${assigned.join(", ") || "No users"}`,
         skipped.length ? `Skipped: ${skipped.join("; ")}` : "",
-      ].filter(Boolean).join("\\n"),
+      ].filter(Boolean).join("\n"),
     };
   }
 
