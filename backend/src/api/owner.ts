@@ -1,4 +1,5 @@
 import express, { Request, Response } from "express";
+import { randomUUID } from "crypto";
 import { dataSource } from "../data/dataSource.js";
 import { ApiAuditLog } from "../data/ApiAuditLog.js";
 import { AuditLogEventTypes } from "../data/apiAuditLogTypes.js";
@@ -10,6 +11,46 @@ import { apiTokenAuthHandlers } from "./auth.js";
 
 const auditLog = new ApiAuditLog();
 const DEVELOPER_LOG_KEY = "okg:developer:logs";
+const DEVELOPER_COMMAND_QUEUE = "okg:developer:commands:queue";
+const DEVELOPER_COMMAND_RESULT_PREFIX = "okg:developer:commands:result:";
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+type DeveloperCommand =
+  | { id: string; type: "servers.list" }
+  | { id: string; type: "server.info"; guildId: string }
+  | { id: string; type: "server.adminroles"; guildId: string }
+  | { id: string; type: "user.inspect"; guildId: string; userId: string }
+  | { id: string; type: "message.send"; guildId: string; channelId: string; message: string }
+  | { id: string; type: "role.create"; guildId: string; name: string; give: string[]; position?: number; permissions: string[] };
+
+function parseDeveloperCommand(raw: string, id: string): DeveloperCommand | null {
+  const command = raw.replace(/^\/+/, "").trim();
+  let match = command.match(/^servers\s+list$/i);
+  if (match) return { id, type: "servers.list" };
+  match = command.match(/^server\s+info\s+(\d{17,20})$/i);
+  if (match) return { id, type: "server.info", guildId: match[1] };
+  match = command.match(/^adminroles\s+(\d{17,20})$/i);
+  if (match) return { id, type: "server.adminroles", guildId: match[1] };
+  match = command.match(/^user\s+inspect\s+(\d{17,20})\s+(\d{17,20})$/i);
+  if (match) return { id, type: "user.inspect", guildId: match[1], userId: match[2] };
+  match = command.match(/^message\s+send\s+(\d{17,20})\s+(\d{17,20})\s+([\s\S]+)$/i);
+  if (match) return { id, type: "message.send", guildId: match[1], channelId: match[2], message: match[3].trim() };
+
+  const roleMatch = command.match(/^admin\s+role\s+create\s+(\d{17,20})\s+(?:"([^"]{1,100})"|([^\s]+))(.*)$/i);
+  if (roleMatch) {
+    const tail = roleMatch[4] || "";
+    const readFlag = (name: string) => tail.match(new RegExp("(?:^|\\s)--" + name + "\\s+([^\\s]+)", "i"))?.[1] ?? "";
+    const give = readFlag("give").split(",").map((value) => value.trim()).filter(Boolean);
+    const permissions = readFlag("permissions").split(",").map((value) => value.trim()).filter(Boolean);
+    const positionRaw = readFlag("position");
+    const position = positionRaw ? Number(positionRaw) : undefined;
+    if (positionRaw && (!Number.isInteger(position) || position! < 1)) return null;
+    const stripped = tail.replace(/--(?:give|permissions|position)\s+[^\s]+/gi, "");
+    if (/--\w+/.test(stripped)) return null;
+    return { id, type: "role.create", guildId: roleMatch[1], name: roleMatch[2] || roleMatch[3], give, permissions, ...(position === undefined ? {} : { position }) };
+  }
+  return null;
+}
 
 function parseLog(raw: string): DeveloperLogEntry | null {
   try {
@@ -115,15 +156,28 @@ export function initOwnerAPI(router: express.Router) {
 
   ownerRouter.post("/console/execute", async (req: Request, res: Response) => {
     if (!requireOwner(req, res)) return;
-    const command = typeof req.body?.command === "string" ? req.body.command.trim() : "";
-    if (!command || command.length > 200) return res.status(400).json({ error: "Enter a command of 1–200 characters." });
-    const normalized = command.replace(/^\/+/, "").trim().replace(/\s+/g, " ");
+    const rawCommand = typeof req.body?.command === "string" ? req.body.command.trim() : "";
+    if (!rawCommand || rawCommand.length > 4000) return res.status(400).json({ error: "Enter a command of 1–4,000 characters." });
+    const normalized = rawCommand.replace(/^\/+/, "").trim().replace(/\s+/g, " ");
     let output = "";
     let success = true;
     let attachedLogs: DeveloperLogEntry[] | undefined;
     try {
       if (normalized === "help") {
-        output = ["/help — Show available commands", "/bot status — Check the bot heartbeat", "/database health — Check the database connection", "/redis health — Check Redis connectivity", "/logs tail [1-100] — Show recent console entries"].join("\n");
+        output = [
+          "/help — Show command reference",
+          "/servers list — List authorized servers",
+          "/server info {serverId} — Inspect a server",
+          "/adminroles {serverId} — List roles with administrative permissions",
+          "/user inspect {serverId} {userId} — Inspect a server member",
+          "/message send {serverId} {channelId} {message} — Send a message as the bot",
+          '/admin role create {serverId} "{name}" --give {userId,userId} --position {number} --permissions {Permission,Permission}',
+          "/bot status — Check bot heartbeat",
+          "/database health — Check database connection",
+          "/redis health — Check Redis connection",
+          "/logs tail [1-100] — Show recent console entries",
+          "Role permissions are optional; without --permissions, the new role has no elevated permissions.",
+        ].join("\n");
       } else if (normalized === "bot status") {
         const heartbeat = await redis.get("okg:developer:heartbeat:bot");
         const lastSeen = heartbeat ? Number(heartbeat) : 0;
@@ -138,7 +192,33 @@ export function initOwnerAPI(router: express.Router) {
         attachedLogs = raw.map(parseLog).filter((entry): entry is DeveloperLogEntry => Boolean(entry));
         output = `Loaded ${attachedLogs.length} recent log entr${attachedLogs.length === 1 ? "y" : "ies"}.`;
       } else {
-        success = false; output = "Unknown command. Run /help. Arbitrary shell commands are disabled.";
+        const id = randomUUID();
+        const job = parseDeveloperCommand(rawCommand, id);
+        if (!job) {
+          success = false;
+          output = "Unknown command or invalid arguments. Run /help.";
+        } else {
+          await redis.rPush(DEVELOPER_COMMAND_QUEUE, JSON.stringify(job));
+          const resultKey = `${DEVELOPER_COMMAND_RESULT_PREFIX}${id}`;
+          const deadline = Date.now() + 25_000;
+          let result: { ok: boolean; output: string } | null = null;
+          while (Date.now() < deadline) {
+            const rawResult = await redis.get(resultKey);
+            if (rawResult) {
+              try { result = JSON.parse(rawResult); } catch { result = { ok: false, output: "The bot returned an invalid command result." }; }
+              await redis.del(resultKey);
+              break;
+            }
+            await wait(250);
+          }
+          if (!result) {
+            success = false;
+            output = "Timed out waiting for the bot. The command may still be queued; check the bot heartbeat and logs before retrying.";
+          } else {
+            success = result.ok;
+            output = result.output;
+          }
+        }
       }
     } catch (error: any) {
       success = false; output = `Command failed: ${String(error?.message || error).slice(0, 500)}`;
