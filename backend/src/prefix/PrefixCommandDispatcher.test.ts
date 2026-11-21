@@ -41,7 +41,7 @@ test("forwards rewritten commands as an own content property without mutating th
   }) as any;
   const forwarded = createForwardedPrefixMessage(original as any, INTERNAL_COMMAND_PREFIX + "ban @member reason");
 
-  t.is(forwarded.content, "!ban @member reason");
+  t.is(forwarded.content, INTERNAL_COMMAND_PREFIX + "ban @member reason");
   t.is(original.content, originalContent);
   t.is(Object.getPrototypeOf(forwarded), original);
   t.true(Object.prototype.hasOwnProperty.call(forwarded, "content"));
