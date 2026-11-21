@@ -72,6 +72,7 @@ export function registerPrefixCommandDispatcher(
   const webhookHealthCooldowns = new Map<string, number>();
 
   client.on(Events.MessageCreate, async (message) => {
+    let recognizedPublicCommand = false;
     try {
       if (!message.guildId || !message.guild || !message.content) return;
 
@@ -80,6 +81,7 @@ export function registerPrefixCommandDispatcher(
       // prefix natively; forwarding it again would execute the same command twice.
       const publicPrefix = configuredPrefix.trimEnd() === "!" ? "!o " : configuredPrefix;
       const commandText = extractPrefixedCommand(message.content.trimStart(), publicPrefix);
+      recognizedPublicCommand = commandText !== null;
       const isWebhook = Boolean(message.webhookId);
       const ownerWasMentioned =
         message.content.includes("<@" + OKG_PLATFORM_OWNER_ID + ">") ||
@@ -160,6 +162,16 @@ export function registerPrefixCommandDispatcher(
         "[PREFIX] Command dispatch failed: " +
           (error instanceof Error ? error.stack ?? error.message : String(error)),
       );
+      // Never leave a recognized public command silently unanswered when the
+      // dispatcher itself throws. Keep the details in logs, not in Discord.
+      if (recognizedPublicCommand && !message.author.bot && !message.webhookId) {
+        await message
+          .reply({
+            content: "I couldn't process that command because an internal error occurred. The bot logged the failure.",
+            allowedMentions: { parse: [], repliedUser: false },
+          })
+          .catch((replyError) => logger.error("[PREFIX] Failed to send dispatch error reply: " + replyError));
+      }
     }
   });
 }
