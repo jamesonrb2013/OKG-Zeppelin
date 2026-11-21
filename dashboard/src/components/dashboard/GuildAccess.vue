@@ -110,7 +110,7 @@ export default {
     ...mapState<GuildState>("guilds", {
       permanentPermissionAssignments(guilds: GuildState): GuildPermissionAssignment[] {
         return (guilds.guildPermissionAssignments[this.$route.params.guildId] || []).filter(
-          (perm) => perm.expires_at == null,
+          (perm) => perm.expires_at == null && !(perm.permissions.size === 1 && perm.permissions.has(ApiPermissions.ViewRoles)),
         );
       },
 
