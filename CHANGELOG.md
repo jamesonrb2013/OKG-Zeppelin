@@ -15,6 +15,12 @@
 - Added channel renaming with Manage Channels and per-channel manageability checks.
 - Added filtered CSV export for the Developer Center log explorer, including spreadsheet-formula injection protection.
 - Added read-only database table-size/row-estimate and Redis memory/uptime/connection diagnostics.
+- Added bot runtime statistics (version, WebSocket latency, connected servers, cached users, uptime, and memory).
+- Added owner-only bot custom-presence controls that preserve the version activity, plus an owner Developer Center controls tab.
+- Added log time-range filtering (1 hour through 30 days, or all retained entries) to the log explorer and CSV export.
+- Added API process memory and Node.js runtime details to the monitoring panel.
+- Enabled configured Modmail staff and administrators to use `!o dm` in their own server, while preserving normal `can_dm` grants; Modmail-role DMs are restricted to that server's members and rate-limited.
+- Kept `/modmail dm`, `/modmail open`, and Modmail thread replies available to configured staff/admin roles.
 
 ### Security
 - Kept Developer Center endpoints behind the existing platform-owner authorization check.
