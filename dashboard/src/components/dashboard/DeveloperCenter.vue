@@ -92,7 +92,7 @@
 <script lang="ts">
 import { get, post } from "../../api";
 type LogEntry = { id: string; timestamp: string; level: string; source: string; message: string };
-type ConsoleStatus = { api?: { status: string; uptimeSeconds: number; memoryBytes: number }; bot?: { status: string; lastSeen: string | null }; redis?: { status: string }; database?: { status: string }; checkedAt?: string };
+type ConsoleStatus = { api?: { status: string; uptimeSeconds: number; memoryBytes: number; heapUsedBytes?: number; nodeVersion?: string }; bot?: { status: string; lastSeen: string | null }; redis?: { status: string }; database?: { status: string }; checkedAt?: string };
 export default {
   data() {
     return { tabs: ["Console", "Logs", "Monitoring", "Bot Controls", "Commands"], activeTab: "Console", logs: [] as LogEntry[], status: {} as ConsoleStatus, retained: 0, search: "", level: "ALL", source: "all", hours: "24", autoRefresh: true, error: "", command: "", commandBusy: false, statusText: "", statusBusy: false, terminalOutput: "OKG Developer Console ready. Run /help.", timer: null as ReturnType<typeof setInterval> | null };
