@@ -3,6 +3,7 @@
 import "./threadsSignalFix.js";
 
 import { installDeveloperConsole } from "./developerConsole.js";
+import { startDeveloperCommandWorker } from "./developerCommandWorker.js";
 
 import {
   ActivityType,
@@ -516,6 +517,7 @@ connect().then(async () => {
   });
 
   client.once("clientReady", async () => {
+    startDeveloperCommandWorker(client, allowedGuilds);
     // Refresh the names, icons, and owner IDs of already-allowed servers on every startup.
     for (const guild of client.guilds.cache.values()) {
       try {
