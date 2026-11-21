@@ -40,6 +40,7 @@ test("forwards rewritten commands as an own content property without mutating th
   t.is(original.content, originalContent);
   t.is(Object.getPrototypeOf(forwarded), original);
   t.true(Object.prototype.hasOwnProperty.call(forwarded, "content"));
+  t.true(Object.getOwnPropertyDescriptor(forwarded, "content")?.writable);
 });
 
 
