@@ -9,6 +9,7 @@ import {
 import { AllowedGuilds } from "./data/AllowedGuilds.js";
 import { redis } from "./data/redis.js";
 import { logger } from "./logger.js";
+import { BOT_VERSION } from "./version.js";
 
 const QUEUE_KEY = "okg:developer:commands:queue";
 const RESULT_PREFIX = "okg:developer:commands:result:";
@@ -30,6 +31,7 @@ const ALLOWED_ROLE_PERMISSIONS = [
 
 type DeveloperCommand =
   | { id: string; type: "servers.list" }
+  | { id: string; type: "bot.stats" }
   | { id: string; type: "server.info"; guildId: string }
   | { id: string; type: "server.adminroles"; guildId: string }
   | { id: string; type: "server.channels"; guildId: string }
@@ -67,6 +69,24 @@ async function execute(client: Client, allowedGuilds: AllowedGuilds, command: De
     })));
     const allowed = rows.filter((row) => row.allowed).map(({ guild }) => `• ${guild.name} — ${guild.id}`);
     return { ok: true, output: allowed.length ? `Authorized servers (${allowed.length}):\n${allowed.join("\n")}` : "No authorized servers are currently cached." };
+  }
+  if (command.type === "bot.stats") {
+    const memory = process.memoryUsage();
+    const mb = (bytes: number) => (bytes / 1024 / 1024).toFixed(1) + " MB";
+    return {
+      ok: true,
+      output: [
+        "OKG Manager Bot Statistics",
+        "Version: " + BOT_VERSION,
+        "WebSocket latency: " + Math.round(client.ws.ping) + " ms",
+        "Connected servers: " + client.guilds.cache.size,
+        "Cached users: " + client.users.cache.size,
+        "Process uptime: " + Math.floor(process.uptime()) + " seconds",
+        "RSS memory: " + mb(memory.rss),
+        "Heap used: " + mb(memory.heapUsed),
+        "Heap total: " + mb(memory.heapTotal),
+      ].join("\n"),
+    };
   }
 
   const guild = await getAllowedGuild(client, allowedGuilds, command.guildId);
