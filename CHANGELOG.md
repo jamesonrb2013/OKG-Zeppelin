@@ -12,6 +12,7 @@
 - Added explicitly confirmed role deletion; the bot refuses to delete @everyone, managed roles, or roles at/above its highest role.
 - Added role editing for names and allowlisted permissions, with role hierarchy enforcement.
 - Added text, voice, and category channel creation plus explicitly confirmed channel deletion; the bot checks Manage Channels and channel deletability.
+- Added filtered CSV export for the Developer Center log explorer, including spreadsheet-formula injection protection.
 
 ### Security
 - Kept Developer Center endpoints behind the existing platform-owner authorization check.
