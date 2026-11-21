@@ -62,6 +62,8 @@
           <p><code>/bot status</code> <span class="font-sans text-gray-400">Bot worker heartbeat</span></p>
           <p><code>/database health</code> <span class="font-sans text-gray-400">Database connectivity check</span></p>
           <p><code>/redis health</code> <span class="font-sans text-gray-400">Redis connectivity check</span></p>
+          <p><code>/database tables</code> <span class="font-sans text-gray-400">Read-only table size and row estimates</span></p>
+          <p><code>/redis info</code> <span class="font-sans text-gray-400">Read-only memory, uptime, and connection diagnostics</span></p>
           <p><code>/logs tail [1-100]</code> <span class="font-sans text-gray-400">Fetch recent console entries</span></p>
         </div>
       </div>
