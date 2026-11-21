@@ -1,3 +1,16 @@
+## 1.3.36
+
+### Fixed
+- Fixed the moderation message-command permission pipeline: Vety's built-in filter previously rejected commands before the custom moderation wrapper could apply the platform/server-owner exception.
+- The built-in permission filter is now explicitly skipped for wrapped moderation message commands; the moderation wrapper still enforces the exact `can_*` permission for every non-owner.
+- Restored execution and feedback for message-prefix moderation commands including mute, warn, and note.
+
+### Reliability
+- Preserved role/channel permission checks and the platform/server-owner rules; no moderation permission bypass was introduced.
+
+### Credits
+- Updated by Jeffery Spinnel.
+
 ## 1.3.35
 
 ### Fixed
