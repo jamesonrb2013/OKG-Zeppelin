@@ -1,6 +1,10 @@
 import test from "ava";
 import { createForwardedPrefixMessage, extractPrefixedCommand, INTERNAL_COMMAND_PREFIX, registerPrefixCommandDispatcher } from "./PrefixCommandDispatcher.js";
 
+test("uses Vety's supported internal ! prefix", (t) => {
+  t.is(INTERNAL_COMMAND_PREFIX, "!");
+});
+
 test("parses the default !o prefix", (t) => {
   t.is(extractPrefixedCommand("!o ban @member spam"), "ban @member spam");
 });
@@ -54,7 +58,7 @@ test("registers one public !o handler and forwards ordinary commands to Vety", a
   let forwarded: any;
   const fakeClient = {
     user: null,
-    on(event: string, handler: (message: any) => Promise<void>) {
+    prependListener(event: string, handler: (message: any) => Promise<void>) {
       if (event === "messageCreate") messageHandler = handler;
       return this;
     },
@@ -98,7 +102,7 @@ test("routes the exact warn test command to Vety with its arguments intact", asy
   let forwarded: any;
   const fakeClient = {
     user: null,
-    on(event: string, handler: (message: any) => Promise<void>) {
+    prependListener(event: string, handler: (message: any) => Promise<void>) {
       if (event === "messageCreate") messageHandler = handler;
       return this;
     },
@@ -135,7 +139,7 @@ test("routes the exact mute test command to Vety with its arguments intact", asy
   let forwarded: any;
   const fakeClient = {
     user: null,
-    on(event: string, handler: (message: any) => Promise<void>) {
+    prependListener(event: string, handler: (message: any) => Promise<void>) {
       if (event === "messageCreate") messageHandler = handler;
       return this;
     },
@@ -172,7 +176,7 @@ test("replies visibly when Vety throws while dispatching a public command", asyn
   let replyContent = "";
   const fakeClient = {
     user: null,
-    on(event: string, handler: (message: any) => Promise<void>) {
+    prependListener(event: string, handler: (message: any) => Promise<void>) {
       if (event === "messageCreate") messageHandler = handler;
       return this;
     },
@@ -209,7 +213,7 @@ test("does not dispatch a bare ! command", async (t) => {
   let dispatchCount = 0;
   const fakeClient = {
     user: null,
-    on(event: string, handler: (message: any) => Promise<void>) {
+    prependListener(event: string, handler: (message: any) => Promise<void>) {
       if (event === "messageCreate") messageHandler = handler;
       return this;
     },
@@ -244,7 +248,7 @@ test("dispatches configured custom prefixes through the same Vety command pipeli
   let forwarded: any;
   const fakeClient = {
     user: null,
-    on(event: string, handler: (message: any) => Promise<void>) {
+    prependListener(event: string, handler: (message: any) => Promise<void>) {
       if (event === "messageCreate") messageHandler = handler;
       return this;
     },
