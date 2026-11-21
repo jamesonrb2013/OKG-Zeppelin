@@ -425,8 +425,8 @@ connect().then(async () => {
             );
 
             // Keep the public prefix separate from Vety's internal parser prefix.
-            // The dedicated dispatcher rewrites public !o commands to !commands
-            // before handing them to Vety, preserving the normal command pipeline.
+            // The dedicated dispatcher rewrites public !o/custom-prefix commands to the
+            // private ASCII-only prefix before handing them to Vety.
             const publicPrefix =
               typeof loaded.command_prefix === "string" && loaded.command_prefix.trim().length > 0
                 ? loaded.command_prefix
@@ -466,9 +466,9 @@ connect().then(async () => {
           }
         }
 
-        logger.warn(`No config with key "${key}"`);
+        logger.warn(`No config with key "${key}"; using the private command prefix ${JSON.stringify(INTERNAL_COMMAND_PREFIX)}`);
         externalPrefixes.set(id, "!o ");
-        const fallbackConfig = id === "global" ? {} : { prefix: INTERNAL_COMMAND_PREFIX, command_prefix: "!o ", levels: {} };
+        const fallbackConfig = { prefix: INTERNAL_COMMAND_PREFIX, command_prefix: "!o ", levels: {} };
         applyPermissionOverrides(
           fallbackConfig,
           id === "global" ? availableGlobalPlugins : availableGuildPlugins,
