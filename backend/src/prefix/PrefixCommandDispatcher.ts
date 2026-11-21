@@ -28,7 +28,7 @@ export function extractPrefixedCommand(content: string, configuredPrefix = "!o "
 /** Create the rewritten Message exactly as Vety documents; Message.content is inherited via an accessor. */
 export function createForwardedPrefixMessage(message: Message, content: string): Message {
   return Object.create(message, {
-    content: { configurable: true, enumerable: true, value: content },
+    content: { configurable: true, enumerable: true, writable: true, value: content },
   }) as Message;
 }
 
