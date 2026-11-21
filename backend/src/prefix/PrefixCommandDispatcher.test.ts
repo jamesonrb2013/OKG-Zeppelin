@@ -125,6 +125,43 @@ test("routes the exact mute test command to Vety with its arguments intact", asy
   t.is(original.content, "!o mute <@1528924568020844655> 15m test");
 });
 
+test("replies visibly when Vety throws while dispatching a public command", async (t) => {
+  let messageHandler: ((message: any) => Promise<void>) | undefined;
+  let replyContent = "";
+  const fakeClient = {
+    user: null,
+    on(event: string, handler: (message: any) => Promise<void>) {
+      if (event === "messageCreate") messageHandler = handler;
+      return this;
+    },
+  };
+  const fakeVety = {
+    async dispatchMessageCommands() {
+      throw new Error("test dispatch failure");
+    },
+  };
+  const fakeAllowedGuilds = {
+    async isAllowed() {
+      return true;
+    },
+  };
+
+  registerPrefixCommandDispatcher(fakeClient as any, fakeVety as any, fakeAllowedGuilds as any, () => "!o ");
+
+  await messageHandler!({
+    guildId: "guild-1",
+    guild: {},
+    content: "!o mute <@1528924568020844655> 15m test",
+    author: { id: "user-1", bot: false },
+    mentions: { users: { has: () => false } },
+    async reply(payload: any) {
+      replyContent = payload.content;
+    },
+  });
+
+  t.true(replyContent.includes("internal error occurred"));
+});
+
 test("dispatches configured custom prefixes through the same Vety command pipeline", async (t) => {
   let messageHandler: ((message: any) => Promise<void>) | undefined;
   let forwarded: any;
