@@ -176,10 +176,10 @@ export function initOwnerAPI(router: express.Router) {
       .filter((entry) => !source || source === "all" || entry.source === source)
       .filter((entry) => !search || entry.message.toLowerCase().includes(search));
     const csvCell = (value: string) => {
-      const safe = /^[=+\\-@]/.test(value) ? "'" + value : value;
+      const safe = /^[=+\-@]/.test(value) ? "'" + value : value;
       return '"' + safe.replace(/"/g, '""') + '"';
     };
-    const csv = ["timestamp,level,source,message", ...entries.map((entry) => [entry.timestamp, entry.level, entry.source, entry.message].map(csvCell).join(","))].join("\\n");
+    const csv = ["timestamp,level,source,message", ...entries.map((entry) => [entry.timestamp, entry.level, entry.source, entry.message].map(csvCell).join(","))].join("\n");
     res.setHeader("Cache-Control", "no-store");
     res.setHeader("Content-Type", "application/json; charset=utf-8");
     return res.json({ filename: "okg-developer-logs.csv", csv, count: entries.length });
