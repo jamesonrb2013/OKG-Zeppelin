@@ -75,6 +75,7 @@
           <p><code>/admin role edit {serverId} {roleId} --name "Staff" --permissions ManageMessages,ModerateMembers</code> <span class="font-sans text-gray-400">Edit a role name and permissions</span></p>
           <p class="font-sans text-xs text-amber-300">Role changes respect the bot's role hierarchy. Deletion requires --confirm and cannot remove @everyone or managed roles.</p>
           <p><code>/bot status</code> <span class="font-sans text-gray-400">Bot worker heartbeat</span></p>
+          <p><code>/bot stats</code> <span class="font-sans text-gray-400">Live bot latency, uptime, memory, and cache counts</span></p>
           <p><code>/database health</code> <span class="font-sans text-gray-400">Database connectivity check</span></p>
           <p><code>/redis health</code> <span class="font-sans text-gray-400">Redis connectivity check</span></p>
           <p><code>/database tables</code> <span class="font-sans text-gray-400">Read-only table size and row estimates</span></p>
