@@ -107,15 +107,14 @@ async function execute(client: Client, allowedGuilds: AllowedGuilds, command: De
 
   if (command.type === "server.channels") {
     const channels = await guild.channels.fetch();
-    const rows = channels.filter((channel) => channel !== null).sort((a, b) => {
-      const aPosition = "rawPosition" in a ? a.rawPosition : 0;
-      const bPosition = "rawPosition" in b ? b.rawPosition : 0;
-      return aPosition - bPosition;
-    }).map((channel) => {
+    const rows = channels
+      .filter((channel) => channel !== null)
+      .sort((a, b) => ((a as any).rawPosition ?? 0) - ((b as any).rawPosition ?? 0))
+      .map((channel) => {
       const kind = channel.type === 0 ? "text" : channel.type === 2 ? "voice" : channel.type === 4 ? "category" : channel.type === 5 ? "announcement" : channel.type === 13 ? "stage" : channel.type === 15 ? "forum" : channel.type === 16 ? "media" : "other";
       return `• #${channel.name} [${kind}] — ${channel.id}`;
     });
-    return { ok: true, output: rows.length ? `Channels in ${guild.name} (${rows.length}):\\n${rows.join("\\n")}` : `No channels found in ${guild.name}.` };
+    return { ok: true, output: rows.length ? `Channels in ${guild.name} (${rows.length}):\n${rows.join("\n")}` : `No channels found in ${guild.name}.` };
   }
 
   if (command.type === "user.inspect") {
