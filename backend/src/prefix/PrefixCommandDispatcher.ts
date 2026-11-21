@@ -6,7 +6,7 @@ import { logger } from "../logger.js";
 
 export const OKG_PLATFORM_OWNER_ID = "1441223435043868735";
 
-export const INTERNAL_COMMAND_PREFIX = "~!";
+export const INTERNAL_COMMAND_PREFIX = "!";
 const CANONICAL_OKG_PREFIX = "!o";
 
 export function extractPrefixedCommand(content: string, configuredPrefix = "!o "): string | null {
@@ -71,21 +71,43 @@ export function registerPrefixCommandDispatcher(
   const directHealthCooldowns = new Map<string, number>();
   const webhookHealthCooldowns = new Map<string, number>();
 
-  client.on(Events.MessageCreate, async (message) => {
+  // Run before Vety's own message listener. Vety uses a single-character `!`
+  // parser prefix internally, so temporarily mask the original public message
+  // while the EventEmitter finishes this synchronous dispatch. Valid public
+  // commands are forwarded below as a separate Message with the private `!` prefix.
+  client.prependListener(Events.MessageCreate, async (message) => {
+    const originalContent = message.content;
+    const originalContentDescriptor = Object.getOwnPropertyDescriptor(message, "content");
+    if (originalContent.startsWith("!")) {
+      Object.defineProperty(message, "content", {
+        configurable: true,
+        enumerable: true,
+        writable: true,
+        value: "",
+      });
+      queueMicrotask(() => {
+        if (originalContentDescriptor) {
+          Object.defineProperty(message, "content", originalContentDescriptor);
+        } else {
+          Reflect.deleteProperty(message, "content");
+        }
+      });
+    }
+
     let recognizedPublicCommand = false;
     try {
-      if (!message.guildId || !message.guild || !message.content) return;
+      if (!message.guildId || !message.guild || !originalContent) return;
 
       const configuredPrefix = getConfiguredPrefix(message.guildId) || "!o ";
-      // A bare exclamation mark is reserved as Vety's hidden internal prefix,
-      // never as a public guild prefix. If configured, keep the safe !o default.
+      // A bare exclamation mark is never a public prefix. The early mask above
+      // prevents Vety's native listener from treating !command as a command.
       const publicPrefix = configuredPrefix.trimEnd() === "!" ? "!o " : configuredPrefix;
-      const commandText = extractPrefixedCommand(message.content.trimStart(), publicPrefix);
+      const commandText = extractPrefixedCommand(originalContent.trimStart(), publicPrefix);
       recognizedPublicCommand = commandText !== null;
       const isWebhook = Boolean(message.webhookId);
       const ownerWasMentioned =
-        message.content.includes("<@" + OKG_PLATFORM_OWNER_ID + ">") ||
-        message.content.includes("<@!" + OKG_PLATFORM_OWNER_ID + ">");
+        originalContent.includes("<@" + OKG_PLATFORM_OWNER_ID + ">") ||
+        originalContent.includes("<@!" + OKG_PLATFORM_OWNER_ID + ">");
 
       // Webhooks are accepted only for the authenticated Dyno health-check path.
       if (isWebhook) {
