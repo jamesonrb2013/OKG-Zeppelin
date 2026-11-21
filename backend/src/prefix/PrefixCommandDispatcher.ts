@@ -6,7 +6,7 @@ import { logger } from "../logger.js";
 
 export const OKG_PLATFORM_OWNER_ID = "1441223435043868735";
 
-export const INTERNAL_COMMAND_PREFIX = "\u2063!";
+export const INTERNAL_COMMAND_PREFIX = "~!";
 const CANONICAL_OKG_PREFIX = "!o";
 
 export function extractPrefixedCommand(content: string, configuredPrefix = "!o "): string | null {
