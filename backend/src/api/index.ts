@@ -2,9 +2,13 @@
 // See comment in module for details
 import "../threadsSignalFix.js";
 
+import { installDeveloperConsole } from "../developerConsole.js";
+
 import { connect } from "../data/db.js";
 import { env } from "../env.js";
 import { setIsAPI } from "../globals.js";
+
+installDeveloperConsole("api");
 
 if (!env.KEY) {
   // tslint:disable-next-line:no-console
