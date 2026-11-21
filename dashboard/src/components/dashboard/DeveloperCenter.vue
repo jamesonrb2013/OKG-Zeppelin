@@ -38,8 +38,23 @@
     </section>
     <section v-if="activeTab === 'Commands'" class="rounded-xl border border-gray-800 bg-gray-900 p-5">
       <h3 class="text-lg font-semibold text-white">Available commands</h3><p class="mt-1 text-sm text-gray-400">Only explicitly allowlisted commands are accepted. Arbitrary shell execution is disabled.</p>
-      <div class="mt-4 space-y-3 font-mono text-sm">
-        <p><code>/help</code> <span class="font-sans text-gray-400">Command reference</span></p><p><code>/bot status</code> <span class="font-sans text-gray-400">Bot worker heartbeat</span></p><p><code>/database health</code> <span class="font-sans text-gray-400">Database connectivity check</span></p><p><code>/redis health</code> <span class="font-sans text-gray-400">Redis connectivity check</span></p><p><code>/logs tail [1-100]</code> <span class="font-sans text-gray-400">Fetch recent console entries</span></p>
+      <div class="mt-4 grid gap-4 md:grid-cols-2">
+        <div class="space-y-3 font-mono text-sm">
+          <p><code>/help</code> <span class="font-sans text-gray-400">Command reference</span></p>
+          <p><code>/servers list</code> <span class="font-sans text-gray-400">List authorized servers</span></p>
+          <p><code>/server info {serverId}</code> <span class="font-sans text-gray-400">Inspect server metadata</span></p>
+          <p><code>/adminroles {serverId}</code> <span class="font-sans text-gray-400">List admin-permission roles</span></p>
+          <p><code>/user inspect {serverId} {userId}</code> <span class="font-sans text-gray-400">Inspect a server member</span></p>
+          <p><code>/message send {serverId} {channelId} {message}</code> <span class="font-sans text-gray-400">Send a bot message (mentions disabled)</span></p>
+        </div>
+        <div class="space-y-3 font-mono text-sm">
+          <p><code>/admin role create {serverId} "Staff" --give {userId,userId} --position {number} --permissions {Permission,Permission}</code></p>
+          <p class="font-sans text-xs text-gray-400">Creates a role, optionally assigns members, positions it below the bot's highest role, and applies only the permissions explicitly requested.</p>
+          <p><code>/bot status</code> <span class="font-sans text-gray-400">Bot worker heartbeat</span></p>
+          <p><code>/database health</code> <span class="font-sans text-gray-400">Database connectivity check</span></p>
+          <p><code>/redis health</code> <span class="font-sans text-gray-400">Redis connectivity check</span></p>
+          <p><code>/logs tail [1-100]</code> <span class="font-sans text-gray-400">Fetch recent console entries</span></p>
+        </div>
       </div>
     </section>
     <p v-if="error" class="rounded-lg border border-red-900 bg-red-950/40 p-3 text-sm text-red-200">{{ error }}</p>
