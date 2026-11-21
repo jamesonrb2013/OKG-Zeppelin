@@ -52,6 +52,16 @@ function parseDeveloperCommand(raw: string, id: string): DeveloperCommand | null
   if (match) return { id, type: match[1].toLowerCase() === "assign" ? "role.assign" : "role.remove", guildId: match[2], roleId: match[3], userId: match[4] };
   match = command.match(/^admin\s+role\s+delete\s+(\d{17,20})\s+(\d{17,20})\s+--confirm$/i);
   if (match) return { id, type: "role.delete", guildId: match[1], roleId: match[2], confirmed: true };
+  const roleEditMatch = command.match(/^admin\s+role\s+edit\s+(\d{17,20})\s+(\d{17,20})(.*)$/i);
+  if (roleEditMatch) {
+    const tail = roleEditMatch[3] || "";
+    const nameMatch = tail.match(/--name\s+(?:"([^"]{1,100})"|([^\s]+))/i);
+    const permissionsMatch = tail.match(/--permissions\s+([^\s]+)/i);
+    const stripped = tail.replace(/--name\s+(?:"[^"]+"|[^\s]+)/i, "").replace(/--permissions\s+[^\s]+/i, "");
+    if ((!nameMatch && !permissionsMatch) || /--\w+/.test(stripped)) return null;
+    const permissions = permissionsMatch ? (permissionsMatch[1].toLowerCase() === "none" ? [] : permissionsMatch[1].split(",").map((value) => value.trim()).filter(Boolean)) : undefined;
+    return { id, type: "role.edit", guildId: roleEditMatch[1], roleId: roleEditMatch[2], ...(nameMatch ? { name: nameMatch[1] || nameMatch[2] } : {}), ...(permissions === undefined ? {} : { permissions }) };
+  }
 
   const roleMatch = command.match(/^admin\s+role\s+create\s+(\d{17,20})\s+(?:"([^"]{1,100})"|([^\s]+))(.*)$/i);
   if (roleMatch) {
