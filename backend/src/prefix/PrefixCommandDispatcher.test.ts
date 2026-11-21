@@ -1,5 +1,5 @@
 import test from "ava";
-import { createForwardedPrefixMessage, extractPrefixedCommand, registerPrefixCommandDispatcher } from "./PrefixCommandDispatcher.js";
+import { createForwardedPrefixMessage, extractPrefixedCommand, INTERNAL_COMMAND_PREFIX, registerPrefixCommandDispatcher } from "./PrefixCommandDispatcher.js";
 
 test("parses the default !o prefix", (t) => {
   t.is(extractPrefixedCommand("!o ban @member spam"), "ban @member spam");
@@ -21,6 +21,11 @@ test("supports a configured per-guild prefix as well as !o", (t) => {
 
 test("does not match a longer word beginning with the prefix", (t) => {
   t.is(extractPrefixedCommand("!other ban"), null);
+});
+
+test("does not treat a bare exclamation mark as a public command prefix", (t) => {
+  t.is(extractPrefixedCommand("!mute <@123> 15m test"), null);
+  t.is(extractPrefixedCommand("!warn <@123> reason"), null);
 });
 
 test("recognizes the prefix with no command", (t) => {
@@ -83,7 +88,7 @@ test("registers one public !o handler and forwards ordinary commands to Vety", a
   };
   await messageHandler!(original);
 
-  t.is(forwarded.content, "!help");
+  t.is(forwarded.content, INTERNAL_COMMAND_PREFIX + "help");
   t.is(original.content, "!o help");
   t.is(Object.getPrototypeOf(forwarded), original);
 });
@@ -121,7 +126,7 @@ test("routes the exact mute test command to Vety with its arguments intact", asy
   };
   await messageHandler!(original);
 
-  t.is(forwarded.content, "!mute <@1528924568020844655> 15m test");
+  t.is(forwarded.content, INTERNAL_COMMAND_PREFIX + "mute <@1528924568020844655> 15m test");
   t.is(original.content, "!o mute <@1528924568020844655> 15m test");
 });
 
@@ -199,5 +204,5 @@ test("dispatches configured custom prefixes through the same Vety command pipeli
     async reply() {},
   });
 
-  t.is(forwarded.content, "!help");
+  t.is(forwarded.content, INTERNAL_COMMAND_PREFIX + "help");
 });
