@@ -13,6 +13,7 @@ import {
 import { randomUUID } from "node:crypto";
 import { Configs } from "../data/Configs.js";
 import { loadYamlSafely } from "../utils/loadYamlSafely.js";
+import { hasModmailStaffRole } from "./modmailAccess.js";
 
 const PREFIX = "okg_modmail:";
 const PLATFORM_OWNER_ID = "1441223435043868735";
@@ -371,7 +372,7 @@ export async function handleModmailMessage(client: Client, incoming: Message): P
   const cfg = await getModmailConfig(message.guildId);
   if (!cfg) return;
   const member = await message.guild?.members.fetch(message.author.id).catch(() => null);
-  if (!member || (message.author.id !== PLATFORM_OWNER_ID && !member.roles.cache.has(cfg.roleId) && !member.roles.cache.has(cfg.adminRoleId))) return;
+  if (!member || (message.author.id !== PLATFORM_OWNER_ID && !hasModmailStaffRole(member.roles.cache.keys(), cfg))) return;
 
   if (message.content.trim().toLowerCase() === "!close") {
     if (message.author.id !== PLATFORM_OWNER_ID && !member.roles.cache.has(cfg.adminRoleId)) {
