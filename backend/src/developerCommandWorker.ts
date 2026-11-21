@@ -141,7 +141,7 @@ async function execute(client: Client, allowedGuilds: AllowedGuilds, command: De
     const channel = await guild.channels.fetch(command.channelId);
     if (!channel || channel.guildId !== guild.id) throw new Error("That channel was not found in the selected server.");
     if (!channel.manageable) throw new Error("The bot cannot manage that channel.");
-    await channel.setName(name, "Renamed through the OKG Manager owner Developer Center");
+    await channel.setName(name);
     return { ok: true, output: "Renamed channel " + command.channelId + " to #" + name + " in " + guild.name + "." };
   }
 
@@ -152,9 +152,9 @@ async function execute(client: Client, allowedGuilds: AllowedGuilds, command: De
     if (!botMember.permissions.has(PermissionFlagsBits.ManageChannels)) throw new Error("The bot needs Manage Channels permission in that server.");
     const channel = await guild.channels.fetch(command.channelId);
     if (!channel || channel.guildId !== guild.id) throw new Error("That channel was not found in the selected server.");
-    if (!channel.deletable) throw new Error("The bot cannot delete that channel.");
+    if (!channel.manageable) throw new Error("The bot cannot manage that channel.");
     const channelName = channel.name;
-    await channel.delete("Deleted through the OKG Manager owner Developer Center with explicit confirmation");
+    await channel.delete();
     return { ok: true, output: "Deleted channel #" + channelName + " (" + command.channelId + ") from " + guild.name + "." };
   }
   if (command.type === "user.inspect") {
@@ -254,7 +254,7 @@ async function execute(client: Client, allowedGuilds: AllowedGuilds, command: De
     if (command.type === "role.delete") {
       if (command.confirmed !== true) throw new Error("Role deletion requires the explicit --confirm flag.");
       const roleName = role.name;
-      await role.delete("Deleted through the OKG Manager owner Developer Center with explicit confirmation");
+      await role.delete();
       return { ok: true, output: `Deleted role ${roleName} (${command.roleId}) from ${guild.name}.` };
     }
     if (command.type === "role.edit") {
@@ -272,7 +272,7 @@ async function execute(client: Client, allowedGuilds: AllowedGuilds, command: De
         if (flags.some((flag) => flag === undefined)) throw new Error("One or more Discord permissions are invalid.");
         changes.permissions = new PermissionsBitField(flags);
       }
-      await role.edit(changes, "Edited through the OKG Manager owner Developer Center");
+      await role.edit({ ...changes, reason: "Edited through the OKG Manager owner Developer Center" });
       return { ok: true, output: "Updated role " + role.name + " (" + role.id + ") in " + guild.name + "." };
     }
     if (!snowflake(command.userId)) throw new Error("That user ID is invalid.");
