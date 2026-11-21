@@ -42,12 +42,9 @@ export const HelpCmd = utilityCmd({
 
     const totalResults = matchingCommands.length;
     const limitedResults = matchingCommands.slice(0, 3);
+    const publicPrefix = String(pluginData.fullConfig.command_prefix ?? "!o ").trimEnd() + " ";
     const commandSnippets = limitedResults.map(({ plugin, command }) => {
-      const prefix: string = command.originalPrefix
-        ? typeof command.originalPrefix === "string"
-          ? command.originalPrefix
-          : command.originalPrefix.source
-        : "";
+      const prefix = publicPrefix;
 
       const originalTrigger = command.originalTriggers[0];
       const trigger: string = originalTrigger
