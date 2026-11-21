@@ -26,6 +26,7 @@ declare global {
 }
 
 const DISCORD_API_URL = "https://discord.com/api";
+const VIEW_ROLES_PERMISSION = "ViewRoles" as ApiPermissions;
 
 function simpleDiscordAPIRequest(bearerToken, path): Promise<any> {
   return new Promise((resolve, reject) => {
@@ -98,20 +99,33 @@ export function initAuth(router: express.Router) {
         const user = await simpleDiscordAPIRequest(accessToken, "users/@me");
 
         // Automatically restore dashboard access for the actual owners of servers where the bot is enabled.
-        // This does not grant access to unrelated servers or expose owner-only invite-code management.
+        // Grant regular members a separate, read-only Role Details permission for servers the bot serves.
+        // This intentionally does not grant access to configuration, audit logs, or other dashboard tools.
         try {
           const discordGuilds = await simpleDiscordAPIRequest(accessToken, "users/@me/guilds");
           for (const guild of discordGuilds) {
-            if (guild.owner === true && (await allowedGuilds.isAllowed(guild.id))) {
+            if (!(await allowedGuilds.isAllowed(guild.id))) continue;
+
+            if (guild.owner === true) {
               const existingOwner = await apiPermissionAssignments.getByGuildAndUserId(guild.id, user.id);
               if (!existingOwner?.permissions.includes(ApiPermissions.Owner)) {
                 await apiPermissionAssignments.applyOwnerChange(guild.id, user.id);
               }
             }
+
+            const existing = await apiPermissionAssignments.getByGuildAndUserId(guild.id, user.id);
+            if (!existing) {
+              await apiPermissionAssignments.addUser(guild.id, user.id, [VIEW_ROLES_PERMISSION]);
+            } else if (!existing.permissions.includes(VIEW_ROLES_PERMISSION)) {
+              await apiPermissionAssignments.updateUserPermissions(guild.id, user.id, [
+                ...existing.permissions,
+                VIEW_ROLES_PERMISSION,
+              ]);
+            }
           }
         } catch (error) {
           // Existing permission assignments still work if Discord's guild list is temporarily unavailable.
-          console.warn("Unable to sync Discord server-owner dashboard access:", error);
+          console.warn("Unable to sync Discord server member Role Details access:", error);
         }
 
         // Make sure the user is able to access at least 1 guild
