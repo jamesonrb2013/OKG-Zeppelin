@@ -5,6 +5,8 @@
 - Captured bot and API console output into a shared Redis-backed log history with a 1,000-entry retention limit.
 - Added bot/API heartbeats and live database/Redis health checks.
 - Added audited developer command execution and secret redaction before log persistence.
+- Added a Redis-backed API-to-bot command bridge for real Discord operations: authorized server listing, server inspection, administrative role discovery, member inspection, and bot-authored channel messages.
+- Added guarded role creation with optional member assignment, explicit permission selection, and Discord role-hierarchy enforcement.
 
 ### Security
 - Kept Developer Center endpoints behind the existing platform-owner authorization check.
