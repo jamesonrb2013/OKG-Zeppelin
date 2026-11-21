@@ -1,3 +1,18 @@
+## 1.3.37
+
+### Added
+- Added an owner-only Developer Center with live console output, recent log history, filters, system health cards, and an allowlisted diagnostic command terminal.
+- Captured bot and API console output into a shared Redis-backed log history with a 1,000-entry retention limit.
+- Added bot/API heartbeats and live database/Redis health checks.
+- Added audited developer command execution and secret redaction before log persistence.
+
+### Security
+- Kept Developer Center endpoints behind the existing platform-owner authorization check.
+- Disabled arbitrary shell execution; only explicit read-only diagnostic commands are accepted.
+
+### Credits
+- Updated by Jeffery Spinnel.
+
 ## 1.3.36
 
 ### Fixed

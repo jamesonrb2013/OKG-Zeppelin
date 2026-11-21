@@ -2,6 +2,8 @@
 // See comment in module for details
 import "./threadsSignalFix.js";
 
+import { installDeveloperConsole } from "./developerConsole.js";
+
 import {
   ActivityType,
   Client,
@@ -72,6 +74,8 @@ import {
 } from "./slashCommands/updates.js";
 import { applyPermissionOverrides } from "./permissionConfig.js";
 import { INTERNAL_COMMAND_PREFIX, registerPrefixCommandDispatcher } from "./prefix/PrefixCommandDispatcher.js";
+
+installDeveloperConsole("bot");
 
 // Error handling
 let recentPluginErrors = 0;

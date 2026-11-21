@@ -24,6 +24,22 @@ export const loginCallbackGuard: NavigationGuard = async (to, from, next) => {
   return next();
 };
 
+export const ownerOnlyGuard: NavigationGuard = async (to, from, next) => {
+  if (!(await isAuthenticated())) {
+    window.location.href = `${window.API_URL}/auth/login`;
+    return next(false);
+  }
+  try {
+    const response = await fetch(`${window.API_URL}/owner/access`, {
+      headers: { "X-Api-Key": RootStore.state.auth.apiKey || "" },
+    });
+    if (response.ok) return next();
+  } catch {
+    // Fail closed: the owner console must never be exposed when access cannot be verified.
+  }
+  return next("/dashboard");
+};
+
 export const staffOnlyGuard: NavigationGuard = async (to, from, next) => {
   if (!(await isAuthenticated())) {
     window.location.href = `${window.API_URL}/auth/login`;

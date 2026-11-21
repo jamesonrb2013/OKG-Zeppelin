@@ -5,7 +5,7 @@
       <div class="flex-full md:flex-initial flex items-center">
         <img class="w-10 mr-4" src="/img/okg-shield.svg" alt="OKG" />
         <router-link to="/dashboard"><div class="font-semibold leading-tight">OKG Administrative &amp; Management</div><div class="text-xs tracking-widest text-blue-300">CONTROL CENTER</div></router-link>
-        <router-link v-if="isStaff" to="/dashboard/owner" class="ml-4 rounded bg-blue-700 hover:bg-blue-600 px-3 py-1.5 text-sm">Owner</router-link>
+        <router-link v-if="isOwner" to="/dashboard/owner" class="ml-4 rounded bg-blue-700 hover:bg-blue-600 px-3 py-1.5 text-sm">Owner</router-link>
       </div>
       <div class="flex-1 flex items-center flex-wrap">
         <ul class="dashboard-nav list-none flex md:ml-8">
@@ -29,10 +29,10 @@ import Title from "../Title.vue";
 import { get } from "../../api";
 export default {
   components: { Title },
-  data() { return { isStaff: false }; },
+  data() { return { isOwner: false }; },
   async mounted() {
-    try { const result = await get("staff/status"); this.isStaff = result?.isStaff === true; }
-    catch { this.isStaff = false; }
+    try { const result = await get("staff/status"); this.isOwner = result?.isOwner === true; }
+    catch { this.isOwner = false; }
   },
   methods: {
     async logout() { await this.$store.dispatch("auth/logout"); window.location.pathname = "/"; },

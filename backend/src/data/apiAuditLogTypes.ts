@@ -9,6 +9,7 @@ export const AuditLogEventTypes = {
   INVITE_CODE_CREATED: "INVITE_CODE_CREATED" as const,
   INVITE_CODE_REVOKED: "INVITE_CODE_REVOKED" as const,
   GUILD_LOG_EVENT: "GUILD_LOG_EVENT" as const,
+  DEVELOPER_COMMAND_EXECUTED: "DEVELOPER_COMMAND_EXECUTED" as const,
 };
 
 export type AuditLogEventType = keyof typeof AuditLogEventTypes;
@@ -48,6 +49,7 @@ export interface AuditLogEventData extends Record<AuditLogEventType, unknown> {
   INVITE_CODE_CREATED: { code_hint: string; target_guild_id: string; max_uses: number; expires_at: string | null };
   INVITE_CODE_REVOKED: { code_id: number; code_hint: string };
   GUILD_LOG_EVENT: { log_type: string; payload: unknown };
+  DEVELOPER_COMMAND_EXECUTED: { command: string; success: boolean; result_summary: string };
 }
 
 export type AnyAuditLogEventData = AuditLogEventData[AuditLogEventType];
