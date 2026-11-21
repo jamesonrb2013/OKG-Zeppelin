@@ -1,4 +1,5 @@
 import {
+  ChannelType,
   Client,
   PermissionFlagsBits,
   PermissionsBitField,
@@ -32,10 +33,13 @@ type DeveloperCommand =
   | { id: string; type: "server.info"; guildId: string }
   | { id: string; type: "server.adminroles"; guildId: string }
   | { id: string; type: "server.channels"; guildId: string }
+  | { id: string; type: "channel.create"; guildId: string; channelType: "text" | "voice" | "category"; name: string }
+  | { id: string; type: "channel.delete"; guildId: string; channelId: string; confirmed: true }
   | { id: string; type: "user.inspect"; guildId: string; userId: string }
   | { id: string; type: "message.send"; guildId: string; channelId: string; message: string }
   | { id: string; type: "role.create"; guildId: string; name: string; give: string[]; position?: number; permissions: string[] }
   | { id: string; type: "role.assign" | "role.remove"; guildId: string; roleId: string; userId: string }
+  | { id: string; type: "role.edit"; guildId: string; roleId: string; name?: string; permissions?: string[] }
   | { id: string; type: "role.delete"; guildId: string; roleId: string; confirmed: true };
 
 type CommandResult = { ok: boolean; output: string };
@@ -117,6 +121,28 @@ async function execute(client: Client, allowedGuilds: AllowedGuilds, command: De
     return { ok: true, output: rows.length ? `Channels in ${guild.name} (${rows.length}):\n${rows.join("\n")}` : `No channels found in ${guild.name}.` };
   }
 
+  if (command.type === "channel.create") {
+    const name = command.name.trim().toLowerCase().replace(/[^a-z0-9-_]/g, "-").replace(/-+/g, "-").slice(0, 100);
+    if (!name) throw new Error("Channel name cannot be empty.");
+    const botMember = guild.members.me ?? await guild.members.fetchMe();
+    if (!botMember.permissions.has(PermissionFlagsBits.ManageChannels)) throw new Error("The bot needs Manage Channels permission in that server.");
+    const type = command.channelType === "text" ? ChannelType.GuildText : command.channelType === "voice" ? ChannelType.GuildVoice : ChannelType.GuildCategory;
+    const channel = await guild.channels.create({ name, type, reason: "Created through the OKG Manager owner Developer Center" });
+    return { ok: true, output: "Created " + command.channelType + " channel #" + channel.name + " in " + guild.name + ".\nChannel ID: " + channel.id };
+  }
+
+  if (command.type === "channel.delete") {
+    if (!snowflake(command.channelId)) throw new Error("That channel ID is invalid.");
+    if (command.confirmed !== true) throw new Error("Channel deletion requires the explicit --confirm flag.");
+    const botMember = guild.members.me ?? await guild.members.fetchMe();
+    if (!botMember.permissions.has(PermissionFlagsBits.ManageChannels)) throw new Error("The bot needs Manage Channels permission in that server.");
+    const channel = await guild.channels.fetch(command.channelId);
+    if (!channel || channel.guildId !== guild.id) throw new Error("That channel was not found in the selected server.");
+    if (!channel.deletable) throw new Error("The bot cannot delete that channel.");
+    const channelName = channel.name;
+    await channel.delete("Deleted through the OKG Manager owner Developer Center with explicit confirmation");
+    return { ok: true, output: "Deleted channel #" + channelName + " (" + command.channelId + ") from " + guild.name + "." };
+  }
   if (command.type === "user.inspect") {
     if (!snowflake(command.userId)) throw new Error("That user ID is invalid.");
     const member = await guild.members.fetch(command.userId);
@@ -202,7 +228,7 @@ async function execute(client: Client, allowedGuilds: AllowedGuilds, command: De
     };
   }
 
-  if (command.type === "role.assign" || command.type === "role.remove" || command.type === "role.delete") {
+  if (command.type === "role.assign" || command.type === "role.remove" || command.type === "role.delete" || command.type === "role.edit") {
     if (!snowflake(command.roleId)) throw new Error("That role ID is invalid.");
     const botMember = guild.members.me ?? await guild.members.fetchMe();
     if (!botMember.permissions.has(PermissionFlagsBits.ManageRoles)) throw new Error("The bot needs Manage Roles permission in that server.");
@@ -216,6 +242,24 @@ async function execute(client: Client, allowedGuilds: AllowedGuilds, command: De
       const roleName = role.name;
       await role.delete("Deleted through the OKG Manager owner Developer Center with explicit confirmation");
       return { ok: true, output: `Deleted role ${roleName} (${command.roleId}) from ${guild.name}.` };
+    }
+    if (command.type === "role.edit") {
+      if (command.name === undefined && command.permissions === undefined) throw new Error("Provide --name and/or --permissions.");
+      const changes: { name?: string; permissions?: PermissionsBitField } = {};
+      if (command.name !== undefined) {
+        const name = command.name.trim().slice(0, 100);
+        if (!name) throw new Error("Role name cannot be empty.");
+        changes.name = name;
+      }
+      if (command.permissions !== undefined) {
+        const invalid = command.permissions.filter((permission) => !ALLOWED_ROLE_PERMISSIONS.includes(permission as any));
+        if (invalid.length) throw new Error("Unsupported permission names: " + invalid.join(", ") + ".");
+        const flags = command.permissions.map((permission) => (PermissionFlagsBits as any)[permission]);
+        if (flags.some((flag) => flag === undefined)) throw new Error("One or more Discord permissions are invalid.");
+        changes.permissions = new PermissionsBitField(flags);
+      }
+      await role.edit(changes, { reason: "Edited through the OKG Manager owner Developer Center" });
+      return { ok: true, output: "Updated role " + role.name + " (" + role.id + ") in " + guild.name + "." };
     }
     if (!snowflake(command.userId)) throw new Error("That user ID is invalid.");
     const member = await guild.members.fetch(command.userId);
