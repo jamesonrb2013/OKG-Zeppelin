@@ -6,7 +6,6 @@ import {
   ChatInputCommandInteraction,
   EmbedBuilder,
   PermissionFlagsBits,
-  PermissionsString,
   Role,
   RoleSelectMenuBuilder,
   RoleSelectMenuInteraction,
@@ -114,7 +113,7 @@ async function buildRoleView(
   const members = guild.members.cache
     .filter((member) => member.roles.cache.has(role.id))
     .sort((a, b) => a.user.username.localeCompare(b.user.username));
-  const permissions = role.permissions.toArray() as PermissionsString[];
+  const permissions = role.permissions.toArray();
   const pageSize = section === "members" ? MEMBERS_PER_PAGE : PERMISSIONS_PER_PAGE;
   const items = section === "members" ? members.map((member) => member) : permissions;
   const maxPage = Math.max(0, Math.ceil(items.length / pageSize) - 1);
