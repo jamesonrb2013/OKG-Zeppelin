@@ -164,6 +164,26 @@ export function initOwnerAPI(router: express.Router) {
     return res.json({ entries, retained: rawEntries.length, limit });
   });
 
+  ownerRouter.get("/console/logs/export", async (req: Request, res: Response) => {
+    if (!requireOwner(req, res)) return;
+    const rawEntries = await redis.lRange(DEVELOPER_LOG_KEY, 0, 999);
+    const level = String(req.query.level || "").toUpperCase();
+    const source = String(req.query.source || "").toLowerCase();
+    const search = String(req.query.search || "").slice(0, 200).toLowerCase();
+    const entries = rawEntries.map(parseLog)
+      .filter((entry): entry is DeveloperLogEntry => Boolean(entry))
+      .filter((entry) => !level || level === "ALL" || entry.level === level)
+      .filter((entry) => !source || source === "all" || entry.source === source)
+      .filter((entry) => !search || entry.message.toLowerCase().includes(search));
+    const csvCell = (value: string) => {
+      const safe = /^[=+\\-@]/.test(value) ? "'" + value : value;
+      return '"' + safe.replace(/"/g, '""') + '"';
+    };
+    const csv = ["timestamp,level,source,message", ...entries.map((entry) => [entry.timestamp, entry.level, entry.source, entry.message].map(csvCell).join(","))].join("\\n");
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    return res.json({ filename: "okg-developer-logs.csv", csv, count: entries.length });
+  });
   ownerRouter.get("/console/status", async (req: Request, res: Response) => {
     if (!requireOwner(req, res)) return;
     const [botHeartbeat, redisResult, databaseResult] = await Promise.allSettled([
