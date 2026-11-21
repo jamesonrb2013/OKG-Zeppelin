@@ -40,7 +40,7 @@ type CommandResult = { ok: boolean; output: string };
 const snowflake = (value: string) => /^\d{17,20}$/.test(value);
 
 function safeText(value: string, max = 1800) {
-  return value.replace(/@everyone|@here/g, "\u200bvalue.replace(/@everyone|@here/g, "@\u200b$&")").slice(0, max);
+  return value.replace(/@everyone|@here/g, "\u200breturn value.replace(/@everyone|@here/g, "\u200bvalue.replace(/@everyone|@here/g, "@\u200b$&")").slice(0, max);").slice(0, max);
 }
 
 async function getAllowedGuild(client: Client, allowedGuilds: AllowedGuilds, guildId: string) {
