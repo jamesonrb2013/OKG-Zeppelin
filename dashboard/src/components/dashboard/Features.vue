@@ -63,6 +63,18 @@
       </router-link>
 
       <router-link
+        class="rounded-2xl border border-gray-700 bg-gray-900/80 p-6 transition hover:border-violet-500/60 hover:bg-gray-900"
+        :to="'/dashboard/guilds/' + $route.params.guildId + '/roles'"
+      >
+        <div class="text-xs font-semibold uppercase tracking-widest text-violet-300">Server management</div>
+        <h2 class="mt-4 text-xl font-semibold text-white">Role details</h2>
+        <p class="mt-2 text-sm leading-6 text-gray-400">
+          Inspect role membership counts, creation dates, hierarchy, colors, and every enabled Discord permission, with powerful permissions clearly highlighted.
+        </p>
+        <p class="mt-5 text-sm font-semibold text-violet-300">Explore server roles <span aria-hidden="true">→</span></p>
+      </router-link>
+
+      <router-link
         class="rounded-2xl border border-gray-700 bg-gray-900/80 p-6 transition hover:border-amber-500/60 hover:bg-gray-900"
         :to="'/dashboard/guilds/' + $route.params.guildId + '/audit-log'"
       >
