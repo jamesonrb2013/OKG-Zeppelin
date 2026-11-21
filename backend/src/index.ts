@@ -435,7 +435,7 @@ connect().then(async () => {
                   : "!o ";
             externalPrefixes.set(id, publicPrefix);
             loaded.command_prefix = publicPrefix;
-            loaded.prefix = "!";
+            loaded.prefix = INTERNAL_COMMAND_PREFIX;
 
             // This OKG fork stores the staff hierarchy as role_levels. Vety's
             // permission engine (used by the normal prefix commands) reads the
