@@ -33,8 +33,7 @@ type DeveloperCommand =
 
 function parseDeveloperCommand(raw: string, id: string): DeveloperCommand | null {
   const command = raw.replace(/^\/+/, "").trim();
-  let match = command.match(/^bot\s+stats$/i);
-  if (match) return { id, type: "bot.stats" };
+  if (/^bot\s+stats$/i.test(command)) return { id, type: "bot.stats" };
   let match = command.match(/^servers\s+list$/i);
   if (match) return { id, type: "servers.list" };
   match = command.match(/^server\s+info\s+(\d{17,20})$/i);
