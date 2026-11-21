@@ -1,6 +1,6 @@
 {
   "name": "@zeppelinbot/zeppelin",
-  "version": "1.3.38",
+  "version": "1.3.39",
   "description": "OKG Administrative and Management Bot",
   "private": true,
   "scripts": {
