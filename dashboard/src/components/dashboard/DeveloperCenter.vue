@@ -18,6 +18,7 @@
         <input v-model="search" placeholder="Search…" class="min-w-[120px] rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white">
         <select v-model="level" class="rounded-lg border border-gray-700 bg-gray-950 px-2 py-2 text-xs text-white"><option>ALL</option><option>DEBUG</option><option>INFO</option><option>WARN</option><option>ERROR</option></select>
         <select v-model="source" class="rounded-lg border border-gray-700 bg-gray-950 px-2 py-2 text-xs text-white"><option value="all">All</option><option value="bot">Bot</option><option value="api">API</option></select>
+        <select v-model="hours" class="rounded-lg border border-gray-700 bg-gray-950 px-2 py-2 text-xs text-white"><option value="1">Last hour</option><option value="6">Last 6 hours</option><option value="24">Last 24 hours</option><option value="168">Last 7 days</option><option value="720">Last 30 days</option><option value="all">All retained</option></select>
         <label class="flex items-center gap-1 text-xs text-gray-400"><input v-model="autoRefresh" type="checkbox" class="accent-indigo-500"> Live</label>
         <button class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-gray-200 hover:bg-gray-800" @click="exportLogs">Export CSV</button>
       </div>
@@ -28,6 +29,19 @@
         <p v-if="!logs.length" class="py-8 text-center text-gray-500">No matching log entries.</p>
       </div>
       <footer class="border-t border-gray-800 px-4 py-2 text-xs text-gray-500">Showing {{ logs.length }} · Retained {{ retained }} / 1,000 entries · Newest first</footer>
+    </section>
+    <section v-if="activeTab === 'Bot Controls'" class="rounded-xl border border-gray-800 bg-gray-900 p-5">
+      <h3 class="text-lg font-semibold text-white">Bot presence controls</h3>
+      <p class="mt-1 text-sm text-gray-400">Change the bot's custom status without removing its version activity.</p>
+      <form class="mt-4 space-y-3" @submit.prevent="savePresence">
+        <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400" for="bot-custom-status">Custom status · up to 128 characters</label>
+        <input id="bot-custom-status" v-model="statusText" maxlength="128" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-3 text-sm text-white" placeholder="Helping the OKG community">
+        <div class="flex flex-wrap items-center gap-2">
+          <button class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50" :disabled="statusBusy">{{ statusBusy ? 'Saving…' : 'Save status' }}</button>
+          <button type="button" class="rounded-lg border border-gray-700 px-4 py-2 text-sm text-gray-200 hover:bg-gray-800 disabled:opacity-50" :disabled="statusBusy || !statusText" @click="clearPresence">Clear custom status</button>
+        </div>
+      </form>
+      <p class="mt-3 text-xs text-gray-500">The bot's “Version … of OKG Administrative BotOS” playing activity is preserved. Discord presence sync normally applies changes within about one minute.</p>
     </section>
     <section v-if="activeTab === 'Console'" class="overflow-hidden rounded-xl border border-gray-800 bg-gray-950">
       <header class="border-b border-gray-800 bg-gray-900 px-4 py-3"><h3 class="font-semibold text-white">Developer command terminal</h3><p class="text-xs text-gray-500">Allowlisted diagnostic commands · every execution is audited</p></header>
@@ -80,7 +94,7 @@ type LogEntry = { id: string; timestamp: string; level: string; source: string; 
 type ConsoleStatus = { api?: { status: string; uptimeSeconds: number; memoryBytes: number }; bot?: { status: string; lastSeen: string | null }; redis?: { status: string }; database?: { status: string }; checkedAt?: string };
 export default {
   data() {
-    return { tabs: ["Console", "Logs", "Monitoring", "Commands"], activeTab: "Console", logs: [] as LogEntry[], status: {} as ConsoleStatus, retained: 0, search: "", level: "ALL", source: "all", autoRefresh: true, error: "", command: "", commandBusy: false, terminalOutput: "OKG Developer Console ready. Run /help.", timer: null as ReturnType<typeof setInterval> | null };
+    return { tabs: ["Console", "Logs", "Monitoring", "Bot Controls", "Commands"], activeTab: "Console", logs: [] as LogEntry[], status: {} as ConsoleStatus, retained: 0, search: "", level: "ALL", source: "all", hours: "24", autoRefresh: true, error: "", command: "", commandBusy: false, statusText: "", statusBusy: false, terminalOutput: "OKG Developer Console ready. Run /help.", timer: null as ReturnType<typeof setInterval> | null };
   },
   computed: {
     statusCards(): Array<{ label: string; status: string; detail: string }> {
@@ -89,22 +103,23 @@ export default {
         { label: "Dashboard API", status: this.status.api?.status || "checking", detail: `Uptime ${this.formatDuration(this.status.api?.uptimeSeconds || 0)}` },
         { label: "Database", status: this.status.database?.status || "checking", detail: "Live SELECT 1 check" },
         { label: "Redis", status: this.status.redis?.status || "checking", detail: "Shared log/heartbeat store" },
+        { label: "API memory", status: this.status.api?.memoryBytes ? this.formatBytes(this.status.api.memoryBytes) : "checking", detail: this.status.api?.nodeVersion ? "Node " + this.status.api.nodeVersion : "Process RSS memory" },
       ];
     },
   },
   async mounted() { await this.refreshAll(); this.timer = setInterval(() => { if (this.autoRefresh && ["Console", "Logs", "Monitoring"].includes(this.activeTab)) void this.refreshAll(); }, 3000); },
   beforeUnmount() { if (this.timer) clearInterval(this.timer); },
-  watch: { activeTab() { this.error = ""; void this.refreshAll(); } },
+  watch: { activeTab() { this.error = ""; void this.refreshAll(); if (this.activeTab === "Bot Controls") void this.loadPresence(); } },
   methods: {
     async refreshAll() { await Promise.all([this.loadStatus(), this.loadLogs()]); },
     async loadStatus() { try { this.status = await get("owner/console/status"); } catch (error: any) { this.error = error?.body?.error || error?.message || "Unable to load system status."; } },
     async loadLogs() {
-      try { const result = await get("owner/console/logs", { limit: "500", level: this.level, source: this.source, search: this.search }); this.logs = Array.isArray(result?.entries) ? result.entries : []; this.retained = Number(result?.retained || 0); }
+      try { const result = await get("owner/console/logs", { limit: "500", level: this.level, source: this.source, search: this.search, hours: this.hours }); this.logs = Array.isArray(result?.entries) ? result.entries : []; this.retained = Number(result?.retained || 0); }
       catch (error: any) { this.error = error?.body?.error || error?.message || "Unable to load console logs."; }
     },
     async exportLogs() {
       try {
-        const result = await get("owner/console/logs/export", { level: this.level, source: this.source, search: this.search });
+        const result = await get("owner/console/logs/export", { level: this.level, source: this.source, search: this.search, hours: this.hours });
         const blob = new Blob([result?.csv || ""], { type: "text/csv;charset=utf-8" });
         const url = URL.createObjectURL(blob);
         const anchor = document.createElement("a");
@@ -114,6 +129,21 @@ export default {
         URL.revokeObjectURL(url);
       } catch (error: any) { this.error = error?.body?.error || error?.message || "Unable to export console logs."; }
     },
+    async loadPresence() {
+      try { const result = await get("owner/presence"); this.statusText = String(result?.statusText || ""); }
+      catch (error: any) { this.error = error?.body?.error || error?.message || "Unable to load bot presence."; }
+    },
+    async savePresence() {
+      if (this.statusBusy) return;
+      this.statusBusy = true;
+      try {
+        const result = await post("owner/presence", { statusText: this.statusText });
+        this.statusText = String(result?.statusText || "");
+        this.terminalOutput = "Bot custom status saved. The version activity remains enabled.";
+      } catch (error: any) { this.error = error?.body?.error || error?.message || "Unable to save bot presence."; }
+      finally { this.statusBusy = false; }
+    },
+    async clearPresence() { this.statusText = ""; await this.savePresence(); },
     async runCommand() {
       const command = this.command.trim(); if (!command || this.commandBusy) return;
       this.commandBusy = true; this.command = "";
@@ -125,6 +155,7 @@ export default {
     levelColor(value: string) { return value === "ERROR" ? "text-red-400" : value === "WARN" ? "text-amber-300" : value === "DEBUG" ? "text-gray-500" : "text-emerald-300"; },
     formatTime(value?: string) { if (!value) return "—"; const date = new Date(value); return Number.isNaN(date.getTime()) ? value : date.toLocaleTimeString(); },
     formatDuration(value: number) { const s = Math.max(0, Math.floor(value)); return `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m ${s % 60}s`; },
+    formatBytes(value: number) { return value >= 1024 * 1024 * 1024 ? (value / 1024 / 1024 / 1024).toFixed(1) + " GB" : (value / 1024 / 1024).toFixed(0) + " MB"; },
   },
 };
 </script>
