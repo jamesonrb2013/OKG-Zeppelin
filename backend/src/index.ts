@@ -468,7 +468,7 @@ connect().then(async () => {
 
         logger.warn(`No config with key "${key}"`);
         externalPrefixes.set(id, "!o ");
-        const fallbackConfig = id === "global" ? {} : { prefix: "!", command_prefix: "!o ", levels: {} };
+        const fallbackConfig = id === "global" ? {} : { prefix: INTERNAL_COMMAND_PREFIX, command_prefix: "!o ", levels: {} };
         applyPermissionOverrides(
           fallbackConfig,
           id === "global" ? availableGlobalPlugins : availableGuildPlugins,
