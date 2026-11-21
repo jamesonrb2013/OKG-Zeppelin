@@ -136,7 +136,7 @@ async function execute(client: Client, allowedGuilds: AllowedGuilds, command: De
       content,
       allowedMentions: { parse: [], users: [], roles: [], repliedUser: false },
     });
-    return { ok: true, output: `Message sent successfully.\nServer: ${guild.name}\nChannel: #${"name" in channel ? channel.name : channel.id} (${channel.id})\nMessage ID: ${sent.id}` };
+    return { ok: true, output: `Message sent successfully.\nServer: ${guild.name}\nChannel ID: ${command.channelId}\nMessage ID: ${sent.id}` };
   }
 
   if (command.type === "role.create") {
