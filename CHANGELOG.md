@@ -1,3 +1,14 @@
+## 1.3.38
+
+### Fixed
+- Hardened the prefix Modmail DM command so only configured Modmail staff/admin roles or existing `can_dm` grants can use it.
+- Added shared, tested Modmail staff-role authorization logic for the bot command.
+- Limited the 10-second cooldown to Modmail-role access, preserving existing `can_dm` behavior, and bounded cooldown memory usage.
+- Corrected the command usage example to show the configured `!o` prefix.
+
+### Credits
+- Updated by Jeffery Spinnel.
+
 ## 1.3.37
 
 ### Added
