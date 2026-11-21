@@ -229,6 +229,8 @@ export function initOwnerAPI(router: express.Router) {
           "/bot status — Check bot heartbeat",
           "/database health — Check database connection",
           "/redis health — Check Redis connection",
+          "/database tables — List database table sizes and row estimates",
+          "/redis info — Show Redis memory, uptime, and connection diagnostics",
           "/logs tail [1-100] — Show recent console entries",
           "Role permissions are optional; without --permissions, the new role has no elevated permissions.",
         ].join("\n");
@@ -240,6 +242,13 @@ export function initOwnerAPI(router: express.Router) {
         await dataSource.query("SELECT 1 AS ok"); output = "Database connection successful.";
       } else if (normalized === "redis health") {
         await redis.ping(); output = "Redis connection successful.";
+      } else if (normalized === "database tables") {
+        const rows = await dataSource.query("SHOW TABLE STATUS");
+        output = rows.length ? "Database tables (first 50):\\n" + rows.slice(0, 50).map((row: any) => "• " + row.Name + " — rows≈" + Number(row.Rows || 0).toLocaleString() + ", data=" + (Number(row.Data_length || 0) / 1024).toFixed(1) + " KB").join("\\n") : "No database tables were returned.";
+      } else if (normalized === "redis info") {
+        const info = String(await redis.sendCommand(["INFO"]));
+        const lines = info.split(/\\r?\\n/).filter((line) => /^(used_memory_human|connected_clients|uptime_in_seconds|keyspace_)/.test(line));
+        output = lines.length ? "Redis diagnostics:\\n" + lines.join("\\n") : "Redis INFO returned no matching diagnostic fields.";
       } else if (/^logs tail(?: \d{1,3})?$/.test(normalized)) {
         const count = Math.min(Math.max(Number(normalized.split(" ")[2] || 30), 1), 100);
         const raw = await redis.lRange(DEVELOPER_LOG_KEY, 0, count - 1);
