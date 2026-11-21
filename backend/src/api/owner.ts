@@ -22,6 +22,7 @@ type DeveloperCommand =
   | { id: string; type: "server.channels"; guildId: string }
   | { id: string; type: "channel.create"; guildId: string; channelType: "text" | "voice" | "category"; name: string }
   | { id: string; type: "channel.delete"; guildId: string; channelId: string; confirmed: true }
+  | { id: string; type: "channel.rename"; guildId: string; channelId: string; name: string }
   | { id: string; type: "user.inspect"; guildId: string; userId: string }
   | { id: string; type: "message.send"; guildId: string; channelId: string; message: string }
   | { id: string; type: "role.create"; guildId: string; name: string; give: string[]; position?: number; permissions: string[] }
@@ -43,6 +44,8 @@ function parseDeveloperCommand(raw: string, id: string): DeveloperCommand | null
   if (channelCreate) return { id, type: "channel.create", guildId: channelCreate[1], channelType: channelCreate[2].toLowerCase() as "text" | "voice" | "category", name: channelCreate[3] || channelCreate[4] };
   match = command.match(/^channel\s+delete\s+(\d{17,20})\s+(\d{17,20})\s+--confirm$/i);
   if (match) return { id, type: "channel.delete", guildId: match[1], channelId: match[2], confirmed: true };
+  const channelRename = command.match(/^channel\s+rename\s+(\d{17,20})\s+(\d{17,20})\s+(?:"([^"]{1,100})"|([^\s]+))$/i);
+  if (channelRename) return { id, type: "channel.rename", guildId: channelRename[1], channelId: channelRename[2], name: channelRename[3] || channelRename[4] };
   match = command.match(/^user\s+inspect\s+(\d{17,20})\s+(\d{17,20})$/i);
   if (match) return { id, type: "user.inspect", guildId: match[1], userId: match[2] };
   match = command.match(/^message\s+send\s+(\d{17,20})\s+(\d{17,20})\s+([\s\S]+)$/i);
@@ -219,6 +222,7 @@ export function initOwnerAPI(router: express.Router) {
           "/server channels {serverId} — List channel names, types, and IDs",
           '/channel create {serverId} {text|voice|category} "{name}" — Create a channel',
           "/channel delete {serverId} {channelId} --confirm — Delete a channel",
+          '/channel rename {serverId} {channelId} "{name}" — Rename a channel',
           "/user inspect {serverId} {userId} — Inspect a server member",
           "/message send {serverId} {channelId} {message} — Send a message as the bot",
           '/admin role create {serverId} "{name}" --give {userId,userId} --position {number} --permissions {Permission,Permission}',
