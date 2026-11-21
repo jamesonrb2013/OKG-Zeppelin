@@ -31,6 +31,7 @@ function formatArguments(args: unknown[]): string {
 }
 
 function persist(entry: DeveloperLogEntry) {
+  if (!redis.isReady) return;
   void redis.lPush(LOG_KEY, JSON.stringify(entry))
     .then(() => redis.lTrim(LOG_KEY, 0, LOG_LIMIT - 1))
     .catch(() => undefined);
@@ -61,7 +62,7 @@ export function installDeveloperConsole(source: "bot" | "api") {
     console.error = ((...args: unknown[]) => { original.error(...args); record("ERROR", args); }) as typeof console.error;
     console.debug = ((...args: unknown[]) => { original.debug(...args); record("DEBUG", args); }) as typeof console.debug;
     console.trace = ((...args: unknown[]) => { original.trace(...args); record("DEBUG", args); }) as typeof console.trace;
-    console.dir = ((...args: unknown[]) => { original.dir(...args); record("DEBUG", args); }) as typeof console.dir;
+    console.dir = ((...args: unknown[]) => { original.dir(args[0], args[1] as any); record("DEBUG", args); }) as typeof console.dir;
   }
 
   const heartbeatKey = `okg:developer:heartbeat:${source}`;
