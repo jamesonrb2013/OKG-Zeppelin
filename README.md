@@ -25,6 +25,10 @@ OKG Administrative & Management provides Discord server owners and authorized st
 
 ## Usage documentation
 
+- **[Self-hosting guide](docs/SELF_HOSTING.md)** — complete walkthrough from a fresh server to your own deployed bot, API, and dashboard.
+- [Production deployment](docs/PRODUCTION.md)
+- [Development setup](docs/DEVELOPMENT.md)
+
 Open the platform's **Documentation** section for configuration, permissions, moderation, logging, and module guides.
 
 ## Development
