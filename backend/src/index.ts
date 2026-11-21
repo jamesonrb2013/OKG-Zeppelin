@@ -65,6 +65,7 @@ import { handleModmailInteraction, handleModmailMessage } from "./slashCommands/
 import { modmailCommand, handleModmailSlashCommand } from "./slashCommands/modmailCommand.js";
 import { unbelievaboatCommand, handleUnbelievaBoatCommand, handleUnbelievaBoatModal } from "./slashCommands/unbelievaboat.js";
 import { permissionLevelCommand, handlePermissionLevelCommand } from "./slashCommands/permissionLevel.js";
+import { roleDetailsCommand, handleRoleDetailsCommand, handleRoleDetailsComponent } from "./slashCommands/roleDetails.js";
 import { apiRouterCommand, handleApiRouterCommand } from "./slashCommands/apiRouter.js";
 import {
   handleUpdatesConfig,
@@ -675,6 +676,7 @@ connect().then(async () => {
         giveawayCommand,
         unbelievaboatCommand,
         permissionLevelCommand,
+        roleDetailsCommand,
         updatesSetupCommand,
         updatesConfigCommand,
         apiRouterCommand,
@@ -764,6 +766,7 @@ connect().then(async () => {
   });
 
   client.on(Events.InteractionCreate, async (interaction) => {
+    if ((interaction.isRoleSelectMenu() || interaction.isButton()) && await handleRoleDetailsComponent(interaction)) return;
     if (await handleModmailInteraction(client, interaction)) return;
     if (interaction.isModalSubmit() && interaction.customId === "okg_unbelievaboat:connect") {
       await handleUnbelievaBoatModal(interaction, client);
@@ -811,6 +814,11 @@ connect().then(async () => {
 
     if (interaction.commandName === "announce") {
       await handleAnnounceCommand(interaction);
+      return;
+    }
+
+    if (interaction.commandName === "role") {
+      await handleRoleDetailsCommand(interaction);
       return;
     }
 
