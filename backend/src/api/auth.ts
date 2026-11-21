@@ -118,7 +118,7 @@ export function initAuth(router: express.Router) {
               await apiPermissionAssignments.addUser(guild.id, user.id, [VIEW_ROLES_PERMISSION]);
             } else if (!existing.permissions.includes(VIEW_ROLES_PERMISSION)) {
               await apiPermissionAssignments.updateUserPermissions(guild.id, user.id, [
-                ...existing.permissions,
+                ...existing.permissions.map((permission) => permission as ApiPermissions),
                 VIEW_ROLES_PERMISSION,
               ]);
             }
