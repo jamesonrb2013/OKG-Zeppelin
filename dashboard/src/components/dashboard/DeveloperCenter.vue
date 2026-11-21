@@ -19,6 +19,7 @@
         <select v-model="level" class="rounded-lg border border-gray-700 bg-gray-950 px-2 py-2 text-xs text-white"><option>ALL</option><option>DEBUG</option><option>INFO</option><option>WARN</option><option>ERROR</option></select>
         <select v-model="source" class="rounded-lg border border-gray-700 bg-gray-950 px-2 py-2 text-xs text-white"><option value="all">All</option><option value="bot">Bot</option><option value="api">API</option></select>
         <label class="flex items-center gap-1 text-xs text-gray-400"><input v-model="autoRefresh" type="checkbox" class="accent-indigo-500"> Live</label>
+        <button class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-gray-200 hover:bg-gray-800" @click="exportLogs">Export CSV</button>
       </div>
       <div class="max-h-[480px] min-h-[220px] overflow-auto p-3 font-mono text-xs">
         <div v-for="entry in logs" :key="entry.id" class="grid grid-cols-[125px_48px_36px_minmax(0,1fr)] gap-2 border-b border-gray-900 py-1.5">
@@ -97,6 +98,18 @@ export default {
     async loadLogs() {
       try { const result = await get("owner/console/logs", { limit: "500", level: this.level, source: this.source, search: this.search }); this.logs = Array.isArray(result?.entries) ? result.entries : []; this.retained = Number(result?.retained || 0); }
       catch (error: any) { this.error = error?.body?.error || error?.message || "Unable to load console logs."; }
+    },
+    async exportLogs() {
+      try {
+        const result = await get("owner/console/logs/export", { level: this.level, source: this.source, search: this.search });
+        const blob = new Blob([result?.csv || ""], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = result?.filename || "okg-developer-logs.csv";
+        anchor.click();
+        URL.revokeObjectURL(url);
+      } catch (error: any) { this.error = error?.body?.error || error?.message || "Unable to export console logs."; }
     },
     async runCommand() {
       const command = this.command.trim(); if (!command || this.commandBusy) return;
