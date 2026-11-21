@@ -2,9 +2,10 @@ import { ApiPermissions } from "@zeppelinbot/shared/apiPermissions.js";
 import express, { Request, Response } from "express";
 import { PermissionsBitField } from "discord.js";
 import { AllowedGuilds } from "../../data/AllowedGuilds.js";
+import { ApiPermissionAssignments } from "../../data/ApiPermissionAssignments.js";
 import { env } from "../../env.js";
 import { rateLimit } from "../rateLimits.js";
-import { requireGuildPermission } from "../permissions.js";
+import { hasGuildPermission } from "../permissions.js";
 import { serverError, unauthorized } from "../responses.js";
 
 type DiscordRole = {
@@ -103,9 +104,16 @@ async function loadRoleDetails(guildId: string): Promise<RoleDetails[]> {
 
 export function initGuildsRolesAPI(router: express.Router) {
   const allowedGuilds = new AllowedGuilds();
+  const permissionAssignments = new ApiPermissionAssignments();
   router.get(
     "/:guildId/roles",
-    requireGuildPermission(ApiPermissions.ViewGuild),
+    async (req: Request, res: Response, next) => {
+      const assignment = await permissionAssignments.getByGuildAndUserId(req.params.guildId, req.user!.userId);
+      const canViewRoles = assignment?.permissions.includes("ViewRoles" as ApiPermissions);
+      const canViewGuild = await hasGuildPermission(req.user!.userId, req.params.guildId, ApiPermissions.ViewGuild);
+      if (!canViewRoles && !canViewGuild) return unauthorized(res);
+      next();
+    },
     rateLimit((req) => `role-details-${req.params.guildId}-${req.user!.userId}`, 15_000, "Please wait before refreshing role details again."),
     async (req: Request, res: Response) => {
       if (!(await allowedGuilds.isAllowed(req.params.guildId))) return unauthorized(res);
