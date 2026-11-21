@@ -3,7 +3,7 @@
   <div v-else>
     <h1>Guilds</h1>
     <ul class="list-none flex flex-wrap -m-4 pt-4">
-      <li v-for="guild in guilds" class="flex-none p-4 w-full md:w-1/2 lg:w-1/3 xl:w-1/4">
+      <li v-for="guild in guilds" :key="guild.id" class="flex-none p-4 w-full md:w-1/2 lg:w-1/3 xl:w-1/4">
         <div class="flex items-center">
           <div class="flex-none w-12 h-12">
             <img
@@ -22,6 +22,7 @@
             </div>
             <div class="pt-1">
               <router-link
+                v-if="canReadConfig(guild.id)"
                 class="inline-block bg-gray-700 rounded px-1 hover:bg-gray-800"
                 :to="'/dashboard/guilds/' + guild.id + '/config'"
                 >Config</router-link
@@ -33,9 +34,16 @@
                 >Access</router-link
               >
               <router-link
+                v-if="canViewGuild(guild.id)"
                 class="inline-block bg-indigo-700 rounded px-2 py-1 ml-1 hover:bg-indigo-600"
                 :to="'/dashboard/features/' + guild.id"
                 >Features</router-link
+              >
+              <router-link
+                v-if="canViewRoles(guild.id)"
+                class="inline-block bg-violet-700 rounded px-2 py-1 ml-1 hover:bg-violet-600"
+                :to="'/dashboard/guilds/' + guild.id + '/roles'"
+                >Role details</router-link
               >
               <router-link
                 v-if="canManageAccess(guild.id)"
@@ -48,6 +56,7 @@
         </div>
       </li>
     </ul>
+    <p v-if="guilds.length === 0" class="mt-6 text-sm text-gray-500">No servers are available for this account. Join a server where OKG Manager is installed, then sign in again.</p>
   </div>
 </template>
 
@@ -87,10 +96,22 @@ export default {
     }),
   },
   methods: {
+    myGuildPermissions(guildId: string) {
+      const assignments = this.guildPermissionAssignments[guildId] || [];
+      return assignments.find((p) => p.type === "USER" && p.target_id === this.userId)?.permissions || [];
+    },
+    canReadConfig(guildId: string) {
+      return hasPermission(new Set(this.myGuildPermissions(guildId)), ApiPermissions.ReadConfig);
+    },
+    canViewGuild(guildId: string) {
+      return hasPermission(new Set(this.myGuildPermissions(guildId)), ApiPermissions.ViewGuild);
+    },
+    canViewRoles(guildId: string) {
+      const permissions = this.myGuildPermissions(guildId);
+      return permissions.includes("ViewRoles") || hasPermission(new Set(permissions), ApiPermissions.ViewGuild);
+    },
     canManageAccess(guildId: string) {
-      const guildPermissions = this.guildPermissionAssignments[guildId] || [];
-      const myPermissions = guildPermissions.find((p) => p.type === "USER" && p.target_id === this.userId) || null;
-      return myPermissions && hasPermission(new Set(myPermissions.permissions), ApiPermissions.ManageAccess);
+      return hasPermission(new Set(this.myGuildPermissions(guildId)), ApiPermissions.ManageAccess);
     },
   },
 };
