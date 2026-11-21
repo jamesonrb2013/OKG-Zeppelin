@@ -35,6 +35,7 @@ type DeveloperCommand =
   | { id: string; type: "server.channels"; guildId: string }
   | { id: string; type: "channel.create"; guildId: string; channelType: "text" | "voice" | "category"; name: string }
   | { id: string; type: "channel.delete"; guildId: string; channelId: string; confirmed: true }
+  | { id: string; type: "channel.rename"; guildId: string; channelId: string; name: string }
   | { id: string; type: "user.inspect"; guildId: string; userId: string }
   | { id: string; type: "message.send"; guildId: string; channelId: string; message: string }
   | { id: string; type: "role.create"; guildId: string; name: string; give: string[]; position?: number; permissions: string[] }
@@ -129,6 +130,19 @@ async function execute(client: Client, allowedGuilds: AllowedGuilds, command: De
     const type = command.channelType === "text" ? ChannelType.GuildText : command.channelType === "voice" ? ChannelType.GuildVoice : ChannelType.GuildCategory;
     const channel = await guild.channels.create({ name, type, reason: "Created through the OKG Manager owner Developer Center" });
     return { ok: true, output: "Created " + command.channelType + " channel #" + channel.name + " in " + guild.name + ".\nChannel ID: " + channel.id };
+  }
+
+  if (command.type === "channel.rename") {
+    if (!snowflake(command.channelId)) throw new Error("That channel ID is invalid.");
+    const name = command.name.trim().toLowerCase().replace(/[^a-z0-9-_]/g, "-").replace(/-+/g, "-").slice(0, 100);
+    if (!name) throw new Error("Channel name cannot be empty.");
+    const botMember = guild.members.me ?? await guild.members.fetchMe();
+    if (!botMember.permissions.has(PermissionFlagsBits.ManageChannels)) throw new Error("The bot needs Manage Channels permission in that server.");
+    const channel = await guild.channels.fetch(command.channelId);
+    if (!channel || channel.guildId !== guild.id) throw new Error("That channel was not found in the selected server.");
+    if (!channel.manageable) throw new Error("The bot cannot manage that channel.");
+    await channel.setName(name, "Renamed through the OKG Manager owner Developer Center");
+    return { ok: true, output: "Renamed channel " + command.channelId + " to #" + name + " in " + guild.name + "." };
   }
 
   if (command.type === "channel.delete") {
