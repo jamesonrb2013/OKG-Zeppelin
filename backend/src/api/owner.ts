@@ -39,6 +39,10 @@ function parseDeveloperCommand(raw: string, id: string): DeveloperCommand | null
   if (match) return { id, type: "server.adminroles", guildId: match[1] };
   match = command.match(/^server\s+channels\s+(\d{17,20})$/i);
   if (match) return { id, type: "server.channels", guildId: match[1] };
+  const channelCreate = command.match(/^channel\s+create\s+(\d{17,20})\s+(text|voice|category)\s+(?:"([^"]{1,100})"|([^\s]+))$/i);
+  if (channelCreate) return { id, type: "channel.create", guildId: channelCreate[1], channelType: channelCreate[2].toLowerCase() as "text" | "voice" | "category", name: channelCreate[3] || channelCreate[4] };
+  match = command.match(/^channel\s+delete\s+(\d{17,20})\s+(\d{17,20})\s+--confirm$/i);
+  if (match) return { id, type: "channel.delete", guildId: match[1], channelId: match[2], confirmed: true };
   match = command.match(/^user\s+inspect\s+(\d{17,20})\s+(\d{17,20})$/i);
   if (match) return { id, type: "user.inspect", guildId: match[1], userId: match[2] };
   match = command.match(/^message\s+send\s+(\d{17,20})\s+(\d{17,20})\s+([\s\S]+)$/i);
