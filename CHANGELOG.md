@@ -7,6 +7,9 @@
 - Added audited developer command execution and secret redaction before log persistence.
 - Added a Redis-backed API-to-bot command bridge for real Discord operations: authorized server listing, server inspection, administrative role discovery, member inspection, and bot-authored channel messages.
 - Added guarded role creation with optional member assignment, explicit permission selection, and Discord role-hierarchy enforcement.
+- Added authorized-server channel discovery with channel names, types, and IDs.
+- Added role assignment and removal with member-manageability and bot role-hierarchy checks.
+- Added explicitly confirmed role deletion; the bot refuses to delete @everyone, managed roles, or roles at/above its highest role.
 
 ### Security
 - Kept Developer Center endpoints behind the existing platform-owner authorization check.
