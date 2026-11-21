@@ -1,3 +1,17 @@
+## 1.3.33
+
+### Fixed
+- Finalized isolated public-prefix routing: `!o` always works, configured per-server prefixes work, and bare `!command` is not accepted.
+- Routed exact mute and warn regression cases through Vety using its private internal prefix.
+- Added a dispatcher regression proving a bare `!mute` is ignored.
+- Kept the Help output on the configured public prefix.
+
+### Changed
+- Aligned root, backend, and dashboard package versions at 1.3.33.
+
+### Credits
+- Updated by Jeffery Spinnel.
+
 ## 1.3.32
 
 ### Fixed
