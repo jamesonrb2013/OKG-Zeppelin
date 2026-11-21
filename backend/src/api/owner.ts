@@ -17,6 +17,7 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 type DeveloperCommand =
   | { id: string; type: "servers.list" }
+  | { id: string; type: "bot.stats" }
   | { id: string; type: "server.info"; guildId: string }
   | { id: string; type: "server.adminroles"; guildId: string }
   | { id: string; type: "server.channels"; guildId: string }
@@ -32,6 +33,8 @@ type DeveloperCommand =
 
 function parseDeveloperCommand(raw: string, id: string): DeveloperCommand | null {
   const command = raw.replace(/^\/+/, "").trim();
+  let match = command.match(/^bot\s+stats$/i);
+  if (match) return { id, type: "bot.stats" };
   let match = command.match(/^servers\s+list$/i);
   if (match) return { id, type: "servers.list" };
   match = command.match(/^server\s+info\s+(\d{17,20})$/i);
@@ -239,6 +242,9 @@ export function initOwnerAPI(router: express.Router) {
           "/admin role delete {serverId} {roleId} --confirm — Permanently delete a role",
           '/admin role edit {serverId} {roleId} --name "{name}" --permissions {Permission,Permission|none}',
           "/bot status — Check bot heartbeat",
+          "/bot stats — Show live bot version, latency, uptime, memory, and cache counts",
+          '/bot presence set "status text" — Update the custom status while keeping the version activity',
+          "/bot presence clear — Clear the custom status and keep the version activity",
           "/database health — Check database connection",
           "/redis health — Check Redis connection",
           "/database tables — List database table sizes and row estimates",
@@ -246,6 +252,16 @@ export function initOwnerAPI(router: express.Router) {
           "/logs tail [1-100] — Show recent console entries",
           "Role permissions are optional; without --permissions, the new role has no elevated permissions.",
         ].join("\n");
+      } else if (normalized === "bot presence clear") {
+        await dataSource.query("INSERT INTO okg_manager_owner_settings (setting_key, setting_value, updated_by) VALUES ('custom_status', '', ?) ON DUPLICATE KEY UPDATE setting_value = '', updated_by = VALUES(updated_by)", [req.user!.userId]);
+        output = "Custom status cleared. The bot version activity will remain visible; Discord presence sync runs within about one minute.";
+      } else if (/^bot presence set /i.test(rawCommand.replace(/^\/+/, "").trim())) {
+        const match = rawCommand.replace(/^\/+/, "").trim().match(/^bot\s+presence\s+set\s+(.{1,140})$/i);
+        let statusText = match?.[1]?.trim() || "";
+        statusText = statusText.replace(/^"|"$/g, "");
+        if (!statusText || statusText.length > 128) throw new Error("Custom status must contain 1–128 characters.");
+        await dataSource.query("INSERT INTO okg_manager_owner_settings (setting_key, setting_value, updated_by) VALUES ('custom_status', ?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_by = VALUES(updated_by)", [statusText, req.user!.userId]);
+        output = "Custom status saved. The bot version activity will remain visible; Discord presence sync runs within about one minute.";
       } else if (normalized === "bot status") {
         const heartbeat = await redis.get("okg:developer:heartbeat:bot");
         const lastSeen = heartbeat ? Number(heartbeat) : 0;
