@@ -77,8 +77,8 @@ export function registerPrefixCommandDispatcher(
       if (!message.guildId || !message.guild || !message.content) return;
 
       const configuredPrefix = getConfiguredPrefix(message.guildId) || "!o ";
-      // When a guild deliberately configures "!" Vety already handles that
-      // prefix natively; forwarding it again would execute the same command twice.
+      // A bare exclamation mark is reserved as Vety's hidden internal prefix,
+      // never as a public guild prefix. If configured, keep the safe !o default.
       const publicPrefix = configuredPrefix.trimEnd() === "!" ? "!o " : configuredPrefix;
       const commandText = extractPrefixedCommand(message.content.trimStart(), publicPrefix);
       recognizedPublicCommand = commandText !== null;
