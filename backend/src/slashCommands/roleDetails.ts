@@ -6,6 +6,7 @@ import {
   ChatInputCommandInteraction,
   EmbedBuilder,
   PermissionFlagsBits,
+  MessageFlags,
   Role,
   RoleSelectMenuBuilder,
   RoleSelectMenuInteraction,
@@ -76,12 +77,12 @@ function actionRows(userId: string, roleId: string, section: "members" | "permis
   );
   const pager = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
-      .setCustomId(PREFIX + `page:${userId}:${roleId}:${section}:${Math.max(0, page - 1)}`)
+      .setCustomId(PREFIX + `prev:${userId}:${roleId}:${section}:${Math.max(0, page - 1)}`)
       .setLabel("Previous")
       .setStyle(ButtonStyle.Secondary)
       .setDisabled(page <= 0),
     new ButtonBuilder()
-      .setCustomId(PREFIX + `page:${userId}:${roleId}:${section}:${Math.min(maxPage, page + 1)}`)
+      .setCustomId(PREFIX + `next:${userId}:${roleId}:${section}:${Math.min(maxPage, page + 1)}`)
       .setLabel(`Page ${page + 1} / ${maxPage + 1}`)
       .setStyle(ButtonStyle.Secondary)
       .setDisabled(maxPage <= 0),
@@ -198,7 +199,7 @@ export const roleDetailsCommand = new SlashCommandBuilder()
 
 export async function handleRoleDetailsCommand(interaction: ChatInputCommandInteraction): Promise<void> {
   if (!interaction.inGuild() || !interaction.guild) {
-    await interaction.reply({ content: "Use this command inside a server.", ephemeral: true });
+    await interaction.reply({ content: "Use this command inside a server.", flags: MessageFlags.Ephemeral });
     return;
   }
 
@@ -214,11 +215,11 @@ export async function handleRoleDetailsCommand(interaction: ChatInputCommandInte
         { name: "READ-ONLY", value: "This command only displays information. It never changes roles or permissions." },
       )
       .setFooter({ text: "OKG Manager  •  Available to every server member" });
-    await interaction.reply({ embeds: [embed], components: [roleSelectRow(interaction.user.id)], ephemeral: true });
+    await interaction.reply({ embeds: [embed], components: [roleSelectRow(interaction.user.id)], flags: MessageFlags.Ephemeral });
     return;
   }
 
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   const role = await interaction.guild.roles.fetch(selectedRole.id).catch(() => null);
   if (!role) {
     await interaction.editReply({ content: "I couldn't load that role. Please try again." });
@@ -237,11 +238,11 @@ export async function handleRoleDetailsComponent(
   const action = parts[0];
   const ownerId = action === "select" ? parts[1] : parts[1];
   if (ownerId !== interaction.user.id) {
-    await interaction.reply({ content: "This private role viewer belongs to another member. Run /role to open your own.", ephemeral: true });
+    await interaction.reply({ content: "This private role viewer belongs to another member. Run /role to open your own.", flags: MessageFlags.Ephemeral });
     return true;
   }
   if (!interaction.guild) {
-    await interaction.reply({ content: "This viewer is only available inside a server.", ephemeral: true });
+    await interaction.reply({ content: "This viewer is only available inside a server.", flags: MessageFlags.Ephemeral });
     return true;
   }
 
@@ -258,7 +259,7 @@ export async function handleRoleDetailsComponent(
     return true;
   }
 
-  if (!interaction.isButton() || !["section", "page", "refresh"].includes(action)) return true;
+  if (!interaction.isButton() || !["section", "prev", "next", "refresh"].includes(action)) return true;
   const roleId = parts[2];
   const section = parts[3] === "permissions" ? "permissions" : "members";
   const page = action === "section" ? 0 : Math.max(0, Number.parseInt(parts[4] ?? "0", 10) || 0);
