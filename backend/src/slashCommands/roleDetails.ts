@@ -16,6 +16,7 @@ const COLOR = 0x5865f2;
 const PREFIX = "okg_role:";
 const MEMBERS_PER_PAGE = 10;
 const PERMISSIONS_PER_PAGE = 12;
+const fullyFetchedGuildMembers = new Set<string>();
 
 const POWERFUL_PERMISSIONS = new Set<string>([
   "Administrator",
@@ -98,17 +99,20 @@ async function buildRoleView(
   role: Role,
   section: "members" | "permissions",
   requestedPage: number,
+  refreshMembers = false,
 ) {
   const guild = role.guild;
-  let membersAvailable = true;
-  try {
-    // GuildMembers intent is enabled by OKG Manager. Fetch the full member list so
-    // the displayed count is accurate instead of relying on a partial startup cache.
-    await guild.members.fetch();
-  } catch (error) {
-    membersAvailable = false;
-    console.warn("[ROLE] Could not fetch the full guild member list:", error);
+  if (refreshMembers || !fullyFetchedGuildMembers.has(guild.id)) {
+    try {
+      // GuildMembers intent is enabled by OKG Manager. Fetch the full member list so
+      // the displayed count is accurate instead of relying on a partial startup cache.
+      await guild.members.fetch();
+      fullyFetchedGuildMembers.add(guild.id);
+    } catch (error) {
+      console.warn("[ROLE] Could not fetch the full guild member list:", error);
+    }
   }
+  const membersAvailable = fullyFetchedGuildMembers.has(guild.id);
 
   const members = guild.members.cache
     .filter((member) => member.roles.cache.has(role.id))
@@ -139,7 +143,6 @@ async function buildRoleView(
           `Hoisted: **${role.hoist ? "Yes" : "No"}**`,
           `Mentionable: **${role.mentionable ? "Yes" : "No"}**`,
           `Managed by an integration: **${role.managed ? "Yes" : "No"}**`,
-          `Displayed separately: **${role.hoist ? "Yes" : "No"}**`,
         ].join("\n"),
         inline: true,
       },
@@ -265,7 +268,7 @@ export async function handleRoleDetailsComponent(
     await interaction.editReply({ content: "That role no longer exists.", embeds: [], components: [] });
     return true;
   }
-  const view = await buildRoleView(interaction, role, section, page);
+  const view = await buildRoleView(interaction, role, section, page, action === "refresh");
   await interaction.editReply(view);
   return true;
 }
