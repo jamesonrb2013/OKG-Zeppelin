@@ -13,6 +13,7 @@
 - Added role editing for names and allowlisted permissions, with role hierarchy enforcement.
 - Added text, voice, and category channel creation plus explicitly confirmed channel deletion; the bot checks Manage Channels and channel deletability.
 - Added filtered CSV export for the Developer Center log explorer, including spreadsheet-formula injection protection.
+- Added read-only database table-size/row-estimate and Redis memory/uptime/connection diagnostics.
 
 ### Security
 - Kept Developer Center endpoints behind the existing platform-owner authorization check.
