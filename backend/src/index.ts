@@ -462,7 +462,7 @@ connect().then(async () => {
           } catch (err) {
             logger.error(`Error while loading config "${key}": ${err}`);
             externalPrefixes.set(id, "!o ");
-            return { prefix: "!", command_prefix: "!o ", levels: {} };
+            return { prefix: INTERNAL_COMMAND_PREFIX, command_prefix: "!o ", levels: {} };
           }
         }
 
