@@ -426,7 +426,7 @@ connect().then(async () => {
 
             // Keep the public prefix separate from Vety's internal parser prefix.
             // The dedicated dispatcher rewrites public !o/custom-prefix commands to the
-            // private ASCII-only prefix before handing them to Vety.
+            // private internal prefix before handing them to Vety.
             const publicPrefix =
               typeof loaded.command_prefix === "string" && loaded.command_prefix.trim().length > 0
                 ? loaded.command_prefix
