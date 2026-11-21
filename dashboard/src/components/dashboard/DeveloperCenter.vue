@@ -45,6 +45,8 @@
           <p><code>/server info {serverId}</code> <span class="font-sans text-gray-400">Inspect server metadata</span></p>
           <p><code>/adminroles {serverId}</code> <span class="font-sans text-gray-400">List admin-permission roles</span></p>
           <p><code>/server channels {serverId}</code> <span class="font-sans text-gray-400">List channel names, types, and IDs</span></p>
+          <p><code>/channel create {serverId} {text|voice|category} "general"</code> <span class="font-sans text-gray-400">Create a channel</span></p>
+          <p><code>/channel delete {serverId} {channelId} --confirm</code> <span class="font-sans text-gray-400">Delete a channel after confirmation</span></p>
           <p><code>/user inspect {serverId} {userId}</code> <span class="font-sans text-gray-400">Inspect a server member</span></p>
           <p><code>/message send {serverId} {channelId} {message}</code> <span class="font-sans text-gray-400">Send a bot message (mentions disabled)</span></p>
         </div>
@@ -54,6 +56,7 @@
           <p><code>/admin role assign {serverId} {roleId} {userId}</code> <span class="font-sans text-gray-400">Assign a role to a member</span></p>
           <p><code>/admin role remove {serverId} {roleId} {userId}</code> <span class="font-sans text-gray-400">Remove a role from a member</span></p>
           <p><code>/admin role delete {serverId} {roleId} --confirm</code> <span class="font-sans text-gray-400">Delete a role after explicit confirmation</span></p>
+          <p><code>/admin role edit {serverId} {roleId} --name "Staff" --permissions ManageMessages,ModerateMembers</code> <span class="font-sans text-gray-400">Edit a role name and permissions</span></p>
           <p class="font-sans text-xs text-amber-300">Role changes respect the bot's role hierarchy. Deletion requires --confirm and cannot remove @everyone or managed roles.</p>
           <p><code>/bot status</code> <span class="font-sans text-gray-400">Bot worker heartbeat</span></p>
           <p><code>/database health</code> <span class="font-sans text-gray-400">Database connectivity check</span></p>
