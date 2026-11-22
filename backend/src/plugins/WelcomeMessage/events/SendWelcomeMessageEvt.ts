@@ -97,13 +97,13 @@ export const SendWelcomeMessageEvt = welcomeMessageEvt({
       try {
         if (typeof formatted === "string") {
           await createChunkedMessage(channel, formatted, {
-            parse: ["users"],
+            parse: ["users", "roles"],
           });
         } else {
           await channel.send({
             ...formatted,
             allowedMentions: {
-              parse: ["users"],
+              parse: ["users", "roles"],
             },
           });
         }
