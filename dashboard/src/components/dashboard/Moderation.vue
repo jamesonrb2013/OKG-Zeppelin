@@ -78,7 +78,26 @@ export default {
     async loadAdminData() { this.editRequests=await get("moderation/edit-requests")||[];this.appeals=await get("moderation/appeals")||[];this.auditEntries=await get("moderation/audit")||[];const p:any=await get("moderation/policy");this.policyJson=JSON.stringify(p?.config||{offences:{},thresholds:[]},null,2);this.policyMessage=p?.active?"Active policy · version "+p.version:"Policy inactive · draft version "+(p?.version||0); },
     showDetails(item:any) { this.expanded=this.expanded===item.id?"":item.id; },
     async createCase() { this.saving=true;this.message="";this.error=false;try { const payload={requestId:crypto.randomUUID(),subjectDiscordId:this.form.subjectDiscordId,category:this.form.category,offenceCode:this.form.offenceCode,severity:this.form.severity===""?null:Number(this.form.severity),reason:this.form.reason,evidenceUrls:this.form.evidence.split("\n").map(x=>x.trim()).filter(Boolean),internalNotes:this.form.internalNotes};const result:any=await post("moderation/cases",payload);this.message=`Case #${result.case.caseNumber} submitted to the moderation bot.`;this.form={subjectDiscordId:"",category:"",offenceCode:"",severity:"",reason:"",evidence:"",internalNotes:""};this.activeTab="cases";await this.loadCases();}catch(e:any){this.error=true;this.message=e?.body?.error||e?.message||"Could not submit case.";}finally{this.saving=false;} },
-    async editCase(item:any) { const reason=prompt("Update the case reason:",item.reason);if(reason===null)return;const editReason=prompt("Why is this edit necessary?");if(!editReason)return;const changes:any={reason};if(this.role==="ADMINISTRATOR"){const sev=prompt("New severity (1–5), or blank for configured default:",item.severity??"");if(sev===null)return;changes.severity=sev.trim()===""?null:Number(sev);if(changes.severity!==null&&(!Number.isInteger(changes.severity)||changes.severity<1||changes.severity>5)){alert("Severity must be 1–5 or blank.");return;}}try{const result:any=await patch("moderation/cases/"+item.id,{changes,editReason});alert(result.approvalRequired?"Edit sent to Administrators for approval.":"Case updated and bot reconciliation queued.");await this.loadCases();}catch(e:any){alert(e?.body?.error||e?.message||"Could not edit case.");} },
+    async editCase(item:any) {
+      const reason=prompt("Update the case reason:",item.reason);if(reason===null)return;
+      const editReason=prompt("Why is this edit necessary?");if(!editReason)return;
+      const changes:any={reason};
+      const evidence=prompt("Evidence URLs (one per line):",(item.evidenceUrls||[]).join("\\n"));if(evidence===null)return;
+      changes.evidenceUrls=evidence.split("\\n").map((x:string)=>x.trim()).filter(Boolean);
+      if(this.role!=="MODERATOR"){const notes=prompt("Internal staff notes (leave blank to clear):",item.internalNotes||"");if(notes===null)return;changes.internalNotes=notes;}
+      if(this.role==="MANAGEMENT"||this.role==="ADMINISTRATOR"){
+        const sev=prompt("New severity (1–5), or blank for configured default:",item.severity??"");if(sev===null)return;
+        const parsed=sev.trim()===""?null:Number(sev);
+        if(parsed!==null&&(!Number.isInteger(parsed)||parsed<1||parsed>5)){alert("Severity must be 1–5 or blank.");return;}
+        if(parsed!==item.severity)changes.severity=parsed;
+      }
+      if(this.role==="ADMINISTRATOR"){
+        const category=prompt("Offence category:",item.category);if(category===null)return;if(category!==item.category)changes.category=category;
+        const offence=prompt("Specific offence code:",item.offenceCode);if(offence===null)return;if(offence!==item.offenceCode)changes.offenceCode=offence;
+      }
+      try{const result:any=await patch("moderation/cases/"+item.id,{changes,editReason});alert(result.approvalRequired?"Edit sent to Administrators for approval.":"Case updated and bot reconciliation queued.");await this.loadCases();}
+      catch(e:any){alert(e?.body?.error||e?.message||"Could not edit case.");}
+    },
     async reviewEdit(id:string,decision:string) { const note=prompt("Administrator review note:");if(!note)return;try{await post("moderation/edit-requests/"+id+"/review",{decision,note});await this.loadAdminData();await this.loadCases();}catch(e:any){alert(e?.body?.error||e?.message||"Could not review edit.");} },
     async reviewAppeal(id:string,decision:string) { const note=prompt("Record the appeal decision and reason:");if(!note)return;try{await post("moderation/appeals/"+id+"/review",{decision,note});await this.loadAdminData();}catch(e:any){alert(e?.body?.error||e?.message||"Could not review appeal.");} },
     async savePolicy() { this.error=false;try{const config=JSON.parse(this.policyJson);const r:any=await put("moderation/policy/draft",{config});this.policyMessage="Draft saved · version "+r.version+" · enforcement remains disabled.";}catch(e:any){this.error=true;this.policyMessage=e?.body?.details?.join(" ")||e?.body?.error||e?.message||"Policy validation failed.";} },
