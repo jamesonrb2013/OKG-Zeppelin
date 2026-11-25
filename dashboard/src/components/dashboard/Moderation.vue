@@ -82,8 +82,8 @@ export default {
       const reason=prompt("Update the case reason:",item.reason);if(reason===null)return;
       const editReason=prompt("Why is this edit necessary?");if(!editReason)return;
       const changes:any={reason};
-      const evidence=prompt("Evidence URLs (one per line):",(item.evidenceUrls||[]).join("\\n"));if(evidence===null)return;
-      changes.evidenceUrls=evidence.split("\\n").map((x:string)=>x.trim()).filter(Boolean);
+      const evidence=prompt("Evidence URLs (one per line):",(item.evidenceUrls||[]).join("\n"));if(evidence===null)return;
+      changes.evidenceUrls=evidence.split("\n").map((x:string)=>x.trim()).filter(Boolean);
       if(this.role!=="MODERATOR"){const notes=prompt("Internal staff notes (leave blank to clear):",item.internalNotes||"");if(notes===null)return;changes.internalNotes=notes;}
       if(this.role==="MANAGEMENT"||this.role==="ADMINISTRATOR"){
         const sev=prompt("New severity (1–5), or blank for configured default:",item.severity??"");if(sev===null)return;
