@@ -10,6 +10,7 @@ import { initGuildsAPI } from "./guilds/index.js";
 import { initInviteCodesAPI } from "./inviteCodes.js";
 import { initOwnerAPI } from "./owner.js";
 import { initStaff } from "./staff.js";
+import { initModerationAPI } from "./moderation.js";
 import { clientError, error, notFound } from "./responses.js";
 import { startBackgroundTasks } from "./tasks.js";
 
@@ -33,6 +34,7 @@ const rootRouter = express.Router();
 
 initAuth(rootRouter);
 initStaff(rootRouter);
+initModerationAPI(rootRouter);
 initInviteCodesAPI(rootRouter);
 initOwnerAPI(rootRouter);
 initGuildsAPI(rootRouter);

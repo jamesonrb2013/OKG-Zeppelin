@@ -17,6 +17,8 @@ const envType = z.object({
 
   DASHBOARD_URL: z.string().url(),
   API_URL: z.string().url(),
+  MODERATION_API_URL: z.preprocess((v) => v === "" ? undefined : v, z.string().url().optional()),
+  MODERATION_API_SECRET: z.preprocess((v) => v === "" ? undefined : v, z.string().min(32).optional()),
 
   STAFF: z
     .preprocess(
