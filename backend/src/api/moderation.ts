@@ -32,6 +32,42 @@ export function initModerationAPI(rootRouter: express.Router) {
     try { const r = await forward("/cases", "POST", { ...req.body, requestId: req.body?.requestId || randomUUID(), actorDiscordId: req.user!.userId }); return res.status(r.status).json(r.data); }
     catch (e) { return res.status(502).json({ error: e instanceof Error ? e.message : "Moderation service unavailable." }); }
   });
+  router.get("/edit-requests", async (req: Request, res: Response) => {
+    try { const r = await forward(`/edit-requests?actorDiscordId=${encodeURIComponent(req.user!.userId)}`, "GET"); return res.status(r.status).json(r.data); }
+    catch (e) { return res.status(502).json({ error: e instanceof Error ? e.message : "Moderation service unavailable." }); }
+  });
+  router.post("/edit-requests/:id/review", async (req: Request, res: Response) => {
+    try { const r = await forward(`/edit-requests/${encodeURIComponent(req.params.id)}/review`, "POST", { ...req.body, actorDiscordId: req.user!.userId }); return res.status(r.status).json(r.data); }
+    catch (e) { return res.status(502).json({ error: e instanceof Error ? e.message : "Moderation service unavailable." }); }
+  });
+  router.get("/appeals", async (req: Request, res: Response) => {
+    try { const r = await forward(`/appeals?actorDiscordId=${encodeURIComponent(req.user!.userId)}`, "GET"); return res.status(r.status).json(r.data); }
+    catch (e) { return res.status(502).json({ error: e instanceof Error ? e.message : "Moderation service unavailable." }); }
+  });
+  router.post("/appeals/:id/review", async (req: Request, res: Response) => {
+    try { const r = await forward(`/appeals/${encodeURIComponent(req.params.id)}/review`, "POST", { ...req.body, actorDiscordId: req.user!.userId }); return res.status(r.status).json(r.data); }
+    catch (e) { return res.status(502).json({ error: e instanceof Error ? e.message : "Moderation service unavailable." }); }
+  });
+  router.get("/policy", async (req: Request, res: Response) => {
+    try { const r = await forward(`/policy?actorDiscordId=${encodeURIComponent(req.user!.userId)}`, "GET"); return res.status(r.status).json(r.data); }
+    catch (e) { return res.status(502).json({ error: e instanceof Error ? e.message : "Moderation service unavailable." }); }
+  });
+  router.put("/policy/draft", async (req: Request, res: Response) => {
+    try { const r = await forward("/policy/draft", "PUT", { ...req.body, actorDiscordId: req.user!.userId }); return res.status(r.status).json(r.data); }
+    catch (e) { return res.status(502).json({ error: e instanceof Error ? e.message : "Moderation service unavailable." }); }
+  });
+  router.post("/policy/activate", async (req: Request, res: Response) => {
+    try { const r = await forward("/policy/activate", "POST", { actorDiscordId: req.user!.userId }); return res.status(r.status).json(r.data); }
+    catch (e) { return res.status(502).json({ error: e instanceof Error ? e.message : "Moderation service unavailable." }); }
+  });
+  router.post("/policy/deactivate", async (req: Request, res: Response) => {
+    try { const r = await forward("/policy/deactivate", "POST", { actorDiscordId: req.user!.userId }); return res.status(r.status).json(r.data); }
+    catch (e) { return res.status(502).json({ error: e instanceof Error ? e.message : "Moderation service unavailable." }); }
+  });
+  router.get("/audit", async (req: Request, res: Response) => {
+    try { const r = await forward(`/audit?actorDiscordId=${encodeURIComponent(req.user!.userId)}`, "GET"); return res.status(r.status).json(r.data); }
+    catch (e) { return res.status(502).json({ error: e instanceof Error ? e.message : "Moderation service unavailable." }); }
+  });
   router.get("/cases/:caseId", async (req: Request, res: Response) => {
     try { const r = await forward(`/cases/${encodeURIComponent(req.params.caseId)}?actorDiscordId=${encodeURIComponent(req.user!.userId)}`, "GET"); return res.status(r.status).json(r.data); }
     catch (e) { return res.status(502).json({ error: e instanceof Error ? e.message : "Moderation service unavailable." }); }

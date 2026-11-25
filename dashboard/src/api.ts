@@ -104,3 +104,14 @@ export function patch(resource: string, params: any = {}) {
     headers: { ...headers, "Content-Type": "application/json" },
   });
 }
+
+export function put(resource: string, params: any = {}) {
+  const headers: Record<string, string> = RootStore.state.auth.apiKey
+    ? { "X-Api-Key": RootStore.state.auth.apiKey }
+    : {};
+  return request(resource, {
+    method: "PUT",
+    body: JSON.stringify(params),
+    headers: { ...headers, "Content-Type": "application/json" },
+  });
+}
