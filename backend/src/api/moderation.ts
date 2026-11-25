@@ -64,6 +64,14 @@ export function initModerationAPI(rootRouter: express.Router) {
     try { const r = await forward("/policy/deactivate", "POST", { actorDiscordId: req.user!.userId }); return res.status(r.status).json(r.data); }
     catch (e) { return res.status(502).json({ error: e instanceof Error ? e.message : "Moderation service unavailable." }); }
   });
+  router.get("/action-reversals", async (req: Request, res: Response) => {
+    try { const r = await forward(`/action-reversals?actorDiscordId=${encodeURIComponent(req.user!.userId)}`, "GET"); return res.status(r.status).json(r.data); }
+    catch (e) { return res.status(502).json({ error: e instanceof Error ? e.message : "Moderation service unavailable." }); }
+  });
+  router.post("/action-reversals/:id/review", async (req: Request, res: Response) => {
+    try { const r = await forward(`/action-reversals/${encodeURIComponent(req.params.id)}/review`, "POST", { ...req.body, actorDiscordId: req.user!.userId }); return res.status(r.status).json(r.data); }
+    catch (e) { return res.status(502).json({ error: e instanceof Error ? e.message : "Moderation service unavailable." }); }
+  });
   router.get("/audit", async (req: Request, res: Response) => {
     try { const r = await forward(`/audit?actorDiscordId=${encodeURIComponent(req.user!.userId)}`, "GET"); return res.status(r.status).json(r.data); }
     catch (e) { return res.status(502).json({ error: e instanceof Error ? e.message : "Moderation service unavailable." }); }
