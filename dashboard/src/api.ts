@@ -52,7 +52,7 @@ export function get(resource: string, params: QueryParamObject = {}) {
   });
 }
 
-export function post(resource: string, params: QueryParamObject = {}) {
+export function post(resource: string, params: any = {}) {
   const headers: Record<string, string> = RootStore.state.auth.apiKey
     ? { "X-Api-Key": RootStore.state.auth.apiKey }
     : {};
@@ -92,4 +92,15 @@ export function formPost(resource: string, body: Record<any, any> = {}, opts: Fo
   setTimeout(() => {
     document.body.removeChild(form);
   }, 1);
+}
+
+export function patch(resource: string, params: any = {}) {
+  const headers: Record<string, string> = RootStore.state.auth.apiKey
+    ? { "X-Api-Key": RootStore.state.auth.apiKey }
+    : {};
+  return request(resource, {
+    method: "PATCH",
+    body: JSON.stringify(params),
+    headers: { ...headers, "Content-Type": "application/json" },
+  });
 }

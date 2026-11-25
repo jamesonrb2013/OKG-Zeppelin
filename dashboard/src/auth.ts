@@ -65,3 +65,19 @@ export const authRedirectGuard: NavigationGuard = async (to, form, next) => {
   window.location.href = `${window.API_URL}/auth/login`;
   return next();
 };
+
+export const moderationOnlyGuard: NavigationGuard = async (to, from, next) => {
+  if (!(await isAuthenticated())) {
+    window.location.href = `${window.API_URL}/auth/login`;
+    return next(false);
+  }
+  try {
+    const response = await fetch(`${window.API_URL}/moderation/access`, {
+      headers: { "X-Api-Key": RootStore.state.auth.apiKey || "" },
+    });
+    if (response.ok && (await response.json())?.allowed === true) return next();
+  } catch {
+    // Fail closed if Discord role verification or the moderation service is unavailable.
+  }
+  return next("/dashboard");
+};

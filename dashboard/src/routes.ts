@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
-import { authGuard, authRedirectGuard, loginCallbackGuard, ownerOnlyGuard, staffOnlyGuard } from "./auth";
+import { authGuard, authRedirectGuard, loginCallbackGuard, ownerOnlyGuard, staffOnlyGuard, moderationOnlyGuard } from "./auth";
 import Splash from "./components/Splash.vue";
 import InviteLanding from "./components/InviteLanding.vue";
 
@@ -87,6 +87,11 @@ export const router = createRouter({
         {
           path: "features/:guildId/support/config",
           component: () => import("./components/dashboard/SupportConfig.vue"),
+        },
+        {
+          path: "moderation",
+          component: () => import("./components/dashboard/Moderation.vue"),
+          beforeEnter: moderationOnlyGuard,
         },
         {
           path: "owner",
