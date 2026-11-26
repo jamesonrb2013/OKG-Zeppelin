@@ -48,6 +48,10 @@ export function initModerationAPI(rootRouter: express.Router) {
     try { const r = await forward(`/appeals/${encodeURIComponent(req.params.id)}/review`, "POST", { ...req.body, actorDiscordId: req.user!.userId }); return res.status(r.status).json(r.data); }
     catch (e) { return res.status(502).json({ error: e instanceof Error ? e.message : "Moderation service unavailable." }); }
   });
+  router.post("/appeals/:id/reset-counter", async (req: Request, res: Response) => {
+    try { const r = await forward(`/appeals/${encodeURIComponent(req.params.id)}/reset-counter`, "POST", { ...req.body, actorDiscordId: req.user!.userId }); return res.status(r.status).json(r.data); }
+    catch (e) { return res.status(502).json({ error: e instanceof Error ? e.message : "Moderation service unavailable." }); }
+  });
   router.get("/policy", async (req: Request, res: Response) => {
     try { const r = await forward(`/policy?actorDiscordId=${encodeURIComponent(req.user!.userId)}`, "GET"); return res.status(r.status).json(r.data); }
     catch (e) { return res.status(502).json({ error: e instanceof Error ? e.message : "Moderation service unavailable." }); }
